@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <skills_arbitrator_msgs/SkillArbitration.h>
+#include <skills_util/log.h>
 
 namespace skills_arbitrator
 {
@@ -11,6 +12,7 @@ class SkillsArbit
 {
 public:
     SkillsArbit(const ros::NodeHandle & n);
+
     bool skillsArbitration(skills_arbitrator_msgs::SkillArbitration::Request  &req,
                            skills_arbitrator_msgs::SkillArbitration::Response &res);
 
@@ -22,7 +24,7 @@ public:
 private:
     ros::NodeHandle n_;
     ros::ServiceServer skill_arbit_srv_;
-    std::string param_ns_ = "exec_param";
+    std::string param_ns_ = "RL_params";
 
     double fail_reward_ = 10000000.0;
 
@@ -46,24 +48,26 @@ private:
     };
 
     std::map<std::string,std::vector<double>> action_evaluation_weight_ = {
-        {"pick",  {1.0, 100000} },
-        {"place", {1.0, 100000} },
+        {"pick",  {1.0, -100000} },
+        {"place", {1.0, -100000} },
     };
 
     std::map<std::string,std::vector<std::string>> skill_evaluation_parameters_ = {
-        {"cartesian_velocity",   {"duration", "max_force"} },
-        {"cartesian_position",   {"duration", "max_force"} },
-        {"simple_touch",         {"duration", "max_force"} },
+        {"cartesian_velocity",   {"duration", "max_force","traveled_distance"} },
+        {"cartesian_position",   {"duration", "max_force","traveled_distance","contact"} },
+        {"simple_touch",         {"duration", "max_force","traveled_distance"} },
         {"gripper_move",         {"torque", "fail"}        },
         {"robotiq_gripper_move", {"torque", "fail"}        },
+        {"go_to",                { } }
     };
 
     std::map<std::string,std::vector<double>> skill_evaluation_weight_ = {
-        {"cartesian_velocity",   {1.0, 0.5}    },
-        {"cartesian_position",   {1.0, 0.5}    },
-        {"simple_touch",         {0.5, 100000} },
-        {"gripper_move",         {1.0, fail_reward_}    },
-        {"robotiq_gripper_move", {0.5, fail_reward_} }
+        {"cartesian_velocity",   {-0.001, -0.0001, 1}    },
+        {"cartesian_position",   {-0.001, -0.0001, 1, -100000}    },
+        {"simple_touch",         {-0.5, 100000, 1} },
+        {"gripper_move",         {1.0, fail_reward_} },
+        {"robotiq_gripper_move", {0.5, fail_reward_} },
+        {"go_to",                { } }
     };
 
 };
@@ -74,7 +78,6 @@ inline bool SkillsArbit::getParam(const std::string &action_name, const std::str
     std::string param_str = "/"+param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
     if ( !n_.getParam(param_str, param_value) )
     {
-        ROS_WARN("%s not set", param_str.c_str());
         return false;
     }
     return true;
@@ -86,7 +89,6 @@ inline bool SkillsArbit::getParam(const std::string &action_name, const std::str
     std::string param_str = "/"+param_ns_+"/"+action_name+"/"+param_name;
     if ( !n_.getParam(param_str, param_value) )
     {
-        ROS_WARN("%s not set", param_str.c_str());
         return false;
     }
     return true;
@@ -94,10 +96,9 @@ inline bool SkillsArbit::getParam(const std::string &action_name, const std::str
 
 template<typename T>
 inline void SkillsArbit::setParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, const T &param_value)
-{
+{   
     std::string param_str = "/"+param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
 
-    ROS_INFO("Go to set param %s", param_str.c_str());
     n_.setParam(param_str, param_value);
     return;
 }
@@ -107,7 +108,6 @@ inline void SkillsArbit::setParam(const std::string &action_name, const std::str
 {
     std::string param_str = "/"+param_ns_+"/"+action_name+"/"+param_name;
 
-    ROS_INFO("Go to set param %s", param_str.c_str());
     n_.setParam(param_str, param_value);
     return;
 }

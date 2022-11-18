@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   skills_arbitrator_msgs
+  skills_util
 )
 
 catkin_package(

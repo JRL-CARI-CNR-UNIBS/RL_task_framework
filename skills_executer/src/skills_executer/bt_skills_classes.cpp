@@ -90,6 +90,11 @@ BT::NodeStatus SkillExecutionNode::tick()
         return BT::NodeStatus::FAILURE;
     }
 
+    if ( skill_exec_srv.response.result < 0 )
+    {
+        ROS_WARN("/%s/%s has failed", skill_exec_srv.request.action_name.c_str(), skill_exec_srv.request.skill_name.c_str());
+        return BT::NodeStatus::FAILURE;
+    }
     return BT::NodeStatus::SUCCESS;
 }
 

@@ -2,9 +2,10 @@
 #define SKILLS_LEARN_H
 
 #include <ros/ros.h>
+#include <ros/console.h>
 #include <skills_learning_msgs/SkillLearning.h>
 #include <skills_learning_msgs/SkillExplore.h>
-
+#include <skills_util/log.h>
 
 namespace skills_learning
 {
@@ -18,8 +19,13 @@ public:
     bool skillsLearning(skills_learning_msgs::SkillLearning::Request  &req,
                         skills_learning_msgs::SkillLearning::Response &res);
 
-    int learning(const std::string &action_name, const std::string &skill_name, const std::vector<std::string> &params_name);
     int explore (const std::string &action_name, const std::string &skill_name, const std::vector<std::string> &params_name);
+    int learning(const std::string &action_name, const std::string &skill_name, const std::vector<std::string> &params_name);
+
+    void printNewOldParam (std::string name, std::vector<double> param, std::vector<double> param_old);
+    void printNewOldParam (std::string name, std::vector<int> param, std::vector<int> param_old);
+    void printArrayParam (std::string name, std::vector<int> param);
+    void printArrayParam (std::string name, std::vector<double> param);
 
     template<typename T> void setParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, const T &param_value);
     template<typename T> void setParam(const std::string &action_name, const std::string &param_name, const T &param_value);
@@ -27,15 +33,18 @@ public:
     template<typename T> bool getParam(const std::string &action_name, const std::string &param_name, T &param_value);
 
 private:
-    std::string param_ns_ = "exec_params";
+    std::string param_ns_ = "RL_params";
     ros::NodeHandle n_;
+
+    double total_reward_, total_reward_old_;
 
     std::map<std::string,std::vector<std::string>> skill_execution_parameters_ = {
         {"cartesian_velocity",   { "position", "quaternion", "linear_velocity", "angular_velocity"} },
         {"cartesian_position",   { "position", "quaternion", "linear_velocity", "angular_velocity"} },
         {"simple_touch",         { "position", "quaternion", "linear_velocity", "angular_velocity"} },
-        {"gripper_move",         { "position", "quaternion", "linear_velocity", "angular_velocity", "fail"} },
-        {"robotiq_gripper_move", { "position", "quaternion", "linear_velocity", "angular_velocity", "fail"} },
+        {"gripper_move",         { "torque"} },
+        {"robotiq_gripper_move", { "torque"} },
+        {"go_to",                { } }
     };
 
 //    std::vector<std::string> cart_pos_params_                 = { "position", "quaternion", "linear_velocity", "angular_velocity"};
@@ -60,7 +69,6 @@ template<typename T>
 inline void SkillsLearn::setParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, const T &param_value)
 {
     std::string param_str = "/"+param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
-    ROS_INFO("Go to set param %s", param_str.c_str());
     n_.setParam(param_str, param_value);
     return;
 }
@@ -69,7 +77,6 @@ template<typename T>
 inline void SkillsLearn::setParam(const std::string &action_name, const std::string &param_name, const T &param_value)
 {
     std::string param_str = "/"+param_ns_+"/"+action_name+"/"+param_name;
-    ROS_INFO("Go to set param %s", param_str.c_str());
     n_.setParam(param_str, param_value);
     return;
 }
@@ -80,7 +87,6 @@ inline bool SkillsLearn::getParam(const std::string &action_name, const std::str
     std::string param_str = "/"+param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
     if ( !n_.getParam(param_str, param_value) )
     {
-        ROS_WARN("%s not exist", param_str.c_str());
         return false;
     }
     return true;
@@ -92,7 +98,6 @@ inline bool SkillsLearn::getParam(const std::string &action_name, const std::str
     std::string param_str = "/"+param_ns_+"/"+action_name+"/"+param_name;
     if ( !n_.getParam(param_str, param_value) )
     {
-        ROS_WARN("%s not exist", param_str.c_str());
         return false;
     }
     return true;

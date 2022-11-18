@@ -18,12 +18,18 @@
 #include <relative_cartesian_controller_msgs/RelativeMoveGoal.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
+#include <tf/transform_broadcaster.h>
 #include <ur_dashboard_msgs/Load.h>
 #include <std_srvs/Trigger.h>
 #include <thread>
 #include <cmath>
 #include <subscription_notifier/subscription_notifier.h>
-
+#include <skills_util/log.h>
+#include <moveit/move_group_interface/move_group_interface.h>
+#include <moveit/planning_scene_interface/planning_scene_interface.h>
+#include <tf_conversions/tf_eigen.h>
+#include <Eigen/Geometry>
 
 namespace skills_executer
 {
@@ -42,13 +48,16 @@ public:
     int cartVel               (const std::string &action_name, const std::string &skill_name);
     int cartPos               (const std::string &action_name, const std::string &skill_name);
     int simpleTouch           (const std::string &action_name, const std::string &skill_name);
+    int move_to               (const std::string &action_name, const std::string &skill_name);
     double tf_distance (const std::string &reference_tf, const std::string &target_frame);
+
     void gripper_feedback     ();
 
     int reset_ur10e_ft_sensor ();
     double forceTopicCallback();
     double maxForce();
     void maxWrenchCalculation();
+
     template<typename T> void setParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, const T &param_value);
     template<typename T> void setParam(const std::string &action_name, const std::string &param_name, const T &param_value);
     template<typename T> bool getParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, T &param_value);
@@ -57,13 +66,18 @@ public:
 private:
     bool end_gripper_feedback_ = false;
     bool end_force_thread_ = false;
+    bool contact_ = false;
     double screw_accuracy_;
     double max_screw_accuracy_ = 10.0;
     double pi_ = 3.14159265358979323846;
     double max_force_ = 0.0;
     double gripper_tollerance_ = 0.01;
-    std::string param_ns_ = "exec_params";
+    double max_force_variation_ = 500;
+    tf::TransformListener tf_listener_;
+    std::string param_ns_ = "RL_params";
+    std::string end_link_frame_ = "link6";
     std::string gripper_frame_ = "open_tip";
+    std::string robot_name_ = "kr_50_r2500";
     ros::NodeHandle n_;
     ros::ServiceServer skill_exec_srv_;
     ros::ServiceClient start_config_clnt_;
@@ -71,6 +85,7 @@ private:
     ros::ServiceClient skill_explore_clnt_;
     std::shared_ptr<actionlib::SimpleActionClient<simple_touch_controller_msgs::SimpleTouchAction>>        touch_action_;
     std::shared_ptr<actionlib::SimpleActionClient<relative_cartesian_controller_msgs::RelativeMoveAction>> relative_move_action_;
+    std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
     ros::Publisher twist_pub_;
     ros::Publisher gripper_move_pub_;
 
@@ -89,12 +104,14 @@ private:
 //    std::string parallel_2f_gripper_move_type_ = "parallel_2f_gripper_move";
     std::string robotiq_gripper_move_type_     = "robotiq_gripper_move";
     std::string ur_load_program_               = "ur_load_program_";
+    std::string move_to_type_                  = "move_to";
 
     std::string watch_config_ = "watch";
 
     double desired_gripper_position_ = 0.79;
-    tf::TransformListener tf_listener_;
 
+    Eigen::Affine3d T_gripper_link_;
+    moveit::planning_interface::MoveGroupInterface::Plan moveit_plan_;
 };
 
 template<typename T>
@@ -102,7 +119,6 @@ inline void SkillsExec::setParam(const std::string &action_name, const std::stri
 {
     std::string param_str = "/"+param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
 
-    ROS_INFO("Go to set param %s", param_str.c_str());
     n_.setParam(param_str, param_value);
     return;
 }
@@ -112,7 +128,6 @@ inline void SkillsExec::setParam(const std::string &action_name, const std::stri
 {
     std::string param_str = "/"+param_ns_+"/"+action_name+"/"+param_name;
 
-    ROS_INFO("Go to set param %s", param_str.c_str());
     n_.setParam(param_str, param_value);
     return;
 }
@@ -123,7 +138,6 @@ inline bool SkillsExec::getParam(const std::string &action_name, const std::stri
     std::string param_str = "/"+param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
     if ( !n_.getParam(param_str, param_value) )
     {
-        ROS_WARN("%s not exist", param_str.c_str());
         return false;
     }
     return true;
@@ -135,7 +149,6 @@ inline bool SkillsExec::getParam(const std::string &action_name, const std::stri
     std::string param_str = "/"+param_ns_+"/"+action_name+"/"+param_name;
     if ( !n_.getParam(param_str, param_value) )
     {
-        ROS_WARN("%s not exist", param_str.c_str());
         return false;
     }
     return true;

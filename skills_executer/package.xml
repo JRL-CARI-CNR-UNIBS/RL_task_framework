@@ -21,11 +21,16 @@
   <depend>skills_executer_msgs</depend>
   <depend>skills_arbitrator_msgs</depend>
   <depend>skills_learning_msgs</depend>
+  <depend>skills_util</depend>
   <depend>sensor_msgs</depend>
   <depend>relative_cartesian_controller_msgs</depend>
   <depend>ur_dashboard_msgs</depend>
   <depend>subscription_notifier</depend>
   <depend>tf</depend>
+  <depend>moveit_ros_planning_interface</depend>
+  <depend>rosparam_utilities</depend>
+  <depend>eigen_conversions</depend>
+  <depend>tf_conversions</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

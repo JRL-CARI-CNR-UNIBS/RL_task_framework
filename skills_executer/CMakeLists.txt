@@ -19,6 +19,11 @@ find_package(catkin REQUIRED COMPONENTS
   ur_dashboard_msgs
   subscription_notifier
   tf
+  skills_util
+  moveit_ros_planning_interface
+  rosparam_utilities
+  eigen_conversions
+  tf_conversions
 )
 
 catkin_package(
@@ -29,6 +34,10 @@ catkin_package(
                  std_msgs
                  ur_dashboard_msgs
                  subscription_notifier
+                 moveit_ros_planning_interface
+                 rosparam_utilities
+                 eigen_conversions
+                 tf_conversions
   DEPENDS
 )
 
@@ -61,6 +70,13 @@ install(DIRECTORY include/${PROJECT_NAME}/
 add_executable(        skills_exec_node src/skills_exec_node.cpp)
 add_dependencies(      skills_exec_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries( skills_exec_node
+        ${catkin_LIBRARIES}
+        ${PROJECT_NAME}
+)
+
+add_executable(        TF_publisher_node src/TF_publisher_node.cpp)
+add_dependencies(      TF_publisher_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries( TF_publisher_node
         ${catkin_LIBRARIES}
         ${PROJECT_NAME}
 )

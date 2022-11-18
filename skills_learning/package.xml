@@ -12,6 +12,7 @@
   <depend>roscpp</depend>
   <depend>std_msgs</depend>
   <depend>skills_learning_msgs</depend>
+  <depend>skills_util</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
