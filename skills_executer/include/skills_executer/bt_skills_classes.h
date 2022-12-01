@@ -2,7 +2,7 @@
 #define BT_SKILLS_CLASSES_H
 
 #include <ros/ros.h>
-#include <behaviortree_cpp_v3/behavior_tree.h>
+#include <behaviortree_cpp/behavior_tree.h>
 #include <skills_executer_msgs/SkillExecution.h>
 #include <skills_learning_msgs/SkillLearning.h>
 #include <skills_learning_msgs/SkillExplore.h>

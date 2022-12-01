@@ -17,7 +17,7 @@
   <depend>simple_touch_controller_msgs</depend>
   <depend>actionlib_msgs</depend>
   <depend>actionlib</depend>
-  <depend>behaviortree_cpp_v3</depend>
+  <depend>behaviortree_cpp</depend>
   <depend>skills_executer_msgs</depend>
   <depend>skills_arbitrator_msgs</depend>
   <depend>skills_learning_msgs</depend>

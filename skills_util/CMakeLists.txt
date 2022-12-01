@@ -5,12 +5,17 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  tf
+  rosparam_utilities
 )
 
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES ${PROJECT_NAME}
- CATKIN_DEPENDS roscpp rospy std_msgs
+ CATKIN_DEPENDS roscpp
+                rospy
+                std_msgs
+                rosparam_utilities
  DEPENDS
 )
 
@@ -37,4 +42,11 @@ install(DIRECTORY include/${PROJECT_NAME}/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
         FILES_MATCHING PATTERN "*.h"
         PATTERN ".svn" EXCLUDE
+)
+
+add_executable(        TF_publisher_node src/TF_publisher_node.cpp)
+add_dependencies(      TF_publisher_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries( TF_publisher_node
+        ${catkin_LIBRARIES}
+        ${PROJECT_NAME}
 )

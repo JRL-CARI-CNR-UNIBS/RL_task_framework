@@ -12,15 +12,16 @@ bool SkillsArbit::skillsArbitration(skills_arbitrator_msgs::SkillArbitration::Re
                                     skills_arbitrator_msgs::SkillArbitration::Response &res)
 {
     ROS_CYAN_STREAM("Action to evaluate: "<<req.action_name.c_str());
-    std::string skill_type, action_type;
-    std::vector<std::string> skill_names;
+    std::string action_type;
+    std::vector<std::string> skill_names, params;
+    std::map<std::string,std::string> skill_type_map;
 
     double total_reward = 0.0;
     int executed;
 
     if (!getParam(req.action_name, "executed", executed))
     {
-        ROS_WARN("No param /%s/executed, skill arbitration finish", req.action_name.c_str());
+        ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/executed, skill arbitration finish");
         res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoParam;
         return true;
     }
@@ -29,7 +30,7 @@ bool SkillsArbit::skillsArbitration(skills_arbitrator_msgs::SkillArbitration::Re
     {
         if (!getParam(req.action_name, "action_type", action_type))
         {
-            ROS_WARN("No param /%s/action_type, skill arbitration finish", req.action_name.c_str());
+            ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/action_type, skill arbitration finish");
             res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoParam;
             return true;
         }
@@ -37,7 +38,7 @@ bool SkillsArbit::skillsArbitration(skills_arbitrator_msgs::SkillArbitration::Re
 
         if ( action_evaluation_parameters_.find(action_type) == action_evaluation_parameters_.end() )
         {
-            ROS_WARN("/%s action type is not in the list, skill arbitration finish", action_type.c_str());
+            ROS_YELLOW_STREAM("/"<<action_type<<" action type is not in the list, skill arbitration finish");
             res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoSkillType;
             return true;
         }
@@ -50,7 +51,7 @@ bool SkillsArbit::skillsArbitration(skills_arbitrator_msgs::SkillArbitration::Re
             double value;
             if ( !getParam(req.action_name,action_evaluation_parameters_[action_type].at(i),value) )
             {
-                ROS_WARN("No param /%s/%s", req.action_name.c_str(), action_evaluation_parameters_[action_type].at(i).c_str() );
+                ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/"<<action_evaluation_parameters_[action_type].at(i));
                 setParam(req.action_name,action_evaluation_parameters_[action_type].at(i),0.0);
                 ROS_CYAN_STREAM("Set /"<<req.action_name<<"/"<<action_evaluation_parameters_[action_type].at(i)<<": "<<0.0);
                 value = 0.0;
@@ -71,16 +72,37 @@ bool SkillsArbit::skillsArbitration(skills_arbitrator_msgs::SkillArbitration::Re
     }
     else
     {
-        ROS_WARN("/%s not executed, skill arbitration finish", req.action_name.c_str());
+        ROS_YELLOW_STREAM("/"<<req.action_name<<" not executed, skill arbitration finish");
         res.result = skills_arbitrator_msgs::SkillArbitrationResponse::Fail;
         return true;
     }
 
-    if ( !getParam(req.action_name,"skill_names",skill_names) )
+    if (!n_.getParamNames(params))
     {
-        ROS_WARN("No param /%s/skill_names, skill arbitration finish",req.action_name.c_str());
-        res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoParam;
+        ROS_ERROR("Error with getParamNames");
+        res.result = skills_arbitrator_msgs::SkillArbitrationResponse::Error;
         return true;
+    }
+
+    for ( const std::string param: params )
+    {
+        if ( param.find(req.action_name) != std::string::npos && param.find("skill_type") != std::string::npos )
+        {
+            std::string skill_name = param;
+            std::size_t index = skill_name.find("skill_type");
+            skill_name.erase(skill_name.begin()+index-1,skill_name.end());
+            index = skill_name.find_last_of("/");
+            skill_name.erase(skill_name.begin(),skill_name.begin()+index+1);
+            std::string skill_type;
+            if (!getParam(req.action_name, skill_name, "skill_type",   skill_type))
+            {
+                ROS_YELLOW_STREAM("No param "<<req.action_name<<"/"<<skill_name<<"/skill_type, skill explore finish");
+                res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoParam;
+                return true;
+            }
+            skill_type_map.insert(std::make_pair(skill_name,skill_type));
+            skill_names.push_back(skill_name);
+        }
     }
 
     for ( const std::string skill_name: skill_names)
@@ -89,52 +111,41 @@ bool SkillsArbit::skillsArbitration(skills_arbitrator_msgs::SkillArbitration::Re
 
         if (!getParam(req.action_name, skill_name, "executed",   executed))
         {
-            ROS_WARN("No param /%s/%s/executed", req.action_name.c_str(), skill_name.c_str());
+            ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/"<<skill_name<<"/executed");
         }
         else{
             if ( executed )
             {
-                if (!getParam(req.action_name, skill_name, "skill_type",   skill_type))
+                if (!getParam(req.action_name, skill_name, "skill_type", skill_type_map.at(skill_name)))
                 {
-                    ROS_WARN("No param /%s/%s/skill_type, skill arbitration finish", req.action_name.c_str(), skill_name.c_str());
+                    ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/"<<skill_name<<"/skill_type, skill arbitration finish");
                     res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoParam;
                     return true;
                 }
-                ROS_CYAN_STREAM("Skill type: "<<skill_type.c_str());
+                ROS_CYAN_STREAM("Skill type: "<<skill_type_map.at(skill_name).c_str());
 
-                if ( skill_evaluation_parameters_.find(skill_type) == skill_evaluation_parameters_.end() )
+                if ( skill_evaluation_parameters_.find(skill_type_map.at(skill_name)) == skill_evaluation_parameters_.end() )
                 {
-                    ROS_WARN("/%s skill type  is not in the list, skill arbitration finish", skill_type.c_str());
+                    ROS_YELLOW_STREAM("/"<<skill_type_map.at(skill_name)<<" skill type  is not in the list, skill arbitration finish");
                     res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoSkillType;
                     return true;
                 }
 
                 double reward = 0.0;
 
-//                if (!getParam(req.action_name, skill_name, "reward",   reward))
-//                {
-//                    ROS_WARN("No param /%s/%s/reward", req.action_name.c_str(), skill_name.c_str());
-//                    setParam(req.action_name,skill_name,"reward",0.0);
-//                    ROS_RED_STREAM("Set /"<<req.action_name<<"/"<<skill_name<<"/reward: "<<0.0);
-//                    reward = 0.0;
-//                }
-
-//                setParam(req.action_name,skill_name,"reward_old",reward);
-//                ROS_RED_STREAM("Set /"<<req.action_name<<"/"<<skill_name<<"/reward_old: "<<reward);
-
-                for (int i = 0; i < skill_evaluation_parameters_[skill_type].size(); i++)
+                for (int i = 0; i < skill_evaluation_parameters_[skill_type_map.at(skill_name)].size(); i++)
                 {
                     double value;
-                    if ( !getParam(req.action_name,skill_name,skill_evaluation_parameters_[skill_type].at(i),value) )
+                    if ( !getParam(req.action_name,skill_name,skill_evaluation_parameters_[skill_type_map.at(skill_name)].at(i),value) )
                     {
-                        ROS_WARN("No param /%s/%s/%s", req.action_name.c_str(), skill_name.c_str(), skill_evaluation_parameters_[skill_type].at(i).c_str() );
-                        setParam(req.action_name,skill_name,skill_evaluation_parameters_[skill_type].at(i),0.0);
-                        ROS_CYAN_STREAM("Set /"<<req.action_name<<"/"<<skill_name<<"/"<<skill_evaluation_parameters_[skill_type].at(i)<<": "<<0.0);
+                        ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/"<<skill_name<<"/"<<skill_evaluation_parameters_[skill_type_map.at(skill_name)].at(i) );
+                        setParam(req.action_name,skill_name,skill_evaluation_parameters_[skill_type_map.at(skill_name)].at(i),0.0);
+                        ROS_CYAN_STREAM("Set /"<<req.action_name<<"/"<<skill_name<<"/"<<skill_evaluation_parameters_[skill_type_map.at(skill_name)].at(i)<<": "<<0.0);
                         value = 0.0;
                     }
-                    ROS_CYAN_STREAM("/"<<req.action_name<<"/"<<skill_name<<"/"<<skill_evaluation_parameters_[skill_type].at(i)<<": "<<value);
-                    ROS_CYAN_STREAM("Reward + "<<value<<" * "<<skill_evaluation_weight_[skill_type].at(i));
-                    reward = reward + ( value * skill_evaluation_weight_[skill_type].at(i) );
+                    ROS_CYAN_STREAM("/"<<req.action_name<<"/"<<skill_name<<"/"<<skill_evaluation_parameters_[skill_type_map.at(skill_name)].at(i)<<": "<<value);
+                    ROS_CYAN_STREAM("Reward + "<<value<<" * "<<skill_evaluation_weight_[skill_type_map.at(skill_name)].at(i));
+                    reward = reward + ( value * skill_evaluation_weight_[skill_type_map.at(skill_name)].at(i) );
                 }
 
                 setParam(req.action_name,skill_name,"reward",reward);

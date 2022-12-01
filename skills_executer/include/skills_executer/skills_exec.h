@@ -31,6 +31,12 @@
 #include <tf_conversions/tf_eigen.h>
 #include <Eigen/Geometry>
 
+//fjt part
+#include <control_msgs/FollowJointTrajectoryAction.h>
+#include <control_msgs/FollowJointTrajectoryGoal.h>
+#include <control_msgs/FollowJointTrajectoryResult.h>
+//end
+
 namespace skills_executer
 {
 
@@ -49,6 +55,7 @@ public:
     int cartPos               (const std::string &action_name, const std::string &skill_name);
     int simpleTouch           (const std::string &action_name, const std::string &skill_name);
     int move_to               (const std::string &action_name, const std::string &skill_name);
+    int follow_joint_trj      (const std::string &action_name, const std::string &skill_name, bool linear_trj);
     double tf_distance (const std::string &reference_tf, const std::string &target_frame);
 
     void gripper_feedback     ();
@@ -62,6 +69,7 @@ public:
     template<typename T> void setParam(const std::string &action_name, const std::string &param_name, const T &param_value);
     template<typename T> bool getParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, T &param_value);
     template<typename T> bool getParam(const std::string &action_name, const std::string &param_name, T &param_value);
+
 
 private:
     bool end_gripper_feedback_ = false;
@@ -105,6 +113,8 @@ private:
     std::string robotiq_gripper_move_type_     = "robotiq_gripper_move";
     std::string ur_load_program_               = "ur_load_program_";
     std::string move_to_type_                  = "move_to";
+    std::string linear_move_type_              = "linear_move";
+
 
     std::string watch_config_ = "watch";
 
@@ -112,6 +122,13 @@ private:
 
     Eigen::Affine3d T_gripper_link_;
     moveit::planning_interface::MoveGroupInterface::Plan moveit_plan_;
+
+
+//    fjt part
+    double trajectory_time_tollerance_ = 2;
+    std::vector<double> trajectory_joint_tollerance_;
+    std::shared_ptr<actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction>> fjt_ac_;
+//    end
 };
 
 template<typename T>

@@ -20,6 +20,8 @@
   <depend>roscpp</depend>
   <depend>rospy</depend>
   <depend>std_msgs</depend>
+  <depend>tf</depend>
+  <depend>rosparam_utilities</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

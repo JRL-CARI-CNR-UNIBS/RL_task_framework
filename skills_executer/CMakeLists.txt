@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(skills_executer)
+add_compile_options(-std=c++17 -funroll-loops -Wall -Ofast)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -14,7 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   actionlib
   manipulation_msgs
-  behaviortree_cpp_v3
+  behaviortree_cpp
   relative_cartesian_controller_msgs
   ur_dashboard_msgs
   subscription_notifier
@@ -44,6 +45,7 @@ catkin_package(
 include_directories(
 include
   ${catkin_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME}
@@ -70,13 +72,6 @@ install(DIRECTORY include/${PROJECT_NAME}/
 add_executable(        skills_exec_node src/skills_exec_node.cpp)
 add_dependencies(      skills_exec_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries( skills_exec_node
-        ${catkin_LIBRARIES}
-        ${PROJECT_NAME}
-)
-
-add_executable(        TF_publisher_node src/TF_publisher_node.cpp)
-add_dependencies(      TF_publisher_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries( TF_publisher_node
         ${catkin_LIBRARIES}
         ${PROJECT_NAME}
 )

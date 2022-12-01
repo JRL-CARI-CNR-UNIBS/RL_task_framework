@@ -44,7 +44,9 @@ private:
         {"simple_touch",         { "position", "quaternion", "linear_velocity", "angular_velocity"} },
         {"gripper_move",         { "torque"} },
         {"robotiq_gripper_move", { "torque"} },
-        {"go_to",                { } }
+        {"go_to",                { } },
+        {"move_to",              { "acceleration_scaling", "velocity_scaling" } },
+        {"linear_move",          { "position", "quaternion", "acceleration_scaling", "velocity_scaling"} }
     };
 
 //    std::vector<std::string> cart_pos_params_                 = { "position", "quaternion", "linear_velocity", "angular_velocity"};
