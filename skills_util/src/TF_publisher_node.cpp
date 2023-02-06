@@ -11,7 +11,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "tf_publisher");
     ros::NodeHandle nh("tf_publisher");
 
-    XmlRpc::XmlRpcValue TF_param;
+    XmlRpc::XmlRpcValue tf_params;
     ros::Rate rate(10.0);
     static tf::TransformBroadcaster br;
     tf::TransformListener listener;
@@ -19,27 +19,27 @@ int main(int argc, char **argv)
 
     while(ros::ok())
     {
-        if (!nh.getParam("/tf_params",TF_param))
+        if (!nh.getParam("/tf_params",tf_params))
         {
-            ROS_ERROR("Unable to find /tf_params");
-            return false;
+            ROS_DEBUG("Unable to find /tf_paramss");
+            tf_params.clear();
         }
         else
         {
-            if (TF_param.getType() != XmlRpc::XmlRpcValue::TypeArray)
+            if (tf_params.getType() != XmlRpc::XmlRpcValue::TypeArray)
             {
                 ROS_ERROR("The param is not an array" );
                 continue;
             }
-            ROS_DEBUG("There are %d TF",TF_param.size());
+            ROS_DEBUG("There are %d TF",tf_params.size());
 
             tf::Transform transform;
             std::string TF_name;
             std::string reference_TF;
 
-            for (std::size_t i = 0; i < TF_param.size(); i++)
+            for (std::size_t i = 0; i < tf_params.size(); i++)
             {
-                XmlRpc::XmlRpcValue single_TF = TF_param[i];
+                XmlRpc::XmlRpcValue single_TF = tf_params[i];
                 if( single_TF.getType() != XmlRpc::XmlRpcValue::TypeStruct)
                 {
                     ROS_WARN("The element is not a struct");
@@ -85,28 +85,6 @@ int main(int argc, char **argv)
                 transform.setRotation( tf::Quaternion( quat.at(0),quat.at(1),quat.at(2),quat.at(3) ) );
                 br.sendTransform( tf::StampedTransform(transform, ros::Time::now(), reference_TF, TF_name) );
                 ros::spinOnce();
-            }
-        }
-
-        std::vector<std::string> tf_names;
-        listener.getFrameStrings(tf_names);
-
-        if ( !tf_names.empty() )
-        {
-            for ( const std::string tf_name: tf_names)
-            {
-                std::size_t index = tf_name.find("_model__link");
-                if ( index != std::string::npos )
-                {
-                    std::string new_tf_name = tf_name;
-                    new_tf_name.erase(new_tf_name.begin()+index,new_tf_name.end());
-                    std::string str = "_misure";
-                    new_tf_name.append(str);
-                    tf::Transform transform;
-                    transform.setOrigin( tf::Vector3( (((rand() % 101)/50.0)-1) * 0.005,(((rand() % 101)/50.0)-1) * 0.005, (((rand() % 101)/50.0)-1) * 0.005 ) );
-                    transform.setRotation( tf::Quaternion( 0.0,0.0,0.0,1.0 ) );
-                    br.sendTransform( tf::StampedTransform(transform, ros::Time::now(), tf_name, new_tf_name) );
-                }
             }
         }
         rate.sleep();

@@ -7,15 +7,12 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   skills_executer_msgs
-  skills_arbitrator_msgs
-  skills_learning_msgs
   configuration_msgs
   sensor_msgs
   simple_touch_controller_msgs
   actionlib_msgs
   actionlib
   manipulation_msgs
-  behaviortree_cpp
   relative_cartesian_controller_msgs
   ur_dashboard_msgs
   subscription_notifier
@@ -25,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
   rosparam_utilities
   eigen_conversions
   tf_conversions
+  parallel_2f_gripper
 )
 
 catkin_package(
@@ -50,7 +48,6 @@ include
 
 add_library(${PROJECT_NAME}
   src/skills_executer/skills_exec.cpp
-  src/skills_executer/bt_skills_classes.cpp
 )
 
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

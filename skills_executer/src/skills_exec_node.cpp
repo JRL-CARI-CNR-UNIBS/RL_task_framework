@@ -17,8 +17,14 @@ int main(int argc, char **argv)
         return false;
     }
     ros::start();
+    ros::AsyncSpinner spinner(10);
+    spinner.start();
+
     ros::NodeHandle n;
     skills_executer::SkillsExec skills_exec_(n);
 
-    ros::spin();
+    while (ros::ok())
+    {
+        ros::Duration(1).sleep();
+    }
 }

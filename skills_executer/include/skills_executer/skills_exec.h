@@ -3,8 +3,8 @@
 
 #include <ros/ros.h>
 #include <skills_executer_msgs/SkillExecution.h>
-#include <skills_arbitrator_msgs/SkillArbitration.h>
-#include <skills_learning_msgs/SkillLearning.h>
+//#include <skills_arbitrator_msgs/SkillArbitration.h>
+//#include <skills_learning_msgs/SkillLearning.h>
 #include <actionlib/client/simple_action_client.h>
 #include <configuration_msgs/StartConfiguration.h>
 #include <simple_touch_controller_msgs/SimpleTouchAction.h>
@@ -30,6 +30,7 @@
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <tf_conversions/tf_eigen.h>
 #include <Eigen/Geometry>
+#include <parallel_2f_gripper/MoveGripper.h>
 
 //fjt part
 #include <control_msgs/FollowJointTrajectoryAction.h>
@@ -75,19 +76,26 @@ private:
     bool end_gripper_feedback_ = false;
     bool end_force_thread_ = false;
     bool contact_ = false;
+    bool default_execution_duration_monitoring_ = 1;
     double screw_accuracy_;
     double max_screw_accuracy_ = 10.0;
     double pi_ = 3.14159265358979323846;
     double max_force_ = 0.0;
     double gripper_tollerance_ = 0.01;
     double max_force_variation_ = 500;
+    double default_trajectory_goal_joint_tolerance_ = 0.01;
+    double default_trajectory_goal_tolerance_ = 0.1;
+    double default_trajectory_start_tolerance_ = 0.01;
+    double default_goal_duration_margin_ = 1;
+
     tf::TransformListener tf_listener_;
     std::string param_ns_ = "RL_params";
-    std::string end_link_frame_ = "link6";
+    std::string end_link_frame_ = "flange";
     std::string gripper_frame_ = "open_tip";
     std::string robot_name_ = "kr_50_r2500";
     ros::NodeHandle n_;
     ros::ServiceServer skill_exec_srv_;
+    ros::ServiceClient parallel_gripper_move_clnt_;
     ros::ServiceClient start_config_clnt_;
     ros::ServiceClient skill_arbit_clnt_;
     ros::ServiceClient skill_explore_clnt_;
@@ -108,7 +116,7 @@ private:
     std::string cart_vel_type_                 = "cartesian_velocity";
     std::string cart_pos_type_                 = "cartesian_position";
     std::string simple_touch_type_             = "simple_touch";
-    std::string parallel_2f_gripper_move_type_ = "gripper_move";
+    std::string parallel_2f_gripper_move_type_ = "parallel_gripper_move";
 //    std::string parallel_2f_gripper_move_type_ = "parallel_2f_gripper_move";
     std::string robotiq_gripper_move_type_     = "robotiq_gripper_move";
     std::string ur_load_program_               = "ur_load_program_";

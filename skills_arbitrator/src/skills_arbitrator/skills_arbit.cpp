@@ -140,8 +140,9 @@ bool SkillsArbit::skillsArbitration(skills_arbitrator_msgs::SkillArbitration::Re
                     {
                         ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/"<<skill_name<<"/"<<skill_evaluation_parameters_[skill_type_map.at(skill_name)].at(i) );
                         setParam(req.action_name,skill_name,skill_evaluation_parameters_[skill_type_map.at(skill_name)].at(i),0.0);
-                        ROS_CYAN_STREAM("Set /"<<req.action_name<<"/"<<skill_name<<"/"<<skill_evaluation_parameters_[skill_type_map.at(skill_name)].at(i)<<": "<<0.0);
+                        ROS_YELLOW_STREAM("Set /"<<req.action_name<<"/"<<skill_name<<"/"<<skill_evaluation_parameters_[skill_type_map.at(skill_name)].at(i)<<": "<<0.0);
                         value = 0.0;
+                        setParam(req.action_name,skill_name,skill_evaluation_parameters_[skill_type_map.at(skill_name)].at(i),value);
                     }
                     ROS_CYAN_STREAM("/"<<req.action_name<<"/"<<skill_name<<"/"<<skill_evaluation_parameters_[skill_type_map.at(skill_name)].at(i)<<": "<<value);
                     ROS_CYAN_STREAM("Reward + "<<value<<" * "<<skill_evaluation_weight_[skill_type_map.at(skill_name)].at(i));

@@ -39,9 +39,9 @@ private:
     double total_reward_, total_reward_old_;
 
     std::map<std::string,std::vector<std::string>> skill_execution_parameters_ = {
-        {"cartesian_velocity",   { "position", "quaternion", "linear_velocity", "angular_velocity"} },
-        {"cartesian_position",   { "position", "quaternion", "linear_velocity", "angular_velocity"} },
-        {"simple_touch",         { "position", "quaternion", "linear_velocity", "angular_velocity"} },
+        {"cartesian_velocity",   { "position", "quaternion", "linear_velocity_m_s", "angular_velocity_rad_s"} },
+        {"cartesian_position",   { "position", "quaternion", "linear_velocity_m_s", "angular_velocity_rad_s"} },
+        {"simple_touch",         { "goal_twist", "target_wrench", "release"} },
         {"gripper_move",         { "torque"} },
         {"robotiq_gripper_move", { "torque"} },
         {"go_to",                { } },

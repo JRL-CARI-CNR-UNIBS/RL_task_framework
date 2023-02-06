@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(skills_util)
+add_compile_options(-std=c++17 -funroll-loops -Wall -Ofast)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -7,6 +8,10 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   tf
   rosparam_utilities
+  skills_executer_msgs
+  skills_arbitrator_msgs
+  skills_learning_msgs
+  behaviortree_cpp
 )
 
 catkin_package(
@@ -26,6 +31,7 @@ include
 
 add_library(${PROJECT_NAME}
   src/${PROJECT_NAME}/log.cpp
+  src/${PROJECT_NAME}/bt_skills_classes.cpp
 )
 
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
