@@ -1103,56 +1103,6 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
     move_group_->setReplanAttempts(r_att);
     ROS_GREEN_STREAM("  replan_attempts: "<<r_att);
 
-    if (!getParam(action_name, skill_name, "goal_joint_tolerance", goal_j_t))
-    {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/goal_joint_tolerance is not set, defaul value: "<<default_trajectory_goal_joint_tolerance_);
-        goal_j_t = default_trajectory_goal_joint_tolerance_;
-        setParam(action_name, skill_name, "goal_joint_tolerance", goal_j_t);
-        ROS_YELLOW_STREAM("Set "<<action_name<<"/"<<skill_name<<"/goal_joint_tolerance: "<<goal_j_t);
-    }
-    move_group_->setGoalJointTolerance(goal_j_t);
-    ROS_GREEN_STREAM("  goal_joint_tolerance: "<<goal_j_t);
-
-    if (!getParam(action_name, skill_name, "goal_tolerance", goal_t))
-    {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/goal_tolerance is not set, defaul value: "<<default_trajectory_goal_tolerance_);
-        goal_t = default_trajectory_goal_tolerance_;
-        setParam(action_name, skill_name, "goal_tolerance", goal_t);
-        ROS_YELLOW_STREAM("Set "<<action_name<<"/"<<skill_name<<"/goal_tolerance: "<<goal_t);
-    }
-    move_group_->setGoalJointTolerance(goal_t);
-    ROS_GREEN_STREAM("  goal_tolerance: "<<goal_t);
-
-    if (!getParam(action_name, skill_name, "start_tolerance", start_t))
-    {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/start_tolerance is not set, defaul value: "<<default_trajectory_start_tolerance_);
-        start_t = default_trajectory_start_tolerance_;
-        setParam(action_name, skill_name, "start_tolerance", start_t);
-        ROS_YELLOW_STREAM("Set "<<action_name<<"/"<<skill_name<<"/start_tolerance: "<<start_t);
-    }
-    n_.setParam("/move_group/trajectory_execution/allowed_start_tolerance", start_t);
-    ROS_GREEN_STREAM("  start_tolerance: "<<start_t);
-
-    if (!getParam(action_name, skill_name, "goal_duration_margin", goal_duration_m))
-    {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/goal_duration_margin is not set, defaul value: "<<default_goal_duration_margin_);
-        goal_duration_m = default_goal_duration_margin_;
-        setParam(action_name, skill_name, "goal_duration_margin", goal_duration_m);
-        ROS_YELLOW_STREAM("Set "<<action_name<<"/"<<skill_name<<"/goal_duration_margin: "<<goal_duration_m);
-    }
-    n_.setParam("/move_group/trajectory_execution/allowed_goal_duration_margin", goal_duration_m);
-    ROS_GREEN_STREAM("  goal_duration_margin: "<<goal_duration_m);
-
-    if (!getParam(action_name, skill_name, "execution_duration_monitoring", exec_duration_m))
-    {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/execution_duration_monitoring is not set, defaul value: "<<default_execution_duration_monitoring_);
-        exec_duration_m = default_execution_duration_monitoring_;
-        setParam(action_name, skill_name, "execution_duration_monitoring", exec_duration_m);
-        ROS_YELLOW_STREAM("Set "<<action_name<<"/"<<skill_name<<"/execution_duration_monitoring: "<<exec_duration_m);
-    }
-    n_.setParam("/move_group/trajectory_execution/execution_duration_monitoring", exec_duration_m);
-    ROS_GREEN_STREAM("  execution_duration_monitoring: "<<exec_duration_m);
-
     moveit::core::MoveItErrorCode plan_result = move_group_->plan(moveit_plan_);
 
     if ( !changeConfig("trajectory_tracking") )
