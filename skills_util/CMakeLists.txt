@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   skills_executer_msgs
   skills_arbitrator_msgs
   skills_learning_msgs
+  skills_util_msgs
   behaviortree_cpp
 )
 
@@ -32,6 +33,7 @@ include
 add_library(${PROJECT_NAME}
   src/${PROJECT_NAME}/log.cpp
   src/${PROJECT_NAME}/bt_skills_classes.cpp
+  src/${PROJECT_NAME}/bt_exec.cpp
 )
 
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -53,6 +55,13 @@ install(DIRECTORY include/${PROJECT_NAME}/
 add_executable(        TF_publisher_node src/TF_publisher_node.cpp)
 add_dependencies(      TF_publisher_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries( TF_publisher_node
+        ${catkin_LIBRARIES}
+        ${PROJECT_NAME}
+)
+
+add_executable(        bt_exec_node src/bt_exec_node.cpp)
+add_dependencies(      bt_exec_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries( bt_exec_node
         ${catkin_LIBRARIES}
         ${PROJECT_NAME}
 )

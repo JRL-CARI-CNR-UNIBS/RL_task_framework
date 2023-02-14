@@ -6,7 +6,6 @@ namespace skills_executer
 SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
 {
     twist_pub_        = n_.advertise<geometry_msgs::TwistStamped>("/target_cart_twist",1);
-//    gripper_move_pub_ = n_.advertise<sensor_msgs::JointState>("/parallel_gripper/joint_target",1);
 
     wrench_sub_ = std::make_shared<ros_helper::SubscriptionNotifier<geometry_msgs::WrenchStamped>>(n_, "/gripper/wrench", 10);
     js_sub_= std::make_shared<ros_helper::SubscriptionNotifier<sensor_msgs::JointState>>(n_, "/joint_states", 10);
@@ -493,49 +492,66 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
     move_gripper_srv.request.velocity     = velocity;
     move_gripper_srv.request.torque       = torque;
 
+    bool closure;
+    if (control_mode == "close")
+    {
+        closure = true;
+    }
+    else if (control_mode == "torque" & torque > 0)
+    {
+        closure = true;
+    }
+    else if (control_mode == "velocity" & velocity > 0)
+    {
+        closure = true;
+    }
+    else
+    {
+        closure = false;
+    }
+
+    if ( closure & !thread_esistence_ )
+    {
+        ROS_ERROR("In if");
+        end_gripper_feedback_ = false;
+        actual_action_name_ = action_name;
+        actual_skill_name_  = skill_name;
+        gripper_thread_ = std::make_shared<std::thread>([this]{gripper_feedback();});
+        thread_esistence_ = true;
+    }
+    else
+    {
+        ROS_ERROR("In else");
+        if ( thread_esistence_ )
+        {
+            end_gripper_feedback_ = true;
+
+            if ( gripper_thread_->joinable() )
+            {
+                gripper_thread_->join();
+                thread_esistence_ = false;
+            }
+        }
+    }
+    end_gripper_feedback_ = false;
+
     if (!parallel_gripper_move_clnt_.call(move_gripper_srv))
     {
       ROS_ERROR("Unable to call %s service ",parallel_gripper_move_clnt_.getService().c_str());
       return false;
     }
 
-    if ( move_gripper_srv.response.result.compare("true") )
+    ROS_RED_STREAM("Parallel_gripper_move return :"<<move_gripper_srv.response.result);
+    if ( !move_gripper_srv.response.result.compare("true") )
+    {
+        ROS_MAGENTA_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
         return skills_executer_msgs::SkillExecutionResponse::Success;
+    }
     else
+    {
+        ROS_MAGENTA_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
         return skills_executer_msgs::SkillExecutionResponse::Fail;
-
-
-//    sensor_msgs::JointState gripper_move_msg;
-//    gripper_move_msg.name.push_back("");
-//    gripper_move_msg.position.push_back(position);
-//    gripper_move_msg.velocity.push_back(velocity);
-//    gripper_move_msg.effort.push_back(torque);
-
-//    if ( torque < 0.0 )
-//    {
-//        end_gripper_feedback_ = false;
-//        actual_action_name_ = action_name;
-//        actual_skill_name_  = skill_name;
-//        gripper_thread_ = std::make_shared<std::thread>([this]{gripper_feedback();});
-//        thread_esistence_ = true;
-//    }
-//    if ( thread_esistence_ )
-//    {
-//        if ( torque > 0.0 || position == 1.0 )
-//        {
-//            end_gripper_feedback_ = true;
-
-//            if ( gripper_thread_->joinable() )
-//            {
-//                gripper_thread_->join();
-//                thread_esistence_ = false;
-//            }
-//        }
-//    }
-//    end_gripper_feedback_ = false;
-
-//    gripper_move_msg.header.stamp=ros::Time::now();
-//    gripper_move_pub_.publish(gripper_move_msg);
+    }
 
     ros::Duration(1.0).sleep();
 
@@ -1246,10 +1262,11 @@ void SkillsExec::gripper_feedback()
         {
             actual_js = js_sub_->getData();
         }
+        std::vector<std::string>::iterator index = std::find(actual_js.name.begin(), actual_js.name.end(), "right_finger_joint");
 
-        if ( actual_js.position.size() != 6 )
+        if ( index !=  actual_js.name.end() )
         {
-            if ( abs(actual_js.position.at(7)) < desired_gripper_position_ + gripper_tollerance_ && abs(actual_js.position.at(7)) > desired_gripper_position_ - gripper_tollerance_ )
+            if ( abs(actual_js.position.at(index - actual_js.name.begin())) < closed_gripper_position_ + gripper_tollerance_ && abs(actual_js.position.at(index - actual_js.name.begin())) > closed_gripper_position_ - gripper_tollerance_ )
             {
                 setParam(actual_action_name_,actual_skill_name_,"fail",1);
                 setParam(actual_action_name_,"fail",1);
