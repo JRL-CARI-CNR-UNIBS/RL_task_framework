@@ -525,6 +525,7 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
         thread_esistence_ = true;
         std::string link_param_name = "/" + current_grasped_object_ + "/attached_link";
         std::string links_param_name = "/" + current_grasped_object_ + "/touch_links";
+        n_.setParam(param_name,true);
         n_.setParam(link_param_name,attached_link_name_);
         n_.setParam(links_param_name,gripper_touch_links_);
     }
