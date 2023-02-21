@@ -523,9 +523,10 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
         current_skill_name_  = skill_name;
         gripper_thread_ = std::make_shared<std::thread>([this]{gripper_feedback();});
         thread_esistence_ = true;
-        n_.setParam(param_name,true);
-        param_name.append("_robot");
-        n_.setParam(param_name,robot_name_);
+        std::string link_param_name = "/" + current_grasped_object_ + "/attached_link";
+        std::string links_param_name = "/" + current_grasped_object_ + "/touch_links";
+        n_.setParam(link_param_name,attached_link_name_);
+        n_.setParam(links_param_name,gripper_touch_links_);
     }
     else
     {
