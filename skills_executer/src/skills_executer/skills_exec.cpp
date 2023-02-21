@@ -150,6 +150,10 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     }
     else if ( !skill_type.compare(parallel_2f_gripper_move_type_) )
     {
+        if (!object_name.empty())
+        {
+            current_grasped_object_ = object_name;
+        }
         res.result = parallel2fGripperMove(req.action_name, req.skill_name);
     }
     else if ( !skill_type.compare(robotiq_gripper_move_type_) )
@@ -510,14 +514,18 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
         closure = false;
     }
 
+    std::string param_name = "/" + current_grasped_object_ + "/attached";
     if ( closure & !thread_esistence_ )
     {
         ROS_ERROR("In if");
         end_gripper_feedback_ = false;
-        actual_action_name_ = action_name;
-        actual_skill_name_  = skill_name;
+        current_action_name_ = action_name;
+        current_skill_name_  = skill_name;
         gripper_thread_ = std::make_shared<std::thread>([this]{gripper_feedback();});
         thread_esistence_ = true;
+        n_.setParam(param_name,true);
+        param_name.append("_robot");
+        n_.setParam(param_name,robot_name_);
     }
     else
     {
@@ -532,6 +540,7 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
                 thread_esistence_ = false;
             }
         }
+        n_.setParam(param_name, false);
     }
     end_gripper_feedback_ = false;
 
@@ -1268,9 +1277,10 @@ void SkillsExec::gripper_feedback()
         {
             if ( abs(actual_js.position.at(index - actual_js.name.begin())) < closed_gripper_position_ + gripper_tollerance_ && abs(actual_js.position.at(index - actual_js.name.begin())) > closed_gripper_position_ - gripper_tollerance_ )
             {
-                setParam(actual_action_name_,actual_skill_name_,"fail",1);
-                setParam(actual_action_name_,"fail",1);
-
+                setParam(current_action_name_,current_skill_name_,"fail",1);
+                setParam(current_action_name_,"fail",1);
+                std::string param_name = "/" + current_grasped_object_ + "/attached";
+                n_.setParam(param_name,false);
                 ROS_YELLOW_STREAM("No object in the gripper");
                 break;
             }

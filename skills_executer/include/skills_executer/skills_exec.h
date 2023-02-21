@@ -50,12 +50,12 @@ public:
 
     bool changeConfig(std::string config_name);
     int urLoadProgram         (const std::string &action_name, const std::string &skill_name);
-    int parallel2fGripperMove (const std::string &action_name, const std::string &skill_name);
     int robotiqGripperMove    (const std::string &action_name, const std::string &skill_name);
     int cartVel               (const std::string &action_name, const std::string &skill_name);
     int cartPos               (const std::string &action_name, const std::string &skill_name);
     int simpleTouch           (const std::string &action_name, const std::string &skill_name);
     int move_to               (const std::string &action_name, const std::string &skill_name);
+    int parallel2fGripperMove (const std::string &action_name, const std::string &skill_name);
     int follow_joint_trj      (const std::string &action_name, const std::string &skill_name, bool linear_trj);
     double tf_distance (const std::string &reference_tf, const std::string &target_frame);
 
@@ -112,7 +112,7 @@ private:
     std::shared_ptr<std::thread> gripper_thread_;
     bool thread_esistence_ = false;
 
-    std::string actual_action_name_, actual_skill_name_, last_pick_action_;
+    std::string current_action_name_, current_skill_name_, last_pick_action_, current_grasped_object_;
 
     std::string cart_vel_type_                 = "cartesian_velocity";
     std::string cart_pos_type_                 = "cartesian_position";
