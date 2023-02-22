@@ -677,10 +677,10 @@ int SkillsExec::cartVel(const std::string &action_name, const std::string &skill
     twist_command.header.stamp=ros::Time::now();
     twist_pub_.publish(twist_command);
 
-//    if ( !changeConfig(watch_config_) )
-//    {
-//        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
-//    }
+    if ( !changeConfig(watch_config_) )
+    {
+        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
+    }
 
     if ( contact_ )
     {
@@ -898,11 +898,11 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
     relative_move_action_->waitForServer();
     relative_move_action_->sendGoalAndWait(rel_move_goal);
 
-//    if ( !changeConfig(watch_config_) )
-//    {
-//        ROS_BOLDMAGENTA_STREAM("/"<<action_name<<"/"<<skill_name<<" return ProblemConfManager: "<<skills_executer_msgs::SkillExecutionResponse::ProblemConfManager);
-//        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
-//    }
+    if ( !changeConfig(watch_config_) )
+    {
+        ROS_BOLDMAGENTA_STREAM("/"<<action_name<<"/"<<skill_name<<" return ProblemConfManager: "<<skills_executer_msgs::SkillExecutionResponse::ProblemConfManager);
+        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
+    }
 
     if ( contact_ )
     {
@@ -1025,11 +1025,11 @@ int SkillsExec::simpleTouch(const std::string &action_name, const std::string &s
     touch_action_->waitForServer();
     touch_action_->sendGoalAndWait(goal_touch);
 
-//    if ( !changeConfig(watch_config_) )
-//    {
-//        ROS_YELLOW_STREAM("Problem with configuration manager" );
-//        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
-//    }
+    if ( !changeConfig(watch_config_) )
+    {
+        ROS_YELLOW_STREAM("Problem with configuration manager" );
+        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
+    }
 
     if ( touch_action_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
     {
@@ -1051,6 +1051,12 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
     double acc, vel, p_time, goal_t, goal_j_t, start_t, goal_duration_m;
     bool exec_duration_m;
     int r_att;
+
+    if ( !changeConfig("trajectory_tracking") )
+    {
+        ROS_YELLOW_STREAM("Problem with configuration manager");
+        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
+    }
 
     tf::StampedTransform origin_goal_transform, origin_link_goal_transform;
 
@@ -1132,17 +1138,16 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
 
     moveit::core::MoveItErrorCode plan_result = move_group_->plan(moveit_plan_);
 
-    if ( !changeConfig("trajectory_tracking") )
-    {
-        ROS_YELLOW_STREAM("Problem with configuration manager");
-        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
-    }
 
     ROS_YELLOW_STREAM("Plan_result: "<<plan_result);
     if ( plan_result != moveit::core::MoveItErrorCode::SUCCESS )
     {
         ROS_YELLOW_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
-//        changeConfig(watch_config_);
+        if ( !changeConfig(watch_config_) )
+        {
+            ROS_YELLOW_STREAM("Problem with configuration manager");
+            return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
+        }
         return skills_executer_msgs::SkillExecutionResponse::Fail;
     }
 
@@ -1161,11 +1166,11 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
                               final_config[3] - actual_config[3]<<","<<
                               final_config[4] - actual_config[4]<<","<<
                               final_config[5] - actual_config[5]<<"]");
-//    if ( !changeConfig(watch_config_) )
-//    {
-//        ROS_YELLOW_STREAM("Problem with configuration manager");
-//        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
-//    }
+    if ( !changeConfig(watch_config_) )
+    {
+        ROS_YELLOW_STREAM("Problem with configuration manager");
+        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
+    }
 
     ROS_YELLOW_STREAM("Move_result: "<<move_result);
     if ( move_result != moveit::core::MoveItErrorCode::SUCCESS )
@@ -1277,8 +1282,9 @@ void SkillsExec::gripper_feedback()
 
         if ( index !=  actual_js.name.end() )
         {
-            if ( abs(actual_js.position.at(index - actual_js.name.begin())) < closed_gripper_position_ + gripper_tollerance_ && abs(actual_js.position.at(index - actual_js.name.begin())) > closed_gripper_position_ - gripper_tollerance_ )
+            if ( actual_js.position.at(index - actual_js.name.begin()) < closed_gripper_position_ + gripper_tollerance_ && actual_js.position.at(index - actual_js.name.begin()) > closed_gripper_position_ - gripper_tollerance_ )
             {
+                ROS_YELLOW_STREAM("position: "<<actual_js.position.at(index - actual_js.name.begin()));
                 setParam(current_action_name_,current_skill_name_,"fail",1);
                 setParam(current_action_name_,"fail",1);
                 std::string param_name = "/" + current_grasped_object_ + "/attached";
@@ -1302,6 +1308,11 @@ int SkillsExec::follow_joint_trj(const std::string &action_name, const std::stri
     std::vector<double> position, orientation;
     tf::Vector3 pos;
     tf::Quaternion quat;
+
+    if ( !changeConfig("trajectory_tracking") )
+    {
+        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
+    }
 
     if (!getParam(action_name, skill_name, "acceleration_scaling", acc))
     {
@@ -1509,93 +1520,11 @@ int SkillsExec::follow_joint_trj(const std::string &action_name, const std::stri
         if ( plan_result != moveit::core::MoveItErrorCode::SUCCESS )
         {
             ROS_YELLOW_STREAM("Result: " << plan_result);
-//            switch (plan_result.val) {
-//            case moveit::core::MoveItErrorCode::FAILURE :
-//                ROS_YELLOW_STREAM("Plan_result: FAILURE");
-//                break;
-//            case moveit::core::MoveItErrorCode::PLANNING_FAILED :
-//                ROS_YELLOW_STREAM("Plan_result: PLANNING_FAILED");
-//                break;
-//            case moveit::core::MoveItErrorCode::INVALID_MOTION_PLAN :
-//                ROS_YELLOW_STREAM("Plan_result: INVALID_MOTION_PLAN");
-//                break;
-//            case moveit::core::MoveItErrorCode::MOTION_PLAN_INVALIDATED_BY_ENVIRONMENT_CHANGE :
-//                ROS_YELLOW_STREAM("Plan_result: MOTION_PLAN_INVALIDATED_BY_ENVIRONMENT_CHANGE");
-//                break;
-//            case moveit::core::MoveItErrorCode::CONTROL_FAILED :
-//                ROS_YELLOW_STREAM("Plan_result: CONTROL_FAILED");
-//                break;
-//            case moveit::core::MoveItErrorCode::UNABLE_TO_AQUIRE_SENSOR_DATA :
-//                ROS_YELLOW_STREAM("Plan_result: UNABLE_TO_AQUIRE_SENSOR_DATA");
-//                break;
-//            case moveit::core::MoveItErrorCode::TIMED_OUT :
-//                ROS_YELLOW_STREAM("Plan_result: TIMED_OUT");
-//                break;
-//            case moveit::core::MoveItErrorCode::PREEMPTED :
-//                ROS_YELLOW_STREAM("Plan_result: PREEMPTED");
-//                break;
-//            case moveit::core::MoveItErrorCode::START_STATE_IN_COLLISION :
-//                ROS_YELLOW_STREAM("Plan_result: START_STATE_IN_COLLISION");
-//                break;
-//            case moveit::core::MoveItErrorCode::START_STATE_VIOLATES_PATH_CONSTRAINTS :
-//                ROS_YELLOW_STREAM("Plan_result: FAILURE");
-//                break;
-//            case moveit::core::MoveItErrorCode::GOAL_IN_COLLISION :
-//                ROS_YELLOW_STREAM("Plan_result: GOAL_IN_COLLISION");
-//                break;
-//            case moveit::core::MoveItErrorCode::GOAL_VIOLATES_PATH_CONSTRAINTS :
-//                ROS_YELLOW_STREAM("Plan_result: GOAL_VIOLATES_PATH_CONSTRAINTS");
-//                break;
-//            case moveit::core::MoveItErrorCode::GOAL_CONSTRAINTS_VIOLATED :
-//                ROS_YELLOW_STREAM("Plan_result: GOAL_CONSTRAINTS_VIOLATED");
-//                break;
-//            case moveit::core::MoveItErrorCode::INVALID_GROUP_NAME :
-//                ROS_YELLOW_STREAM("Plan_result: INVALID_GROUP_NAME");
-//                break;
-//            case moveit::core::MoveItErrorCode::INVALID_GOAL_CONSTRAINTS :
-//                ROS_YELLOW_STREAM("Plan_result: INVALID_GOAL_CONSTRAINTS");
-//                break;
-//            case moveit::core::MoveItErrorCode::INVALID_ROBOT_STATE :
-//                ROS_YELLOW_STREAM("Plan_result: INVALID_ROBOT_STATE");
-//                break;
-//            case moveit::core::MoveItErrorCode::INVALID_LINK_NAME :
-//                ROS_YELLOW_STREAM("Plan_result: INVALID_LINK_NAME");
-//                break;
-//            case moveit::core::MoveItErrorCode::INVALID_OBJECT_NAME :
-//                ROS_YELLOW_STREAM("Plan_result: INVALID_OBJECT_NAME");
-//                break;
-//            case moveit::core::MoveItErrorCode::FRAME_TRANSFORM_FAILURE :
-//                ROS_YELLOW_STREAM("Plan_result: FRAME_TRANSFORM_FAILURE");
-//                break;
-//            case moveit::core::MoveItErrorCode::COLLISION_CHECKING_UNAVAILABLE :
-//                ROS_YELLOW_STREAM("Plan_result: COLLISION_CHECKING_UNAVAILABLE");
-//                break;
-//            case moveit::core::MoveItErrorCode::ROBOT_STATE_STALE :
-//                ROS_YELLOW_STREAM("Plan_result: ROBOT_STATE_STALE");
-//                break;
-//            case moveit::core::MoveItErrorCode::SENSOR_INFO_STALE :
-//                ROS_YELLOW_STREAM("Plan_result: SENSOR_INFO_STALE");
-//                break;
-//            case moveit::core::MoveItErrorCode::COMMUNICATION_FAILURE :
-//                ROS_YELLOW_STREAM("Plan_result: COMMUNICATION_FAILURE");
-//                break;
-//            case moveit::core::MoveItErrorCode::NO_IK_SOLUTION :
-//                ROS_YELLOW_STREAM("Plan_result: NO_IK_SOLUTION");
-//                break;
-//            default:
-//                ROS_YELLOW_STREAM("Plan_result: unknown error");
-//                break;
-//            }
             ROS_YELLOW_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
             return skills_executer_msgs::SkillExecutionResponse::Fail;
         }
 
         goal.trajectory = moveit_plan_.trajectory_.joint_trajectory;
-    }
-
-    if ( !changeConfig("trajectory_tracking") )
-    {
-        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
     }
 
     if ( !fjt_ac_->waitForServer(ros::Duration(10)) )
@@ -1637,10 +1566,10 @@ int SkillsExec::follow_joint_trj(const std::string &action_name, const std::stri
 
     control_msgs::FollowJointTrajectoryResultConstPtr result =  fjt_ac_->getResult();
 
-//    if ( !changeConfig(watch_config_) )
-//    {
-//        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
-//    }
+    if ( !changeConfig(watch_config_) )
+    {
+        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
+    }
 
     if ( contact_ )
     {

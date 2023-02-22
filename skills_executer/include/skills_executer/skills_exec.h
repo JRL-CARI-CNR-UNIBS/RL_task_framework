@@ -87,7 +87,7 @@ private:
     double default_trajectory_goal_tolerance_ = 0.1;
     double default_trajectory_start_tolerance_ = 0.01;
     double default_goal_duration_margin_ = 1;
-    double closed_gripper_position_ = 0.79;
+    double closed_gripper_position_ = -0.79;
 
     tf::TransformListener tf_listener_;
     std::string param_ns_ = "RL_params";
