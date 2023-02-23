@@ -1058,6 +1058,12 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
         return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
     }
 
+    if ( !fjt_ac_->waitForServer(ros::Duration(10)) )
+    {
+        ROS_ERROR("Timeout FollowJointTrajectory client for robot %s", robot_name_.c_str());
+        return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+
     tf::StampedTransform origin_goal_transform, origin_link_goal_transform;
 
 
