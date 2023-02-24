@@ -7,7 +7,9 @@ SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
 {
     twist_pub_        = n_.advertise<geometry_msgs::TwistStamped>("/target_cart_twist",1);
 
-    wrench_sub_ = std::make_shared<ros_helper::SubscriptionNotifier<geometry_msgs::WrenchStamped>>(n_, "/gripper/wrench", 10);
+    std::string wrench_topic = "/" + robot_name_ + "/" + sensored_joint_ + "/wrench";
+
+    wrench_sub_ = std::make_shared<ros_helper::SubscriptionNotifier<geometry_msgs::WrenchStamped>>(n_, wrench_topic, 10);
     js_sub_= std::make_shared<ros_helper::SubscriptionNotifier<sensor_msgs::JointState>>(n_, "/joint_states", 10);
 
     skill_exec_srv_ = n_.advertiseService("/skills_exec/execute_skill", &SkillsExec::skillsExecution, this);

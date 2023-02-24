@@ -94,6 +94,7 @@ private:
     std::string end_link_frame_ = "flange";
     std::string gripper_frame_ = "open_tip";
     std::string robot_name_ = "kr_50_r2500";
+    std::string sensored_joint_ = "link6_to_flange";
     std::string attached_link_name_ = "gripper_base";
     std::vector<std::string> gripper_touch_links_{"right_crank", "left_crank", "right_phalanx", "left_phalanx"};
     ros::NodeHandle n_;
