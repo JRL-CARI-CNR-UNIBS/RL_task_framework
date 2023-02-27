@@ -31,7 +31,7 @@ private:
     std::string cart_vel_type_                 = "cartesian_velocity";
     std::string cart_pos_type_                 = "cartesian_position";
     std::string simple_touch_type_             = "simple_touch";
-    std::string parallel_2f_gripper_move_type_ = "gripper_move";
+    std::string parallel_2f_gripper_move_type_ = "parallel_gripper_move";
 //    std::string parallel_2f_gripper_move_type_ = "parallel_2f_gripper_move";
     std::string robotiq_gripper_move_type_     = "robotiq_gripper_move";
     std::string ur_load_program_               = "ur_load_program_";
@@ -53,25 +53,25 @@ private:
     };
 
     std::map<std::string,std::vector<std::string>> skill_evaluation_parameters_ = {
-        {"cartesian_velocity",   {"duration", "max_force","traveled_distance","contact"} },
-        {"cartesian_position",   {"duration", "max_force","traveled_distance","contact"} },
-        {"simple_touch",         {"duration", "max_force","traveled_distance"} },
-        {"gripper_move",         {"torque", "fail"}        },
-        {"robotiq_gripper_move", {"torque", "fail"}        },
-        {"go_to",                { } },
-        {"move_to",              { } },
-        {"linear_move",          {"duration", "max_force", "traveled_distance", "contact"} }
+        {"cartesian_velocity",    {"duration", "max_force","traveled_distance","contact"} },
+        {"cartesian_position",    {"duration", "max_force","traveled_distance","contact"} },
+        {"simple_touch",          {"duration", "max_force","traveled_distance"} },
+        {"parallel_gripper_move", {"torque", "fail"}        },
+        {"robotiq_gripper_move",  {"torque", "fail"}        },
+        {"go_to",                 { } },
+        {"move_to",               { } },
+        {"linear_move",           {"duration", "max_force", "traveled_distance", "contact"} }
     };
 
     std::map<std::string,std::vector<double>> skill_evaluation_weight_ = {
-        {"cartesian_velocity",   {-0.001, -0.0001, 1}    },
-        {"cartesian_position",   {-0.001, -0.0001, 1, -100000}    },
-        {"simple_touch",         {-0.5, 100000, 1} },
-        {"gripper_move",         {1.0, fail_reward_} },
-        {"robotiq_gripper_move", {0.5, fail_reward_} },
-        {"go_to",                { } },
-        {"move_to",              { } },
-        {"linear_move",          {-0.001, -0.0001, 1, -100000} }
+        {"cartesian_velocity",    {-0.001, -0.0001, 1}    },
+        {"cartesian_position",    {-0.001, -0.0001, 1, -100000}    },
+        {"simple_touch",          {-0.5, 100000, 1} },
+        {"parallel_gripper_move", {1.0, fail_reward_} },
+        {"robotiq_gripper_move",  {0.5, fail_reward_} },
+        {"go_to",                 { } },
+        {"move_to",               { } },
+        {"linear_move",           {-0.001, -0.0001, 1, -100000} }
     };
 
 };

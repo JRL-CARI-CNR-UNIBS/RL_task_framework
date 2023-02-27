@@ -39,14 +39,14 @@ private:
     double total_reward_, total_reward_old_;
 
     std::map<std::string,std::vector<std::string>> skill_execution_parameters_ = {
-        {"cartesian_velocity",   { "position", "quaternion", "linear_velocity_m_s", "angular_velocity_rad_s"} },
-        {"cartesian_position",   { "position", "quaternion", "linear_velocity_m_s", "angular_velocity_rad_s"} },
-        {"simple_touch",         { "goal_twist", "target_wrench", "release"} },
-        {"gripper_move",         { "torque"} },
-        {"robotiq_gripper_move", { "torque"} },
-        {"go_to",                { } },
-        {"move_to",              { "acceleration_scaling", "velocity_scaling" } },
-        {"linear_move",          { "position", "quaternion", "acceleration_scaling", "velocity_scaling"} }
+        {"cartesian_velocity",    { "position", "quaternion", "linear_velocity_m_s", "angular_velocity_rad_s"} },
+        {"cartesian_position",    { "position", "quaternion", "linear_velocity_m_s", "angular_velocity_rad_s"} },
+        {"simple_touch",          { "goal_twist", "target_wrench", "release"} },
+        {"parallel_gripper_move", { "torque"} },
+        {"robotiq_gripper_move",  { "torque"} },
+        {"go_to",                 { } },
+        {"move_to",               { "acceleration_scaling", "velocity_scaling" } },
+        {"linear_move",           { "position", "quaternion", "acceleration_scaling", "velocity_scaling"} }
     };
 
 //    std::vector<std::string> cart_pos_params_                 = { "position", "quaternion", "linear_velocity", "angular_velocity"};
@@ -58,7 +58,7 @@ private:
     std::string cart_vel_type_                 = "cartesian_velocity";
     std::string cart_pos_type_                 = "cartesian_position";
     std::string simple_touch_type_             = "simple_touch";
-    std::string parallel_2f_gripper_move_type_ = "gripper_move";
+    std::string parallel_2f_gripper_move_type_ = "parallel_gripper_move";
 //    std::string parallel_2f_gripper_move_type_ = "parallel_2f_gripper_move";
     std::string robotiq_gripper_move_type_     = "robotiq_gripper_move";
     std::string ur_load_program_               = "ur_load_program_";
