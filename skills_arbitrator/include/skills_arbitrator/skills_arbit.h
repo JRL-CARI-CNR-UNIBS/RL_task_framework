@@ -43,24 +43,22 @@ private:
                                             "robotiq_gripper_move"
                                            };
     std::map<std::string,std::vector<std::string>> action_evaluation_parameters_ = {
-        {"pick",  {"traveled_distance", "fail"} },
-        {"place", {"traveled_distance", "fail"} },
+        {"pick_and_place", {"final_distance", "fail"} },
     };
 
     std::map<std::string,std::vector<double>> action_evaluation_weight_ = {
-        {"pick",  {1.0, -100000} },
-        {"place", {1.0, -100000} },
+        {"pick_and_place",  {-1000, -100000} },
     };
 
     std::map<std::string,std::vector<std::string>> skill_evaluation_parameters_ = {
         {"cartesian_velocity",    {"duration", "max_force","traveled_distance","contact"} },
         {"cartesian_position",    {"duration", "max_force","traveled_distance","contact"} },
         {"simple_touch",          {"duration", "max_force","traveled_distance"} },
-        {"parallel_gripper_move", {"torque", "fail"}        },
-        {"robotiq_gripper_move",  {"torque", "fail"}        },
-        {"go_to",                 { } },
-        {"move_to",               { } },
-        {"linear_move",           {"duration", "max_force", "traveled_distance", "contact"} }
+        {"parallel_gripper_move", {"max_force", "fail"}        },
+        {"robotiq_gripper_move",  {"max_force", "fail"}        },
+        {"move_to",               {"duration", "max_force","traveled_distance","contact"} },
+        {"linear_move_to",        {"duration", "max_force","traveled_distance","contact"} },
+        {"linear_move",           {"duration", "max_force","traveled_distance", "contact"} }
     };
 
     std::map<std::string,std::vector<double>> skill_evaluation_weight_ = {
@@ -69,8 +67,8 @@ private:
         {"simple_touch",          {-0.5, 100000, 1} },
         {"parallel_gripper_move", {1.0, fail_reward_} },
         {"robotiq_gripper_move",  {0.5, fail_reward_} },
-        {"go_to",                 { } },
-        {"move_to",               { } },
+        {"move_to",               {-0.001, -0.0001, 1, -100000} },
+        {"linear_move_to",        {-0.001, -0.0001, 1, -100000} },
         {"linear_move",           {-0.001, -0.0001, 1, -100000} }
     };
 

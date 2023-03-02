@@ -41,20 +41,14 @@ private:
     std::map<std::string,std::vector<std::string>> skill_execution_parameters_ = {
         {"cartesian_velocity",    { "position", "quaternion", "linear_velocity_m_s", "angular_velocity_rad_s"} },
         {"cartesian_position",    { "position", "quaternion", "linear_velocity_m_s", "angular_velocity_rad_s"} },
-        {"simple_touch",          { "goal_twist", "target_wrench", "release"} },
+        {"simple_touch",          { "goal_twist", "target_force", "release"} },
         {"parallel_gripper_move", { "torque"} },
         {"robotiq_gripper_move",  { "torque"} },
-        {"go_to",                 { } },
-        {"move_to",               { "acceleration_scaling", "velocity_scaling" } },
-        {"linear_move",           { "position", "quaternion", "acceleration_scaling", "velocity_scaling"} }
+        {"move_to",               {"acceleration_scaling", "velocity_scaling", "relative_position", "relative_orientation"} },
+        {"linear_move_to",        {"acceleration_scaling", "velocity_scaling", "relative_position", "relative_orientation"} },
+        {"linear_move",           {"acceleration_scaling", "velocity_scaling", "position", "quaternion"} },
     };
 
-//    std::vector<std::string> cart_pos_params_                 = { "position", "quaternion", "linear_velocity", "angular_velocity"};
-//    std::vector<std::string> cart_vel_params_                 = { "position", "quaternion", "linear_velocity", "angular_velocity"};
-//    std::vector<std::string> simple_touch_params_             = { "position", "quaternion", "linear_velocity", "angular_velocity"};
-//    std::vector<std::string> parallel_2f_gripper_move_params_ = { "position", "quaternion", "linear_velocity", "angular_velocity", "fail"};
-//    std::vector<std::string> robotiq_gripper_move_params_     = { "position", "quaternion", "linear_velocity", "angular_velocity", "fail"};
-//    std::vector<std::string> ur_load_program_params_          = { "position", "quaternion", "linear_velocity", "angular_velocity"};
     std::string cart_vel_type_                 = "cartesian_velocity";
     std::string cart_pos_type_                 = "cartesian_position";
     std::string simple_touch_type_             = "simple_touch";

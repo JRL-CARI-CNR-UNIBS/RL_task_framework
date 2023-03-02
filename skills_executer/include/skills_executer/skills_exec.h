@@ -28,9 +28,11 @@
 #include <skills_util/log.h>
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
+#include <moveit/robot_state/conversions.h>
 #include <tf_conversions/tf_eigen.h>
 #include <Eigen/Geometry>
 #include <parallel_2f_gripper/MoveGripper.h>
+#include <pybullet_utils/SensorReset.h>
 
 //fjt part
 #include <control_msgs/FollowJointTrajectoryAction.h>
@@ -54,9 +56,8 @@ public:
     int cartVel               (const std::string &action_name, const std::string &skill_name);
     int cartPos               (const std::string &action_name, const std::string &skill_name);
     int simpleTouch           (const std::string &action_name, const std::string &skill_name);
-    int move_to               (const std::string &action_name, const std::string &skill_name);
+    int move_to               (const std::string &action_name, const std::string &skill_name, const int &move_type);
     int parallel2fGripperMove (const std::string &action_name, const std::string &skill_name);
-    int follow_joint_trj      (const std::string &action_name, const std::string &skill_name, bool linear_trj);
     double tf_distance (const std::string &reference_tf, const std::string &target_frame);
 
     void gripper_feedback     ();
@@ -100,6 +101,7 @@ private:
     ros::NodeHandle n_;
     ros::ServiceServer skill_exec_srv_;
     ros::ServiceClient parallel_gripper_move_clnt_;
+    ros::ServiceClient sensor_reset_clnt_;
     ros::ServiceClient start_config_clnt_;
     ros::ServiceClient skill_arbit_clnt_;
     ros::ServiceClient skill_explore_clnt_;
@@ -126,6 +128,7 @@ private:
     std::string ur_load_program_               = "ur_load_program_";
     std::string move_to_type_                  = "move_to";
     std::string linear_move_type_              = "linear_move";
+    std::string linear_move_to_type_           = "linear_move_to";
 
     std::string watch_config_ = "watch";
 

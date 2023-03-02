@@ -1,0 +1,63 @@
+RL_params:
+  action_name:
+    action_type: "type of action"  # the action type is necessary to define which indices are to be calculated
+
+    skill_name:
+      skill_type: "type of skill" # the skill type is necessary to define what the robot has to perform
+      param_1: 231
+      param_2: "param"
+      param_3: [0,0,20,0.32]
+
+# param for every skill
+
+      skill_type: "cartesian_velocity"
+      frame_id: "frame_name"      # the movement is refered to this frame
+      twist_move: [0.1, 0.2, 0.0] # velocity in the three directions
+      move_time: 10.0             # movement time
+
+      skill_type: "cartesian_position"
+      frame: "frame_name"         # the movement is refered to this frame
+      rotZdeg: 0.123   # Single basilar movement. Alternatives: rotYdeg, rotXdeg, traXmm, traYmm, traZmm.
+      position: [0,0,10]     # traslation to respect the three axes. Position and orientation are alternative to rotZdeg and others.
+      quaternion: [0,0,0,1]  # rotation to respect the three axes
+
+      skill_type: "simple_touch"
+      goal_twist_frame: "frame_name"
+      goal_twist: 20 # m/s in z axis. [0,0,1,0,0,0] vector to define the three translation e the three rotation
+      target_force: 10.0 # N. Force to reace. The param can be called also traget_wrench
+      release:
+      release_condition:
+      relative_target:
+
+      skill_type: "parallel_gripper_move"
+      torque: 10     # N, positive for the closure
+      velocity: 10   # mm/s, positive for the closure
+      position: 10   # mm between the two fingers
+      control_mode: "position"  # position, velocity, torque. close and open (this two set automatically the position)
+
+      skill_type: "move_to"
+      acceleration_scaling: 1
+      velocity_scaling: 1
+      planning_time: 5.0
+      replan_attempts: 10
+      target_frame: "target_name"
+      relative_position: [0,0,0]
+      relative_orientation: [0,0,0,1]
+
+      skill_type: "linear_move"
+      acceleration_scaling: 1
+      velocity_scaling: 1
+      planning_time: 5.0
+      replan_attempts: 10
+      position: [0,0,0]
+      orientation: [0,0,0,1]
+      frame: "reference_frame"
+
+      skill_type: "linear_move_to"
+      acceleration_scaling: 1
+      velocity_scaling: 1
+      planning_time: 5.0
+      replan_attempts: 10
+      target_frame: "target_name"
+      relative_position: [0,0,0]
+      relative_orientation: [0,0,0,1]

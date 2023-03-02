@@ -23,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
   eigen_conversions
   tf_conversions
   parallel_2f_gripper
+  pybullet_utils
 )
 
 catkin_package(

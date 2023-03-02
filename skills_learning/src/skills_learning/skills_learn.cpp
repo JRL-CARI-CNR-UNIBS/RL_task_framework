@@ -12,14 +12,14 @@ SkillsLearn::SkillsLearn(const ros::NodeHandle & n) : n_(n)
 bool SkillsLearn::skillsExplore(skills_learning_msgs::SkillExplore::Request  &req,
                                  skills_learning_msgs::SkillExplore::Response &res)
 {
-    ROS_BLUE_STREAM("Action to explore: "<<req.action_name);
+    ROS_BOLDBLUE_STREAM("Action to explore: "<<req.action_name);
     std::vector<std::string> skill_names;
     std::vector<std::string> params;
     std::map<std::string,std::string> skill_type_map;
 
     if (!n_.getParamNames(params))
     {
-        ROS_ERROR("Error with getParamNames");
+        ROS_RED_STREAM("Error with getParamNames");
         res.result = skills_learning_msgs::SkillExploreResponse::Error;
         return true;
     }
@@ -37,7 +37,7 @@ bool SkillsLearn::skillsExplore(skills_learning_msgs::SkillExplore::Request  &re
             std::string skill_type;
             if (!getParam(req.action_name, skill_name, "skill_type",   skill_type))
             {
-                ROS_YELLOW_STREAM("No param "<<req.action_name<<"/"<<skill_name<<"/skill_type, skill explore finish");
+                ROS_RED_STREAM("No param "<<req.action_name<<"/"<<skill_name<<"/skill_type, skill explore finish");
                 res.result = skills_learning_msgs::SkillExploreResponse::NoParam;
                 return true;
             }
@@ -48,12 +48,12 @@ bool SkillsLearn::skillsExplore(skills_learning_msgs::SkillExplore::Request  &re
 
     for (const std::string skill_name: skill_names)
     {
-        ROS_BLUE_STREAM("Skill requested: /"<<req.action_name<<"/"<<skill_name<<"");
+        ROS_BOLDBLUE_STREAM("Skill requested: /"<<req.action_name<<"/"<<skill_name<<"");
         ROS_WHITE_STREAM("Skill type: "<<skill_type_map.at(skill_name));
 
         if ( skill_execution_parameters_.find(skill_type_map.at(skill_name)) == skill_execution_parameters_.end() )
         {
-            ROS_YELLOW_STREAM(skill_type_map.at(skill_name)<<" skill type  is not in the list, skill explore finish");
+            ROS_RED_STREAM(skill_type_map.at(skill_name)<<" skill type  is not in the list, skill explore finish");
             res.result = skills_learning_msgs::SkillLearningResponse::NoSkillType;
             return true;
         }
@@ -61,7 +61,7 @@ bool SkillsLearn::skillsExplore(skills_learning_msgs::SkillExplore::Request  &re
         res.result = explore(req.action_name,skill_name,skill_execution_parameters_.at(skill_type_map.at(skill_name)));
     }
 
-    ROS_BLUE_STREAM("Skill explore return true");
+    ROS_BLUE_STREAM("Exploration is finished");
     return true;
 }
 
@@ -92,7 +92,7 @@ bool SkillsLearn::skillsLearning(skills_learning_msgs::SkillLearning::Request  &
             std::string skill_type;
             if (!getParam(req.action_name, skill_name, "skill_type",   skill_type))
             {
-                ROS_YELLOW_STREAM("No param "<<req.action_name<<"/"<<skill_name<<"/skill_type, skill learning finish");
+                ROS_RED_STREAM("No param "<<req.action_name<<"/"<<skill_name<<"/skill_type, skill learning finish");
                 res.result = skills_learning_msgs::SkillExploreResponse::NoParam;
                 return true;
             }
@@ -114,19 +114,19 @@ bool SkillsLearn::skillsLearning(skills_learning_msgs::SkillLearning::Request  &
     {
         ROS_YELLOW_STREAM("The parameter "<<req.action_name<<"/total_reward_old is not set");
         setParam(req.action_name, "total_reward_old", -10000000);
-        ROS_YELLOW_STREAM("Set /"<<req.action_name<<"/total_reward_old: "<<-10000000);
+        ROS_WHITE_STREAM("Set /"<<req.action_name<<"/total_reward_old: "<<-10000000);
         total_reward_old_ = -10000000;
     }
     ROS_WHITE_STREAM("total_reward_old: "<<total_reward_old_);
 
     if( total_reward_old_ > total_reward_)
     {
-        ROS_GREEN_STREAM("Total_reward < Total_reward_old");
+        ROS_WHITE_STREAM("Total_reward < Total_reward_old");
         ROS_WHITE_STREAM(total_reward_<<" < "<<total_reward_old_);
     }
     else
     {
-        ROS_GREEN_STREAM("Total_reward > Total_reward_old");
+        ROS_WHITE_STREAM("Total_reward > Total_reward_old");
         ROS_WHITE_STREAM(total_reward_<<" > "<<total_reward_old_);
         setParam(req.action_name, "total_reward_old", total_reward_ );
         ROS_WHITE_STREAM("Set /"<<req.action_name<<"/total_reward_old: "<<total_reward_);
@@ -141,7 +141,7 @@ bool SkillsLearn::skillsLearning(skills_learning_msgs::SkillLearning::Request  &
 
         if ( skill_execution_parameters_.find(skill_type_map.at(skill_name)) == skill_execution_parameters_.end() )
         {
-            ROS_YELLOW_STREAM(skill_type_map.at(skill_name)<<" skill type  is not in the list, skill learning finish");
+            ROS_RED_STREAM(skill_type_map.at(skill_name)<<" skill type  is not in the list, skill learning finish");
             res.result = skills_learning_msgs::SkillLearningResponse::NoSkillType;
             return true;
         }
@@ -149,7 +149,7 @@ bool SkillsLearn::skillsLearning(skills_learning_msgs::SkillLearning::Request  &
         res.result = learning(req.action_name,skill_name,skill_execution_parameters_.at(skill_type_map.at(skill_name)));
     }
 
-    ROS_GREEN_STREAM("Skill learning return true");
+    ROS_GREEN_STREAM("Learning is finished");
     return true;
 }
 
@@ -170,7 +170,7 @@ int SkillsLearn::explore (const std::string &action_name, const std::string &ski
     {
         test_number++;
         setParam(action_name, skill_name, "test_number", test_number);
-        ROS_BLUE_STREAM("/"<<action_name<<"/"<<skill_name<<"/test_number: "<<test_number);
+        ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/test_number: "<<test_number);
         ROS_BLUE_STREAM("This is the first execution, the params won't be changed");
         return skills_learning_msgs::SkillExploreResponse::Success;
     }
@@ -186,15 +186,39 @@ int SkillsLearn::explore (const std::string &action_name, const std::string &ski
 
         if ( !getParam(action_name, skill_name, name, param) )
         {
-            ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<name<<" is not set");
-            continue;
+            double d_param;
+            if ( !getParam(action_name, skill_name, name, d_param) )
+            {
+                ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<name<<" is not set, the param won't be changed");
+                continue;
+            }
+            param.clear();
+            param.push_back(d_param);
         }
-//        setParam(action_name, skill_name, name_old, param);
+//        if ( param.size() == 1 )
+//        {
+//            setParam(action_name, skill_name, name, param.at(0));
+//        }
+//        else
+//        {
+//            setParam(action_name, skill_name, name, param);
+//        }
         new_param = param;
 
         if ( !getParam(action_name, skill_name, name_max_var, param_max_var) )
         {
-            ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<name_max_var<<" is not set, the param won't be changed");
+            double d_param;
+            if ( !getParam(action_name, skill_name, name_max_var, d_param) )
+            {
+                ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<name_max_var<<" is not set, the param won't be changed");
+                continue;
+            }
+            param_max_var.clear();
+            param_max_var.push_back(d_param);
+        }
+        if ( param.size() != param_max_var.size() )
+        {
+            ROS_YELLOW_STREAM("The parameter "<<name<<" and "<<name_max_var<<" have different sizes");
             continue;
         }
 
@@ -249,7 +273,14 @@ int SkillsLearn::explore (const std::string &action_name, const std::string &ski
                 new_param_test_number.at(a+1) = param_test_number.at(a+1) + 1;
             }
         }
-        setParam(action_name, skill_name, name, new_param);
+        if ( new_param.size()==1 )
+        {
+            setParam(action_name, skill_name, name, new_param.at(0));
+        }
+        else
+        {
+            setParam(action_name, skill_name, name, new_param);
+        }
         printNewOldParam(name,new_param,param);
         printNewOldParam(name_test_number,new_param_test_number,param_test_number);
         setParam(action_name, skill_name, name_test_number, new_param_test_number);
@@ -262,7 +293,6 @@ int SkillsLearn::explore (const std::string &action_name, const std::string &ski
 
 int SkillsLearn::learning(const std::string &action_name, const std::string &skill_name, const std::vector<std::string> &params_name)
 {
-    ROS_GREEN_STREAM("/"<<action_name<<"/"<<skill_name<<": start learning");
     double reward, reward_old;
     std::vector<double> param, param_ratio, param_old, param_ratio_old;
     std::vector<int> param_test_number;
@@ -285,10 +315,10 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
 
     if (!executed)
     {
-        ROS_YELLOW_STREAM("/"<<action_name<<"/"<<skill_name<<" skill was not executed, the param return to the old ones");
+        ROS_GREEN_STREAM("/"<<action_name<<"/"<<skill_name<<" skill was not executed, the param return to the old ones");
         if ( test_number < 2)
         {
-            ROS_YELLOW_STREAM("The skill has not been performed more than once, the parameters cannot be reset");
+            ROS_GREEN_STREAM("The skill has not been performed more than once, the parameters cannot be reset");
         }
         else
         {
@@ -301,20 +331,31 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
 
                 if ( !getParam(action_name, skill_name, name_old, param_old) )
                 {
-                    ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<name_old<<" is not set, skill learning finish");
-                    return skills_learning_msgs::SkillLearningResponse::NoParam;
+                    double d_param;
+                    if ( !getParam(action_name, skill_name, name_old, d_param) )
+                    {
+                        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<name_old<<" is not set");
+                        return skills_learning_msgs::SkillLearningResponse::NoParam;
+                    }
+                    param_old.clear();
+                    param_old.push_back(d_param);
                 }
                 if ( !getParam(action_name, skill_name, name, param) )
                 {
-                    ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<name<<" is not set, skill learning finish");
-                    return skills_learning_msgs::SkillLearningResponse::NoParam;
+                    double d_param;
+                    if ( !getParam(action_name, skill_name, name, d_param) )
+                    {
+                        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<name<<" is not set");
+                        return skills_learning_msgs::SkillLearningResponse::NoParam;
+                    }
+                    param.clear();
+                    param.push_back(d_param);
                 }
                 if ( !getParam(action_name, skill_name, name_test_number, param_test_number) )
                 {
-                    ROS_YELLOW_STREAM("The parameter /action_name/skill_name/name_test_number is not set, skill learning finish");
+                    ROS_YELLOW_STREAM("The parameter /action_name/skill_name/name_test_number is not set");
                     return skills_learning_msgs::SkillLearningResponse::NoParam;
                 }
-                printArrayParam(name_test_number,param_test_number);
 
                 for (std::size_t i = 0; i < param.size(); i++)
                 {
@@ -342,9 +383,15 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
                     }
                 }
                 setParam(action_name, skill_name, name_test_number, param_test_number);
-                printArrayParam(name_test_number,param_test_number);
-                setParam(action_name, skill_name, name, param_old);
-                ROS_GREEN_STREAM("/"<<action_name<<"/"<<skill_name<<"not executed: old_param->param");
+                if ( param_old.size() == 1 )
+                {
+                    setParam(action_name, skill_name, name, param_old.at(0));
+                }
+                else
+                {
+                    setParam(action_name, skill_name, name, param_old);
+                }
+                ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<"not executed: old_param->param");
                 printNewOldParam(name,param,param_old);
                 if ( test_number > 0)
                 {
@@ -361,14 +408,14 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
         ROS_WHITE_STREAM("Set /" << action_name << "/" << skill_name << "/executed: " << 0 );
         if ( test_number == 0 )
         {
-            ROS_YELLOW_STREAM("Learning not possible, never executed.");
-            ROS_YELLOW_STREAM("Learning finish");
+            ROS_GREEN_STREAM("Learning not possible, never executed.");
+            ROS_GREEN_STREAM("Learning finish");
             return skills_learning_msgs::SkillLearningResponse::Success;
         }
         if ( test_number == 1 )
         {
-            ROS_YELLOW_STREAM("Learning not possible, only one execution.");
-            ROS_YELLOW_STREAM("Set old_param with the current one");
+            ROS_GREEN_STREAM("Learning not possible, only one execution.");
+            ROS_GREEN_STREAM("Set old_param with the current one");
 
             for (const std::string name: params_name)
             {
@@ -378,16 +425,29 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
 
                 if ( !getParam(action_name, skill_name, name, param) )
                 {
-                    ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<name<<" is not set");
-                    continue;
+                    double d_param;
+                    if ( !getParam(action_name, skill_name, name, d_param) )
+                    {
+                        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<name<<" is not set");
+                        continue;
+                    }
+                    param.clear();
+                    param.push_back(d_param);
                 }
-                setParam(action_name, skill_name, name_old, param);
+                if ( param.size() == 1 )
+                {
+                    setParam(action_name, skill_name, name_old, param.at(0));
+                }
+                else
+                {
+                    setParam(action_name, skill_name, name_old, param);
+                }
                 printArrayParam(name,param);
                 printArrayParam(name_old,param);
             }
             setParam(action_name, skill_name, "reward_old", -10000000);
-            ROS_YELLOW_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/reward_old: "<<-10000000);
-            ROS_YELLOW_STREAM("Learning finish");
+            ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/reward_old: "<<-10000000);
+            ROS_GREEN_STREAM("Learning finish");
             return skills_learning_msgs::SkillLearningResponse::Success;
         }
     }
@@ -397,7 +457,7 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
         ROS_YELLOW_STREAM("The parameter /"<<action_name<<"/"<<skill_name<<"/reward is not set");
         reward = 0.0;
         setParam(action_name, skill_name, "reward", reward);
-        ROS_YELLOW_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/reward: "<<reward);
+        ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/reward: "<<reward);
     }
     ROS_WHITE_STREAM("reward: "<<reward);
 
@@ -406,34 +466,34 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
         ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/reward_old is not set");
         reward_old = -10000000;
         setParam(action_name, skill_name, "reward_old", reward_old);
-        ROS_RED_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/reward_old: "<<reward_old);
+        ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/reward_old: "<<reward_old);
     }
     ROS_WHITE_STREAM("reward_old: "<<reward_old);
 
     if ( total_reward_ > total_reward_old_ && reward >= reward_old)
     {
-        ROS_GREEN_STREAM("Total_reward > total_reward_old. Reward >= reward_old. Param is approved");
+        ROS_WHITE_STREAM("Total_reward > total_reward_old. Reward >= reward_old. Param is approved");
         ROS_WHITE_STREAM(total_reward_<<" > "<<total_reward_old_<<". "<<reward<<" >= "<<reward_old<<".");
         setParam(action_name, skill_name, "reward_old", reward);
         ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/reward_old: "<<reward);
     }
     else if ( total_reward_ > total_reward_old_ && reward < reward_old)
     {
-        ROS_GREEN_STREAM("Total_reward > total_reward_old. Reward < reward_old. Param not approved");
+        ROS_WHITE_STREAM("Total_reward > total_reward_old. Reward < reward_old. Param not approved");
         ROS_WHITE_STREAM(total_reward_<<" > "<<total_reward_old_<<". "<<reward<<" < "<<reward_old<<".");
         setParam(action_name, skill_name, "reward", reward_old);
         ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/reward: "<<reward_old);
     }
     else if ( total_reward_ <= total_reward_old_ && reward >= reward_old)
     {
-        ROS_GREEN_STREAM("Total_reward <= total_reward_old. Reward >= reward_old. Param not approved");
+        ROS_WHITE_STREAM("Total_reward <= total_reward_old. Reward >= reward_old. Param not approved");
         ROS_WHITE_STREAM(total_reward_<<" <= "<<total_reward_old_<<". "<<reward<<" >= "<<reward_old<<".");
         setParam(action_name, skill_name, "reward", reward_old);
         ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/reward: "<<reward_old);
     }
     else
     {
-        ROS_GREEN_STREAM("Total_reward <= total_reward_old. Reward < reward_old. Param not approved");
+        ROS_WHITE_STREAM("Total_reward <= total_reward_old. Reward < reward_old. Param not approved");
         ROS_WHITE_STREAM(total_reward_<<" <= "<<total_reward_old_<<". "<<reward<<" < "<<reward_old<<".");
         setParam(action_name, skill_name, "reward", reward_old);
         ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/reward: "<<reward_old);
@@ -450,21 +510,30 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
 
         if ( !getParam(action_name, skill_name, name, param) )
         {
-            ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<name<<" is not set");
-            continue;
-//            return skills_learning_msgs::SkillLearningResponse::NoParam;
+            double d_param;
+            if ( !getParam(action_name, skill_name, name, d_param) )
+            {
+                ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<name<<" is not set");
+                continue;
+            }
+            param.clear();
+            param.push_back(d_param);
         }
         if ( !getParam(action_name, skill_name, name_old, param_old) )
         {
-            ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<name_old<<" is not set");
-            continue;
-//            return skills_learning_msgs::SkillLearningResponse::NoParam;
+            double d_param;
+            if ( !getParam(action_name, skill_name, name_old, d_param) )
+            {
+                ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<name_old<<" is not set");
+                continue;
+            }
+            param_old.clear();
+            param_old.push_back(d_param);
         }
         if ( !getParam(action_name, skill_name, name_ratio, param_ratio) )
         {
             ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<name_ratio<<" is not set");
             continue;
-//            return skills_learning_msgs::SkillLearningResponse::NoParam;
         }
         param_ratio_old = param_ratio;
 
@@ -472,7 +541,6 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
         {
             ROS_YELLOW_STREAM("The parameter /"<<action_name<<"/"<<skill_name<<"/"<<name_test_number<<" is not set");
             continue;
-//            return skills_learning_msgs::SkillLearningResponse::NoParam;
         }
         printArrayParam(name_test_number,param_test_number);
 
@@ -482,7 +550,14 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
 
         if ( total_reward_ > total_reward_old_ && reward >= reward_old )
         {
-            setParam(action_name, skill_name, name_old, param);
+            if ( param.size() == 1 )
+            {
+                setParam(action_name, skill_name, name_old, param.at(0));
+            }
+            else
+            {
+                setParam(action_name, skill_name, name_old, param);
+            }
             ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/"<<name_old);
 
             for ( std::size_t i = 0; i < param.size(); i++ )
@@ -525,8 +600,15 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
         }
         else
         {
-            setParam(action_name, skill_name, name, param_old);
-            ROS_GREEN_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/"<<name);
+            if ( param_old.size() == 1 )
+            {
+                setParam(action_name, skill_name, name, param_old.at(0));
+            }
+            else
+            {
+                setParam(action_name, skill_name, name, param_old);
+            }
+            ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/"<<name);
 
             for ( std::size_t i = 0; i < param.size(); i++ )
             {

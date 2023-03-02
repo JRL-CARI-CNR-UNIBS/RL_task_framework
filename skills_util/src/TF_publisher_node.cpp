@@ -37,7 +37,7 @@ int main(int argc, char **argv)
             std::string TF_name;
             std::string reference_TF;
 
-            for (std::size_t i = 0; i < tf_params.size(); i++)
+            for (int i = 0; i < tf_params.size(); i++)
             {
                 XmlRpc::XmlRpcValue single_TF = tf_params[i];
                 if( single_TF.getType() != XmlRpc::XmlRpcValue::TypeStruct)
