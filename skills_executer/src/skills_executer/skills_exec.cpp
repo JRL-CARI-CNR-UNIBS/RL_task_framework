@@ -141,7 +141,11 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     }
     else if ( !skill_type.compare(cart_pos_type_) )
     {
-        res.result = cartPos(req.action_name, req.skill_name);
+        res.result = cartPos(req.action_name, req.skill_name, 0);
+    }
+    else if ( !skill_type.compare(cart_pos_to_type_) )
+    {
+        res.result = cartPos(req.action_name, req.skill_name, 1);
     }
     else if ( !skill_type.compare(simple_touch_type_) )
     {
@@ -671,156 +675,15 @@ int SkillsExec::cartVel(const std::string &action_name, const std::string &skill
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
-int SkillsExec::cartPos(const std::string &action_name, const std::string &skill_name)
+int SkillsExec::cartPos(const std::string &action_name, const std::string &skill_name, const int &move_type)
 {
     ROS_WHITE_STREAM("In cartPos");
     double rotZdeg, rotYdeg, rotXdeg, traXmm, traYmm, traZmm, target_angular_velocity, target_linear_velocity, vel;
-    std::string skill_type;
     geometry_msgs::PoseStamped relative_pose;
     tf2::Quaternion quat;
     std::vector<double> position, orientation;
+    relative_cartesian_controller_msgs::RelativeMoveGoal rel_move_goal;
 
-    if (!getParam(action_name, skill_name, "skill_type", skill_type))
-    {
-        ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/skill_type is not set" );
-        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
-        return skills_executer_msgs::SkillExecutionResponse::NoParam;
-    }
-    if( getParam(action_name, skill_name, "rotZdeg", rotZdeg) )
-    {
-        double angle = rotZdeg*pi_/180;
-        quat.setRPY(0,0,angle);
-//        relative_pose.pose.orientation=tf::createQuaternionFromRPY(0.0,0.0,angle);
-        relative_pose.pose.orientation.x = quat.getX();
-        relative_pose.pose.orientation.y = quat.getY();
-        relative_pose.pose.orientation.z = quat.getZ();
-        relative_pose.pose.orientation.w = quat.getW();
-        relative_pose.pose.position.x = 0.0;
-        relative_pose.pose.position.y = 0.0;
-        relative_pose.pose.position.z = 0.0;
-        ROS_WHITE_STREAM("Read rotZdeg: "<<rotZdeg);
-        ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
-        ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
-    }
-    else if( getParam(action_name, skill_name, "rotYdeg", rotYdeg) )
-    {
-        double angle = rotYdeg*pi_/180;
-        quat.setRPY(0,angle,0);
-//        relative_pose.pose.orientation=tf::createQuaternionFromRPY(0.0,angle,0.0);
-        relative_pose.pose.orientation.x = quat.getX();
-        relative_pose.pose.orientation.y = quat.getY();
-        relative_pose.pose.orientation.z = quat.getZ();
-        relative_pose.pose.orientation.w = quat.getW();
-        relative_pose.pose.position.x = 0.0;
-        relative_pose.pose.position.y = 0.0;
-        relative_pose.pose.position.z = 0.0;
-        ROS_WHITE_STREAM("Read rotYdeg: "<<rotYdeg);
-        ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
-        ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
-    }
-    else if( getParam(action_name, skill_name, "rotXdeg", rotXdeg) )
-    {
-        double angle = rotXdeg*pi_/180;
-        quat.setRPY(angle,0,0);
-//        relative_pose.pose.orientation=tf::createQuaternionFromRPY(angle,0.0,0.0);
-        relative_pose.pose.orientation.x = quat.getX();
-        relative_pose.pose.orientation.y = quat.getY();
-        relative_pose.pose.orientation.z = quat.getZ();
-        relative_pose.pose.orientation.w = quat.getW();
-        relative_pose.pose.position.x = 0.0;
-        relative_pose.pose.position.y = 0.0;
-        relative_pose.pose.position.z = 0.0;
-        ROS_WHITE_STREAM("Read rotXdeg: "<<rotXdeg);
-        ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
-        ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
-    }
-    else if( getParam(action_name, skill_name, "traXmm", traXmm) )
-    {
-        relative_pose.pose.position.x = traXmm/1000;
-        relative_pose.pose.position.y = 0.0;
-        relative_pose.pose.position.z = 0.0;
-        relative_pose.pose.orientation.x = 0.0;
-        relative_pose.pose.orientation.y = 0.0;
-        relative_pose.pose.orientation.z = 0.0;
-        relative_pose.pose.orientation.w = 1.0;
-        ROS_WHITE_STREAM("Read traXmm: "<<traXmm);
-        ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
-        ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
-    }
-    else if( getParam(action_name, skill_name, "traYmm", traYmm) )
-    {
-        relative_pose.pose.position.x = 0.0;
-        relative_pose.pose.position.y = traYmm/1000;
-        relative_pose.pose.position.z = 0.0;
-        relative_pose.pose.orientation.x = 0.0;
-        relative_pose.pose.orientation.y = 0.0;
-        relative_pose.pose.orientation.z = 0.0;
-        relative_pose.pose.orientation.w = 1.0;
-        ROS_WHITE_STREAM("Read traYmm: "<<traYmm);
-        ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
-        ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
-    }
-    else if( getParam(action_name, skill_name, "traZmm", traZmm) )
-    {
-        relative_pose.pose.position.x = 0.0;
-        relative_pose.pose.position.y = 0.0;
-        relative_pose.pose.position.z = traZmm/1000;
-        relative_pose.pose.orientation.x = 0.0;
-        relative_pose.pose.orientation.y = 0.0;
-        relative_pose.pose.orientation.z = 0.0;
-        relative_pose.pose.orientation.w = 1.0;
-        ROS_WHITE_STREAM("Read traZmm: "<<traZmm);
-        ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
-        ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
-    }
-    else
-    {
-        if ( !getParam(action_name, skill_name, "position", position) )
-        {
-            ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/position is not set" );
-            ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
-            return skills_executer_msgs::SkillExecutionResponse::NoParam;
-        }
-        else
-        {
-            if ( position.size() != 3 )
-            {
-                ROS_RED_STREAM("The position size is not 3");
-                ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
-                return skills_executer_msgs::SkillExecutionResponse::NoParam;
-            }
-            relative_pose.pose.position.x = position.at(0);
-            relative_pose.pose.position.y = position.at(1);
-            relative_pose.pose.position.z = position.at(2);
-            ROS_WHITE_STREAM("Read position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
-        }
-        if ( !getParam(action_name, skill_name, "quaternion", orientation) )
-        {
-            ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/quaternion is not set" );
-            ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
-            return skills_executer_msgs::SkillExecutionResponse::NoParam;
-        }
-        else
-        {
-            if ( orientation.size() != 4 )
-            {
-                ROS_RED_STREAM("The quaternion size is not 4");
-                ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
-                return skills_executer_msgs::SkillExecutionResponse::NoParam;
-            }
-            relative_pose.pose.orientation.x = orientation.at(0);
-            relative_pose.pose.orientation.y = orientation.at(1);
-            relative_pose.pose.orientation.z = orientation.at(2);
-            relative_pose.pose.orientation.w = orientation.at(3);
-            ROS_WHITE_STREAM("Read quaternion: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
-        }
-    }
-    if ( !getParam(action_name, skill_name, "frame", relative_pose.header.frame_id) )
-    {
-        ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/frame is not set" );
-        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
-        return skills_executer_msgs::SkillExecutionResponse::NoParam;
-    }
     if ( !getParam(action_name, skill_name, "linear_velocity_m_s", target_linear_velocity) )
     {
         if ( !getParam(action_name, skill_name, "linear_velocity_mm_s", vel) )
@@ -859,22 +722,276 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         ROS_WHITE_STREAM("Read angular_velocity_rad_s: "<<target_angular_velocity);
     }
 
-    if ( !changeConfig(skill_type) )
+    if ( move_type == 0)
+    {
+        if ( !getParam(action_name, skill_name, "frame", relative_pose.header.frame_id) )
+        {
+            ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/frame is not set" );
+            ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+            return skills_executer_msgs::SkillExecutionResponse::NoParam;
+        }
+        if ( getParam(action_name, skill_name, "rotZdeg", rotZdeg) )
+        {
+            double angle = rotZdeg*pi_/180;
+            quat.setRPY(0,0,angle);
+            //        relative_pose.pose.orientation=tf::createQuaternionFromRPY(0.0,0.0,angle);
+            relative_pose.pose.orientation.x = quat.getX();
+            relative_pose.pose.orientation.y = quat.getY();
+            relative_pose.pose.orientation.z = quat.getZ();
+            relative_pose.pose.orientation.w = quat.getW();
+            relative_pose.pose.position.x = 0.0;
+            relative_pose.pose.position.y = 0.0;
+            relative_pose.pose.position.z = 0.0;
+            ROS_WHITE_STREAM("Read rotZdeg: "<<rotZdeg);
+            ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
+            ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
+        }
+        else if( getParam(action_name, skill_name, "rotYdeg", rotYdeg) )
+        {
+            double angle = rotYdeg*pi_/180;
+            quat.setRPY(0,angle,0);
+            //        relative_pose.pose.orientation=tf::createQuaternionFromRPY(0.0,angle,0.0);
+            relative_pose.pose.orientation.x = quat.getX();
+            relative_pose.pose.orientation.y = quat.getY();
+            relative_pose.pose.orientation.z = quat.getZ();
+            relative_pose.pose.orientation.w = quat.getW();
+            relative_pose.pose.position.x = 0.0;
+            relative_pose.pose.position.y = 0.0;
+            relative_pose.pose.position.z = 0.0;
+            ROS_WHITE_STREAM("Read rotYdeg: "<<rotYdeg);
+            ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
+            ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
+        }
+        else if( getParam(action_name, skill_name, "rotXdeg", rotXdeg) )
+        {
+            double angle = rotXdeg*pi_/180;
+            quat.setRPY(angle,0,0);
+            //        relative_pose.pose.orientation=tf::createQuaternionFromRPY(angle,0.0,0.0);
+            relative_pose.pose.orientation.x = quat.getX();
+            relative_pose.pose.orientation.y = quat.getY();
+            relative_pose.pose.orientation.z = quat.getZ();
+            relative_pose.pose.orientation.w = quat.getW();
+            relative_pose.pose.position.x = 0.0;
+            relative_pose.pose.position.y = 0.0;
+            relative_pose.pose.position.z = 0.0;
+            ROS_WHITE_STREAM("Read rotXdeg: "<<rotXdeg);
+            ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
+            ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
+        }
+        else if( getParam(action_name, skill_name, "traXmm", traXmm) )
+        {
+            relative_pose.pose.position.x = traXmm/1000;
+            relative_pose.pose.position.y = 0.0;
+            relative_pose.pose.position.z = 0.0;
+            relative_pose.pose.orientation.x = 0.0;
+            relative_pose.pose.orientation.y = 0.0;
+            relative_pose.pose.orientation.z = 0.0;
+            relative_pose.pose.orientation.w = 1.0;
+            ROS_WHITE_STREAM("Read traXmm: "<<traXmm);
+            ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
+            ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
+        }
+        else if( getParam(action_name, skill_name, "traYmm", traYmm) )
+        {
+            relative_pose.pose.position.x = 0.0;
+            relative_pose.pose.position.y = traYmm/1000;
+            relative_pose.pose.position.z = 0.0;
+            relative_pose.pose.orientation.x = 0.0;
+            relative_pose.pose.orientation.y = 0.0;
+            relative_pose.pose.orientation.z = 0.0;
+            relative_pose.pose.orientation.w = 1.0;
+            ROS_WHITE_STREAM("Read traYmm: "<<traYmm);
+            ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
+            ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
+        }
+        else if( getParam(action_name, skill_name, "traZmm", traZmm) )
+        {
+            relative_pose.pose.position.x = 0.0;
+            relative_pose.pose.position.y = 0.0;
+            relative_pose.pose.position.z = traZmm/1000;
+            relative_pose.pose.orientation.x = 0.0;
+            relative_pose.pose.orientation.y = 0.0;
+            relative_pose.pose.orientation.z = 0.0;
+            relative_pose.pose.orientation.w = 1.0;
+            ROS_WHITE_STREAM("Read traZmm: "<<traZmm);
+            ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
+            ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
+        }
+        else
+        {
+            if ( !getParam(action_name, skill_name, "position", position) )
+            {
+                ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/position is not set" );
+                ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+                return skills_executer_msgs::SkillExecutionResponse::NoParam;
+            }
+            else
+            {
+                if ( position.size() != 3 )
+                {
+                    ROS_RED_STREAM("The position size is not 3");
+                    ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+                    return skills_executer_msgs::SkillExecutionResponse::NoParam;
+                }
+                relative_pose.pose.position.x = position.at(0);
+                relative_pose.pose.position.y = position.at(1);
+                relative_pose.pose.position.z = position.at(2);
+                ROS_WHITE_STREAM("Read position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
+            }
+            if ( !getParam(action_name, skill_name, "quaternion", orientation) )
+            {
+                ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/quaternion is not set" );
+                ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+                return skills_executer_msgs::SkillExecutionResponse::NoParam;
+            }
+            else
+            {
+                if ( orientation.size() != 4 )
+                {
+                    ROS_RED_STREAM("The quaternion size is not 4");
+                    ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+                    return skills_executer_msgs::SkillExecutionResponse::NoParam;
+                }
+                relative_pose.pose.orientation.x = orientation.at(0);
+                relative_pose.pose.orientation.y = orientation.at(1);
+                relative_pose.pose.orientation.z = orientation.at(2);
+                relative_pose.pose.orientation.w = orientation.at(3);
+                ROS_WHITE_STREAM("Read quaternion: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
+            }
+        }
+
+        rel_move_goal.target_angular_velocity = target_angular_velocity;
+        rel_move_goal.target_linear_velocity = target_linear_velocity;
+        rel_move_goal.relative_pose = relative_pose;
+
+        ROS_WHITE_STREAM("Goal:");
+        ROS_WHITE_STREAM("Frame: "<<rel_move_goal.relative_pose.header.frame_id);
+        ROS_WHITE_STREAM("Position: ["<<rel_move_goal.relative_pose.pose.position.x<<","<<rel_move_goal.relative_pose.pose.position.y<<","<<rel_move_goal.relative_pose.pose.position.z<<"]");
+        ROS_WHITE_STREAM("Quaternion: ["<<rel_move_goal.relative_pose.pose.orientation.x<<","<<rel_move_goal.relative_pose.pose.orientation.y<<","<<rel_move_goal.relative_pose.pose.orientation.z<<","<<rel_move_goal.relative_pose.pose.orientation.w<<"]");
+        ROS_WHITE_STREAM("Velocity: lin "<<rel_move_goal.target_linear_velocity<<", rot "<<rel_move_goal.target_angular_velocity);
+    }
+    if ( move_type == 1)
+    {
+        std::string target_TF;
+
+        if (!getParam(action_name, skill_name, "target_frame", target_TF))
+        {
+            ROS_RED_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/target_TF is not set" );
+            ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+            return skills_executer_msgs::SkillExecutionResponse::NoParam;
+        }
+
+        tf::StampedTransform gripper_to_goal_frame_transform;
+        try
+        {
+            tf_listener_.lookupTransform( gripper_frame_, target_TF, ros::Time(0), gripper_to_goal_frame_transform);
+        }
+        catch (tf::TransformException ex){
+            ROS_ERROR("%s",ex.what());
+            ros::Duration(1.0).sleep();
+        }
+        ROS_WHITE_STREAM("  target_frame: "<<target_TF);
+        Eigen::Affine3d T_gripper_to_goal_frame;
+        tf::transformTFToEigen( gripper_to_goal_frame_transform, T_gripper_to_goal_frame);
+
+        std::vector<double> relative_position, relative_quaternion;
+        tf::Vector3 rel_pos;
+        tf::Quaternion rel_quat;
+        tf::StampedTransform relative_transform;
+        Eigen::Affine3d T_relative;
+        if ( !getParam(action_name, skill_name, "relative_position", relative_position) )
+        {
+            ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is not set. It is considered [0,0,0]" );
+            relative_position.clear();
+            relative_position.push_back(0);
+            relative_position.push_back(0);
+            relative_position.push_back(0);
+            setParam(action_name, skill_name, "relative_position", relative_position);
+            rel_pos.setX(0);
+            rel_pos.setY(0);
+            rel_pos.setZ(0);
+        }
+        else
+        {
+            if ( relative_position.size() != 3 )
+            {
+                ROS_YELLOW_STREAM("The relative_position size is not 3");
+                ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is considered [0,0,0]" );
+                relative_position.push_back(0);
+                relative_position.push_back(0);
+                relative_position.push_back(0);
+            }
+            else
+            {
+                rel_pos.setX(relative_position.at(0));
+                rel_pos.setY(relative_position.at(1));
+                rel_pos.setZ(relative_position.at(2));
+                ROS_WHITE_STREAM("  relative_position: ["<<rel_pos.getX()<<","<<rel_pos.getY()<<","<<rel_pos.getZ()<<"]");
+            }
+        }
+        if ( !getParam(action_name, skill_name, "relative_orientation", relative_quaternion) )
+        {
+            ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is not set. It is considered [0,0,0,1]" );
+            relative_quaternion.clear();
+            relative_quaternion.push_back(0);
+            relative_quaternion.push_back(0);
+            relative_quaternion.push_back(0);
+            relative_quaternion.push_back(0);
+            setParam(action_name, skill_name, "relative_orientation", relative_quaternion);
+            rel_quat.setX(0);
+            rel_quat.setY(0);
+            rel_quat.setZ(0);
+            rel_quat.setW(1);
+        }
+        else
+        {
+            if ( relative_quaternion.size() != 4 )
+            {
+                ROS_YELLOW_STREAM("The relative_quaternion size is not 4");
+                ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is considered [0,0,0,1]" );
+                relative_quaternion.push_back(0);
+                relative_quaternion.push_back(0);
+                relative_quaternion.push_back(0);
+                relative_quaternion.push_back(1);
+            }
+            rel_quat.setX(relative_quaternion.at(0));
+            rel_quat.setY(relative_quaternion.at(1));
+            rel_quat.setZ(relative_quaternion.at(2));
+            rel_quat.setW(relative_quaternion.at(3));
+            ROS_WHITE_STREAM("  relative_orientation: ["<<rel_quat.getX()<<","<<rel_quat.getY()<<","<<rel_quat.getZ()<<","<<rel_quat.getW()<<"]");
+        }
+        relative_transform.setOrigin(rel_pos);
+        relative_transform.setRotation(rel_quat);
+        tf::transformTFToEigen(relative_transform, T_relative);
+
+        tf::StampedTransform gripper_to_real_goal_transform;
+        Eigen::Affine3d T_gripper_to_real_goal = T_gripper_to_goal_frame* T_relative;
+        tf::transformEigenToTF(T_gripper_to_real_goal, gripper_to_real_goal_transform);
+        relative_pose.pose.position.x    = gripper_to_real_goal_transform.getOrigin().getX();
+        relative_pose.pose.position.y    = gripper_to_real_goal_transform.getOrigin().getY();
+        relative_pose.pose.position.z    = gripper_to_real_goal_transform.getOrigin().getZ();
+        relative_pose.pose.orientation.x = gripper_to_real_goal_transform.getRotation().getX();
+        relative_pose.pose.orientation.y = gripper_to_real_goal_transform.getRotation().getY();
+        relative_pose.pose.orientation.z = gripper_to_real_goal_transform.getRotation().getZ();
+        relative_pose.pose.orientation.w = gripper_to_real_goal_transform.getRotation().getW();
+        relative_pose.header.frame_id    = gripper_frame_;
+
+        rel_move_goal.target_angular_velocity = target_angular_velocity;
+        rel_move_goal.target_linear_velocity = target_linear_velocity;
+        rel_move_goal.relative_pose = relative_pose;
+
+        ROS_WHITE_STREAM("Goal:");
+        ROS_WHITE_STREAM("Frame: "<<rel_move_goal.relative_pose.header.frame_id);
+        ROS_WHITE_STREAM("Position: ["<<rel_move_goal.relative_pose.pose.position.x<<","<<rel_move_goal.relative_pose.pose.position.y<<","<<rel_move_goal.relative_pose.pose.position.z<<"]");
+        ROS_WHITE_STREAM("Quaternion: ["<<rel_move_goal.relative_pose.pose.orientation.x<<","<<rel_move_goal.relative_pose.pose.orientation.y<<","<<rel_move_goal.relative_pose.pose.orientation.z<<","<<rel_move_goal.relative_pose.pose.orientation.w<<"]");
+        ROS_WHITE_STREAM("Velocity: lin "<<rel_move_goal.target_linear_velocity<<", rot "<<rel_move_goal.target_angular_velocity);
+    }
+
+    if ( !changeConfig(cart_pos_type_) )
     {
         ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return ProblemConfManager: "<<skills_executer_msgs::SkillExecutionResponse::ProblemConfManager);
         return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
     }
-
-    relative_cartesian_controller_msgs::RelativeMoveGoal rel_move_goal;
-    rel_move_goal.target_angular_velocity = target_angular_velocity;
-    rel_move_goal.target_linear_velocity = target_linear_velocity;
-    rel_move_goal.relative_pose = relative_pose;
-
-    ROS_WHITE_STREAM("Goal:");
-    ROS_WHITE_STREAM("Frame: "<<rel_move_goal.relative_pose.header.frame_id);
-    ROS_WHITE_STREAM("Position: ["<<rel_move_goal.relative_pose.pose.position.x<<","<<rel_move_goal.relative_pose.pose.position.y<<","<<rel_move_goal.relative_pose.pose.position.z<<"]");
-    ROS_WHITE_STREAM("Quaternion: ["<<rel_move_goal.relative_pose.pose.orientation.x<<","<<rel_move_goal.relative_pose.pose.orientation.y<<","<<rel_move_goal.relative_pose.pose.orientation.z<<","<<rel_move_goal.relative_pose.pose.orientation.w<<"]");
-    ROS_WHITE_STREAM("Velocity: lin "<<rel_move_goal.target_linear_velocity<<", rot "<<rel_move_goal.target_angular_velocity);
 
     relative_move_action_->waitForServer();
     relative_move_action_->sendGoalAndWait(rel_move_goal);
@@ -1188,18 +1305,14 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
 
         Eigen::Affine3d T_origin_goal_gripper;
         tf::transformTFToEigen( origin_goal_transform, T_origin_goal_gripper);
-//        Eigen::Affine3d T_origin_link_goal = T_origin_goal_gripper * T_gripper_link_;
-//        tf::transformEigenToTF(T_origin_link_goal,origin_link_goal_transform);
-//        ROS_RED_STREAM("["<<origin_link_goal_transform.getOrigin().getX()<<","<<origin_link_goal_transform.getOrigin().getY()<<","<<origin_link_goal_transform.getOrigin().getZ()<<"]");
-//        T_origin_link_goal = T_origin_goal_gripper* T_relative * T_gripper_link_;
         Eigen::Affine3d T_origin_link_goal = T_origin_goal_gripper* T_relative * T_gripper_link_;
         tf::transformEigenToTF(T_origin_link_goal,origin_link_goal_transform);
 
         geometry_msgs::Pose target_pose;
 
-        target_pose.position.x = origin_link_goal_transform.getOrigin().getX();
-        target_pose.position.y = origin_link_goal_transform.getOrigin().getY();
-        target_pose.position.z = origin_link_goal_transform.getOrigin().getZ();
+        target_pose.position.x    = origin_link_goal_transform.getOrigin().getX();
+        target_pose.position.y    = origin_link_goal_transform.getOrigin().getY();
+        target_pose.position.z    = origin_link_goal_transform.getOrigin().getZ();
         target_pose.orientation.x = origin_link_goal_transform.getRotation().getX();
         target_pose.orientation.y = origin_link_goal_transform.getRotation().getY();
         target_pose.orientation.z = origin_link_goal_transform.getRotation().getZ();
@@ -1217,6 +1330,7 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
             moveit::core::robotStateToRobotStateMsg(*robot_state_ptr, robot_state);
             moveit_msgs::RobotTrajectory moveit_trj;
             double plan_time = ros::Time::now().toSec();
+
             if ( move_group_->computeCartesianPath(waypoints,0.001,0.0,moveit_trj) < 0.0 )
             {
                 ROS_RED_STREAM("Linear_plan_result: unknown error");

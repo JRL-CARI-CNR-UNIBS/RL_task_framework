@@ -20,6 +20,8 @@ RL_params:
       rotZdeg: 0.123   # Single basilar movement. Alternatives: rotYdeg, rotXdeg, traXmm, traYmm, traZmm.
       position: [0,0,10]     # traslation to respect the three axes. Position and orientation are alternative to rotZdeg and others.
       quaternion: [0,0,0,1]  # rotation to respect the three axes
+      linear_velocity_m_s: 0.1
+      angular_velocity_rad_s: 0.7
 
       skill_type: "simple_touch"
       goal_twist_frame: "frame_name"

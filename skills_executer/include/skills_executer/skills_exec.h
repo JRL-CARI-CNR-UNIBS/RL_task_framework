@@ -54,8 +54,8 @@ public:
     int urLoadProgram         (const std::string &action_name, const std::string &skill_name);
     int robotiqGripperMove    (const std::string &action_name, const std::string &skill_name);
     int cartVel               (const std::string &action_name, const std::string &skill_name);
-    int cartPos               (const std::string &action_name, const std::string &skill_name);
     int simpleTouch           (const std::string &action_name, const std::string &skill_name);
+    int cartPos               (const std::string &action_name, const std::string &skill_name, const int &move_type);
     int move_to               (const std::string &action_name, const std::string &skill_name, const int &move_type);
     int parallel2fGripperMove (const std::string &action_name, const std::string &skill_name);
     double tf_distance (const std::string &reference_tf, const std::string &target_frame);
@@ -93,7 +93,7 @@ private:
     tf::TransformListener tf_listener_;
     std::string param_ns_ = "RL_params";
     std::string end_link_frame_ = "flange";
-    std::string gripper_frame_ = "open_tip";
+    std::string gripper_frame_ = "closed_tip";
     std::string robot_name_ = "kr_50_r2500";
     std::string sensored_joint_ = "link6_to_flange";
     std::string attached_link_name_ = "gripper_base";
@@ -121,6 +121,7 @@ private:
 
     std::string cart_vel_type_                 = "cartesian_velocity";
     std::string cart_pos_type_                 = "cartesian_position";
+    std::string cart_pos_to_type_              = "cart_pos_to";
     std::string simple_touch_type_             = "simple_touch";
     std::string parallel_2f_gripper_move_type_ = "parallel_gripper_move";
 //    std::string parallel_2f_gripper_move_type_ = "parallel_2f_gripper_move";
