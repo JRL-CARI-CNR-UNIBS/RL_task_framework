@@ -509,43 +509,67 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
     }
 
     std::string param_name = "/" + current_grasped_object_ + "/attached";
-    if ( closure & !thread_esistence_ )
-    {
-        end_gripper_feedback_ = false;
-        current_action_name_ = action_name;
-        current_skill_name_  = skill_name;
-        gripper_thread_ = std::make_shared<std::thread>([this]{gripper_feedback();});
-        thread_esistence_ = true;
-        std::string link_param_name = "/" + current_grasped_object_ + "/attached_link";
-        std::string links_param_name = "/" + current_grasped_object_ + "/touch_links";
-        n_.setParam(param_name,true);
-        n_.setParam(link_param_name,attached_link_name_);
-        n_.setParam(links_param_name,gripper_touch_links_);
-    }
-    else
-    {
-        if ( thread_esistence_ )
-        {
-            end_gripper_feedback_ = true;
-
-            if ( gripper_thread_->joinable() )
-            {
-                gripper_thread_->join();
-                thread_esistence_ = false;
-            }
-        }
-        n_.setParam(param_name, false);
-    }
-    end_gripper_feedback_ = false;
 
     if (!parallel_gripper_move_clnt_.call(move_gripper_srv))
     {
       ROS_RED_STREAM("Unable to call "<<parallel_gripper_move_clnt_.getService()<<" service ");
-      return false;
+      return skills_executer_msgs::SkillExecutionResponse::Fail;
     }
+
+
+
     ROS_WHITE_STREAM("Parallel_gripper_move return :"<<move_gripper_srv.response.result);
     if ( !move_gripper_srv.response.result.compare("true") )
     {
+        sensor_msgs::JointState actual_js;
+        if ( js_sub_->waitForANewData() )
+        {
+            actual_js = js_sub_->getData();
+        }
+        std::vector<std::string>::iterator index = std::find(actual_js.name.begin(), actual_js.name.end(), "right_finger_joint");
+
+        if ( index !=  actual_js.name.end() )
+        {
+            if ( actual_js.position.at(index - actual_js.name.begin()) < closed_gripper_position_ + gripper_tollerance_ && actual_js.position.at(index - actual_js.name.begin()) > closed_gripper_position_ - gripper_tollerance_ )
+            {
+                setParam(action_name,skill_name,"fail",1);
+                setParam(action_name,"fail",1);
+                std::string param_name = "/" + current_grasped_object_ + "/attached";
+                n_.setParam(param_name,false);
+                ROS_YELLOW_STREAM("No object in the gripper. Current position: "<<actual_js.position.at(index - actual_js.name.begin()));
+                return skills_executer_msgs::SkillExecutionResponse::Fail;
+            }
+        }
+
+        if ( closure & !thread_esistence_ )
+        {
+            end_gripper_feedback_ = false;
+            current_action_name_ = action_name;
+            current_skill_name_  = skill_name;
+            gripper_thread_ = std::make_shared<std::thread>([this]{gripper_feedback();});
+            thread_esistence_ = true;
+            std::string link_param_name = "/" + current_grasped_object_ + "/attached_link";
+            std::string links_param_name = "/" + current_grasped_object_ + "/touch_links";
+            n_.setParam(param_name,true);
+            n_.setParam(link_param_name,attached_link_name_);
+            n_.setParam(links_param_name,gripper_touch_links_);
+        }
+        else
+        {
+            if ( thread_esistence_ )
+            {
+                end_gripper_feedback_ = true;
+
+                if ( gripper_thread_->joinable() )
+                {
+                    gripper_thread_->join();
+                    thread_esistence_ = false;
+                }
+            }
+            n_.setParam(param_name, false);
+        }
+        end_gripper_feedback_ = false;
+
         ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
         return skills_executer_msgs::SkillExecutionResponse::Success;
     }
@@ -1639,7 +1663,7 @@ void SkillsExec::gripper_feedback()
 
         if ( index !=  actual_js.name.end() )
         {
-            if ( actual_js.position.at(index - actual_js.name.begin()) < closed_gripper_position_ + gripper_tollerance_ && actual_js.position.at(index - actual_js.name.begin()) > closed_gripper_position_ - gripper_tollerance_ )
+            if ( abs( actual_js.effort.at(index - actual_js.name.begin()) ) < minimum_gripper_force_ )
             {
                 setParam(current_action_name_,current_skill_name_,"fail",1);
                 setParam(current_action_name_,"fail",1);
@@ -1648,6 +1672,15 @@ void SkillsExec::gripper_feedback()
                 ROS_YELLOW_STREAM("No object in the gripper. Current position: "<<actual_js.position.at(index - actual_js.name.begin()));
                 break;
             }
+//            if ( actual_js.position.at(index - actual_js.name.begin()) < closed_gripper_position_ + gripper_tollerance_ && actual_js.position.at(index - actual_js.name.begin()) > closed_gripper_position_ - gripper_tollerance_ )
+//            {
+//                setParam(current_action_name_,current_skill_name_,"fail",1);
+//                setParam(current_action_name_,"fail",1);
+//                std::string param_name = "/" + current_grasped_object_ + "/attached";
+//                n_.setParam(param_name,false);
+//                ROS_YELLOW_STREAM("No object in the gripper. Current position: "<<actual_js.position.at(index - actual_js.name.begin()));
+//                break;
+//            }
         }
     }
     return;

@@ -45,6 +45,7 @@ private:
         {"parallel_gripper_move", { "torque"} },
         {"robotiq_gripper_move",  { "torque"} },
         {"move_to",               {"acceleration_scaling", "velocity_scaling", "relative_position", "relative_orientation"} },
+        {"joint_move_to",         {"acceleration_scaling", "velocity_scaling", "relative_position", "relative_orientation"} },
         {"linear_move_to",        {"acceleration_scaling", "velocity_scaling", "relative_position", "relative_orientation"} },
         {"linear_move",           {"acceleration_scaling", "velocity_scaling", "position", "quaternion"} },
     };

@@ -91,6 +91,7 @@ private:
     double max_force_ = 0.0;
     double gripper_tollerance_ = 0.01;
     double max_force_variation_ = 500;
+    double minimum_gripper_force_ = 5;
     double default_trajectory_goal_joint_tolerance_ = 0.01;
     double default_trajectory_goal_tolerance_ = 0.1;
     double default_trajectory_start_tolerance_ = 0.01;
@@ -141,7 +142,6 @@ private:
     std::string move_to_type_                  = "move_to";
     std::string linear_move_type_              = "linear_move";
     std::string linear_move_to_type_           = "linear_move_to";
-
     std::string joint_move_to_type_           = "joint_move_to";
 
     std::string watch_config_ = "watch";

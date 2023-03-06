@@ -54,9 +54,10 @@ private:
         {"cartesian_velocity",    {"duration", "max_force","traveled_distance","contact"} },
         {"cartesian_position",    {"duration", "max_force","traveled_distance","contact"} },
         {"simple_touch",          {"duration", "max_force","traveled_distance"} },
-        {"parallel_gripper_move", {"max_force", "fail"}        },
-        {"robotiq_gripper_move",  {"max_force", "fail"}        },
-        {"move_to",               {"duration", "max_force","traveled_distance","contact"} },
+        {"parallel_gripper_move", {"max_force", "fail"} },
+        {"robotiq_gripper_move",  {"max_force", "fail"} },
+        {"move_to",               {"duration", "max_force","contact"} },
+        {"joint_move_to",         {"duration", "max_force","contact"} },
         {"linear_move_to",        {"duration", "max_force","traveled_distance","contact"} },
         {"linear_move",           {"duration", "max_force","traveled_distance", "contact"} }
     };
