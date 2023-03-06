@@ -24,6 +24,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf_conversions
   parallel_2f_gripper
   pybullet_utils
+  ik_solver_msgs
 )
 
 catkin_package(
@@ -38,6 +39,7 @@ catkin_package(
                  rosparam_utilities
                  eigen_conversions
                  tf_conversions
+                 ik_solver_msgs
   DEPENDS
 )
 

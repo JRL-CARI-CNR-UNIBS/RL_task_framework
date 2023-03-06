@@ -19,6 +19,11 @@ SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
     start_config_clnt_.waitForExistence();
     ROS_YELLOW_STREAM("Connection ok");
 
+    get_ik_clnt_ = n_.serviceClient<ik_solver_msgs::GetIk>("/kuka_coke/get_ik");
+    ROS_YELLOW_STREAM("Waiting for "<<get_ik_clnt_.getService());
+    get_ik_clnt_.waitForExistence();
+    ROS_YELLOW_STREAM("Connection ok");
+
 //    if( ros::service::exists("/pybullet_sensor_reset") )
 //    {
 //        sensor_reset_clnt_ = n_.serviceClient<pybullet_utils::SensorReset>("/pybullet_sensor_reset");
@@ -181,6 +186,10 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     {
         res.result = move_to(req.action_name, req.skill_name, 2);
 //        res.result = follow_joint_trj(req.action_name, req.skill_name, true);
+    }
+    else if ( !skill_type.compare(joint_move_to_type_) )
+    {
+        res.result = joint_move_to(req.action_name, req.skill_name);
     }
     else
     {
@@ -1256,9 +1265,14 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
             {
                 ROS_YELLOW_STREAM("The relative_position size is not 3");
                 ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is considered [0,0,0]" );
+                relative_position.clear();
                 relative_position.push_back(0);
                 relative_position.push_back(0);
                 relative_position.push_back(0);
+                setParam(action_name, skill_name, "relative_position", relative_position);
+                rel_pos.setX(0);
+                rel_pos.setY(0);
+                rel_pos.setZ(0);
             }
             else
             {
@@ -1288,16 +1302,25 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
             {
                 ROS_YELLOW_STREAM("The relative_quaternion size is not 4");
                 ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is considered [0,0,0,1]" );
+                relative_quaternion.clear();
                 relative_quaternion.push_back(0);
                 relative_quaternion.push_back(0);
                 relative_quaternion.push_back(0);
                 relative_quaternion.push_back(1);
+                setParam(action_name, skill_name, "relative_orientation", relative_quaternion);
+                rel_quat.setX(0);
+                rel_quat.setY(0);
+                rel_quat.setZ(0);
+                rel_quat.setW(1);
             }
-            rel_quat.setX(relative_quaternion.at(0));
-            rel_quat.setY(relative_quaternion.at(1));
-            rel_quat.setZ(relative_quaternion.at(2));
-            rel_quat.setW(relative_quaternion.at(3));
-            ROS_WHITE_STREAM("  relative_orientation: ["<<rel_quat.getX()<<","<<rel_quat.getY()<<","<<rel_quat.getZ()<<","<<rel_quat.getW()<<"]");
+            else
+            {
+                rel_quat.setX(relative_quaternion.at(0));
+                rel_quat.setY(relative_quaternion.at(1));
+                rel_quat.setZ(relative_quaternion.at(2));
+                rel_quat.setW(relative_quaternion.at(3));
+                ROS_WHITE_STREAM("  relative_orientation: ["<<rel_quat.getX()<<","<<rel_quat.getY()<<","<<rel_quat.getZ()<<","<<rel_quat.getW()<<"]");
+            }
         }
         relative_transform.setOrigin(rel_pos);
         relative_transform.setRotation(rel_quat);
@@ -1628,6 +1651,190 @@ void SkillsExec::gripper_feedback()
         }
     }
     return;
+}
+
+int SkillsExec::joint_move_to(const std::string &action_name, const std::string &skill_name)
+{
+    ROS_WHITE_STREAM("In joint_move_to");
+    if ( !changeConfig("trajectory_tracking") )
+    {
+        ROS_RED_STREAM("Problem with configuration manager");
+        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
+    }
+
+    if ( !fjt_ac_->waitForServer(ros::Duration(10)) )
+    {
+        ROS_RED_STREAM("Timeout FollowJointTrajectory client for robot "<<robot_name_);
+        return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+
+    ros::Duration(0.5).sleep();
+    ROS_WHITE_STREAM("Move info: ");
+    std::string target_TF;
+    double acc, vel, p_time;
+    int r_att;
+    std::vector<double> relative_position, relative_quaternion;
+    tf::Transform transform;
+
+    if (!getParam(action_name, skill_name, "acceleration_scaling", acc))
+    {
+        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/acceleration_scaling is not set, defaul value: 0.5" );
+        acc = 0.5;
+        setParam(action_name, skill_name, "acceleration_scaling", acc);
+        ROS_WHITE_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/acceleration_scaling: "<<acc);
+    }
+    move_group_->setMaxAccelerationScalingFactor(acc);
+    ROS_WHITE_STREAM("  acceleration_scaling: "<<acc);
+
+    if (!getParam(action_name, skill_name, "velocity_scaling", vel))
+    {
+        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/velocity_scaling is not set, defaul value: 0.5" );
+        vel = 0.5;
+        setParam(action_name, skill_name, "velocity_scaling", vel);
+        ROS_WHITE_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/velocity_scaling: "<<vel);
+    }
+    move_group_->setMaxVelocityScalingFactor(vel);
+    ROS_WHITE_STREAM("  velocity_scaling: "<<vel);
+
+    if (!getParam(action_name, skill_name, "planning_time", p_time))
+    {
+        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/planning_time is not set, defaul value: 5.0" );
+        p_time = 0.5;
+        setParam(action_name, skill_name, "planning_time", p_time);
+        ROS_WHITE_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/planning_time: "<<p_time);
+    }
+    move_group_->setPlanningTime(p_time);
+    ROS_WHITE_STREAM("  planning_time: "<<p_time);
+
+    if (!getParam(action_name, skill_name, "replan_attempts", r_att))
+    {
+        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/replan_attempts is not set, defaul value: 10" );
+        r_att = 10;
+        setParam(action_name, skill_name, "replan_attempts", r_att);
+        ROS_WHITE_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/replan_attempts: "<<r_att);
+    }
+    move_group_->setReplanAttempts(r_att);
+    ROS_WHITE_STREAM("  replan_attempts: "<<r_att);
+
+    if (!getParam(action_name, skill_name, "target_frame", target_TF))
+    {
+        ROS_RED_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/target_TF is not set" );
+        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+
+    if ( !getParam(action_name, skill_name, "relative_position", relative_position) )
+    {
+        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is not set. It is considered [0,0,0]" );
+        relative_position.clear();
+        relative_position.push_back(0);
+        relative_position.push_back(0);
+        relative_position.push_back(0);
+        setParam(action_name, skill_name, "relative_position", relative_position);
+    }
+    else
+    {
+        if ( relative_position.size() != 3 )
+        {
+            ROS_YELLOW_STREAM("The relative_position size is not 3");
+            ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is considered [0,0,0]" );
+            relative_position.clear();
+            relative_position.push_back(0);
+            relative_position.push_back(0);
+            relative_position.push_back(0);
+        }
+        else
+        {
+            ROS_WHITE_STREAM("  relative_position: ["<<relative_position.at(0)<<","<<relative_position.at(1)<<","<<relative_position.at(2)<<"]");
+        }
+    }
+    if ( !getParam(action_name, skill_name, "relative_orientation", relative_quaternion) )
+    {
+        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is not set. It is considered [0,0,0,1]" );
+        relative_quaternion.clear();
+        relative_quaternion.push_back(0);
+        relative_quaternion.push_back(0);
+        relative_quaternion.push_back(0);
+        relative_quaternion.push_back(1);
+        setParam(action_name, skill_name, "relative_orientation", relative_quaternion);
+    }
+    else
+    {
+        if ( relative_quaternion.size() != 4 )
+        {
+            ROS_YELLOW_STREAM("The relative_quaternion size is not 4");
+            ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is considered [0,0,0,1]" );
+            relative_quaternion.clear();
+            relative_quaternion.push_back(0);
+            relative_quaternion.push_back(0);
+            relative_quaternion.push_back(0);
+            relative_quaternion.push_back(1);
+            setParam(action_name, skill_name, "relative_orientation", relative_quaternion);
+        }
+        else
+        {
+            ROS_WHITE_STREAM("  relative_orientation: ["<<relative_quaternion.at(0)<<","<<relative_quaternion.at(1)<<","<<relative_quaternion.at(2)<<","<<relative_quaternion.at(3)<<"]");
+        }
+    }
+
+    transform.setOrigin( tf::Vector3( relative_position.at(0),relative_position.at(1),relative_position.at(2) ) );
+    transform.setRotation( tf::Quaternion( relative_quaternion.at(0),relative_quaternion.at(1),relative_quaternion.at(2),relative_quaternion.at(3) ) );
+
+    std::string TF_name = target_TF;
+    TF_name.append("_goal");
+    tf_br_.sendTransform( tf::StampedTransform(transform, ros::Time::now(), target_TF, TF_name) );
+
+    move_group_->clearPoseTargets();
+
+    ik_solver_msgs::GetIk get_ik_msg;
+    ik_solver_msgs::Configuration ik_configuration;
+
+    ik_configuration.configuration = move_group_->getCurrentJointValues();
+
+    get_ik_msg.request.tf_name = TF_name;
+    get_ik_msg.request.seeds.push_back(ik_configuration);
+    get_ik_msg.request.seed_joint_names = move_group_->getJointNames();
+    get_ik_msg.request.max_number_of_solutions = 6;
+    get_ik_msg.request.stall_iterations = 10;
+
+    if (!get_ik_clnt_.call(get_ik_msg))
+    {
+        ROS_ERROR("Unable to call %s service",get_ik_clnt_.getService().c_str());
+        return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
+
+    move_group_->setJointValueTarget(get_ik_msg.response.solution.configurations.at(0).configuration);
+
+    moveit::core::MoveItErrorCode plan_result = move_group_->plan(moveit_plan_);
+    ROS_WHITE_STREAM("Plan_result: "<<plan_result);
+    if ( plan_result != moveit::core::MoveItErrorCode::SUCCESS )
+    {
+        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
+        if ( !changeConfig(watch_config_) )
+        {
+            ROS_RED_STREAM("Problem with configuration manager");
+            return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
+        }
+        return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
+
+    moveit::core::MoveItErrorCode move_result = move_group_->execute(moveit_plan_);
+
+    if ( !changeConfig(watch_config_) )
+    {
+        ROS_RED_STREAM("Problem with configuration manager");
+        return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
+    }
+
+    ROS_WHITE_STREAM("Move_result: "<<move_result);
+    if ( move_result != moveit::core::MoveItErrorCode::SUCCESS )
+    {
+        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
+        return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
+
+    ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
+    return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
 } // end namespace skills_executer

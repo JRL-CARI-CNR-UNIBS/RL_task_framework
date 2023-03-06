@@ -40,6 +40,10 @@
 #include <control_msgs/FollowJointTrajectoryResult.h>
 //end
 
+#include <ik_solver_msgs/GetIk.h>
+#include <ik_solver_msgs/Configuration.h>
+#include <ik_solver_msgs/IkSolution.h>
+
 namespace skills_executer
 {
 
@@ -58,6 +62,9 @@ public:
     int cartPos               (const std::string &action_name, const std::string &skill_name, const int &move_type);
     int move_to               (const std::string &action_name, const std::string &skill_name, const int &move_type);
     int parallel2fGripperMove (const std::string &action_name, const std::string &skill_name);
+
+    int joint_move_to         (const std::string &action_name, const std::string &skill_name);
+
     double tf_distance (const std::string &reference_tf, const std::string &target_frame);
 
     void gripper_feedback     ();
@@ -91,6 +98,7 @@ private:
     double closed_gripper_position_ = -0.79;
 
     tf::TransformListener tf_listener_;
+    tf::TransformBroadcaster tf_br_;
     std::string param_ns_ = "RL_params";
     std::string end_link_frame_ = "flange";
     std::string gripper_frame_ = "closed_tip";
@@ -105,6 +113,9 @@ private:
     ros::ServiceClient start_config_clnt_;
     ros::ServiceClient skill_arbit_clnt_;
     ros::ServiceClient skill_explore_clnt_;
+
+    ros::ServiceClient get_ik_clnt_;
+
     std::shared_ptr<actionlib::SimpleActionClient<simple_touch_controller_msgs::SimpleTouchAction>>        touch_action_;
     std::shared_ptr<actionlib::SimpleActionClient<relative_cartesian_controller_msgs::RelativeMoveAction>> relative_move_action_;
     std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
@@ -130,6 +141,8 @@ private:
     std::string move_to_type_                  = "move_to";
     std::string linear_move_type_              = "linear_move";
     std::string linear_move_to_type_           = "linear_move_to";
+
+    std::string joint_move_to_type_           = "joint_move_to";
 
     std::string watch_config_ = "watch";
 
