@@ -1809,7 +1809,6 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
             ROS_WHITE_STREAM("  relative_orientation: ["<<relative_quaternion.at(0)<<","<<relative_quaternion.at(1)<<","<<relative_quaternion.at(2)<<","<<relative_quaternion.at(3)<<"]");
         }
     }
-
     transform.setOrigin( tf::Vector3( relative_position.at(0),relative_position.at(1),relative_position.at(2) ) );
     transform.setRotation( tf::Quaternion( relative_quaternion.at(0),relative_quaternion.at(1),relative_quaternion.at(2),relative_quaternion.at(3) ) );
 
@@ -1830,10 +1829,29 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
     get_ik_msg.request.max_number_of_solutions = 6;
     get_ik_msg.request.stall_iterations = 10;
 
-    if (!get_ik_clnt_.call(get_ik_msg))
+    int max_iter = 5;
+    int iter = 0;
+
+    while ( ros::ok() )
     {
-        ROS_ERROR("Unable to call %s service",get_ik_clnt_.getService().c_str());
-        return skills_executer_msgs::SkillExecutionResponse::Fail;
+        if (!get_ik_clnt_.call(get_ik_msg))
+        {
+            ROS_ERROR("Unable to call %s service",get_ik_clnt_.getService().c_str());
+            return skills_executer_msgs::SkillExecutionResponse::Fail;
+        }
+        if ( get_ik_msg.response.solution.configurations.size() != 0 )
+        {
+            break;
+        }
+        else
+        {
+            iter += 1;
+            if ( iter == max_iter)
+            {
+                ROS_RED_STREAM("Goal configuration not found");
+                return skills_executer_msgs::SkillExecutionResponse::Fail;
+            }
+        }
     }
 
     move_group_->setJointValueTarget(get_ik_msg.response.solution.configurations.at(0).configuration);

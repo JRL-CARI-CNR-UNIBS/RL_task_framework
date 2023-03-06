@@ -43,11 +43,11 @@ private:
                                             "robotiq_gripper_move"
                                            };
     std::map<std::string,std::vector<std::string>> action_evaluation_parameters_ = {
-        {"pick_and_place", {"final_distance", "fail"} },
+        {"pick_and_place", {"duration","final_distance", "fail"} },
     };
 
     std::map<std::string,std::vector<double>> action_evaluation_weight_ = {
-        {"pick_and_place",  {-1000, -100000} },
+        {"pick_and_place",  {-1,-1000, -100000} },
     };
 
     std::map<std::string,std::vector<std::string>> skill_evaluation_parameters_ = {
@@ -69,6 +69,7 @@ private:
         {"parallel_gripper_move", {1.0, fail_reward_} },
         {"robotiq_gripper_move",  {0.5, fail_reward_} },
         {"move_to",               {-0.001, -0.0001, 1, -100000} },
+        {"joint_move_to",         {-0.001, -0.0001, 1, -100000} },
         {"linear_move_to",        {-0.001, -0.0001, 1, -100000} },
         {"linear_move",           {-0.001, -0.0001, 1, -100000} }
     };
