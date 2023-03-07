@@ -78,24 +78,9 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     std::string action_type;
     std::string object_name;
     std::string location_name;
-    double initial_distance, final_distance, traveled_distance, total_traveled_distance;
+    int exec;
+    double total_duration, total_max_force, final_distance;
 
-    // Is it right to put arbitrator here?
-//    if ( !req.skill_name.compare("end") )
-//    {
-//        skills_arbitrator_msgs::SkillArbitration skill_arbit_srv;
-//        skill_arbit_srv.request.action_name = req.action_name;
-//        if ( !skill_arbit_clnt_.call(skill_arbit_srv) )
-//        {
-//            ROS_ERROR("Fail to call service: %s", skill_arbit_clnt_.getService().c_str());
-//            ROS_ERROR("action_name: %s", skill_arbit_srv.request.action_name.c_str());
-//            res.result = skills_executer_msgs::SkillExecutionResponse::Error;
-//            return true;
-//        }
-//        res.result = skills_executer_msgs::SkillExecutionResponse::Success;
-//        return true;
-//    }
-    //
     if (!getParam(req.action_name, "action_type",   action_type))
     {
         ROS_RED_STREAM("No param /"<<req.action_name<<"/action_type, skill execution finish");
@@ -111,6 +96,31 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
         return true;
     }
     ROS_WHITE_STREAM("Skill type: "<<skill_type);
+
+    if (!getParam(req.action_name, "executed", exec))
+    {
+        ROS_RED_STREAM("No param /"<<req.action_name<<"/executed, considered equal to 0");
+        exec = 0;
+    }
+    ROS_WHITE_STREAM("executed: "<<exec);
+    if ( exec == 0)
+    {
+        setParam(req.action_name,"duration",0);
+        setParam(req.action_name,"max_force",0);
+    }
+
+    if (!getParam(req.action_name, "duration", total_duration))
+    {
+        ROS_RED_STREAM("No param /"<<req.action_name<<"/duration, considered equal to 0");
+        total_duration = 0;
+        setParam(req.action_name, "duration", total_duration);
+    }
+    if (!getParam(req.action_name, "max_force", total_max_force))
+    {
+        ROS_RED_STREAM("No param /"<<req.action_name<<"/max_force, considered equal to 0");
+        total_max_force = 0;
+        setParam(req.action_name, "max_force", total_max_force);
+    }
 
     setParam(req.action_name,"executed",1);
     ROS_WHITE_STREAM("Set /"<<req.action_name<<"/executed: "<<1);
@@ -211,12 +221,19 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     }
 
     double duration = ros::Time::now().toSec() - initial_time.toSec();
+    total_duration = total_duration + duration;
+    setParam(req.action_name,"duration",total_duration);
 
     end_force_thread_ = true;
 
     wrench_thread.join();
 
     end_force_thread_ = false;
+
+    if ( max_force_ > total_max_force )
+    {
+        setParam(req.action_name, "max_force", max_force_);
+    }
 
     setParam(req.action_name,req.skill_name,"duration",duration);
     ROS_WHITE_STREAM("Set /"<<req.action_name<<"/"<<req.skill_name<<"/duration: "<<duration);
