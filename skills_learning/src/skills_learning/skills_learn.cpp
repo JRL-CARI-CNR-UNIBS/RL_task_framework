@@ -548,7 +548,8 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
         printArrayParam(name,param);
         printArrayParam(name_old,param_old);
 
-        if ( total_reward_ > total_reward_old_ && reward >= reward_old )
+//        if ( total_reward_ > total_reward_old_ && reward >= reward_old )
+        if ( total_reward_ > total_reward_old_ )
         {
             if ( param.size() == 1 )
             {

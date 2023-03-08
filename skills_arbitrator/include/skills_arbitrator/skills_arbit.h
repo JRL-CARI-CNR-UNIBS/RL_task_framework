@@ -65,7 +65,7 @@ private:
     std::map<std::string,std::vector<double>> skill_evaluation_weight_ = {
         {"cartesian_velocity",    {-0.001, -0.0001, 1}    },
         {"cartesian_position",    {-0.001, -0.0001, 1, -100000}    },
-        {"simple_touch",          {-0.5, 100000, 1} },
+        {"simple_touch",          {-0.5, -1, 1} },
         {"parallel_gripper_move", {1.0, fail_reward_} },
         {"robotiq_gripper_move",  {0.5, fail_reward_} },
         {"move_to",               {-0.001, -0.0001, 1, -100000} },
@@ -100,7 +100,7 @@ inline bool SkillsArbit::getParam(const std::string &action_name, const std::str
 
 template<typename T>
 inline void SkillsArbit::setParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, const T &param_value)
-{   
+{
     std::string param_str = "/"+param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
 
     n_.setParam(param_str, param_value);
