@@ -143,9 +143,11 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
         ROS_WHITE_STREAM(req.action_name<<" object_name: "<<object_name);
     }
 
+
     max_force_ = 0.0;
     contact_ = false;
     end_force_thread_ = false;
+
     std::thread wrench_thread(&SkillsExec::maxWrenchCalculation, this);
 
     ros::Time initial_time = ros::Time::now();
@@ -1622,8 +1624,29 @@ int SkillsExec::reset_ur10e_ft_sensor()
         return skills_executer_msgs::SkillExecutionResponse::Fail;
 }
 
+int SkillsExec::reset_pybullet_ft_sensor()
+{
+    ROS_WHITE_STREAM("In reset_pybullet_ft_sensor");
+    ros::ServiceClient reset_force_sensor_clnt = n_.serviceClient<pybullet_utils::SensorReset>("/pybullet_sensor_reset");
+    reset_force_sensor_clnt.waitForExistence();
+    pybullet_utils::SensorReset zero_srv;
+    zero_srv.request.robot_name = robot_name_;
+    zero_srv.request.joint_name = sensored_joint_;
+    if ( !reset_force_sensor_clnt.call(zero_srv) )
+    {
+        ROS_RED_STREAM("Unable to reset force sensor");
+        return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+    ros::Duration(0.1).sleep();
+    if ( !zero_srv.response.result.compare("true") )
+        return skills_executer_msgs::SkillExecutionResponse::Success;
+    else
+        return skills_executer_msgs::SkillExecutionResponse::Fail;
+}
+
 void SkillsExec::maxWrenchCalculation()
 {
+    reset_pybullet_ft_sensor();
     geometry_msgs::WrenchStamped actual_wrench;
     double force_old;
     while ( !end_force_thread_ )

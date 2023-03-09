@@ -100,7 +100,7 @@ inline bool SkillsArbit::getParam(const std::string &action_name, const std::str
 
 template<typename T>
 inline void SkillsArbit::setParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, const T &param_value)
-{   
+{
     std::string param_str = "/"+param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
 
     n_.setParam(param_str, param_value);

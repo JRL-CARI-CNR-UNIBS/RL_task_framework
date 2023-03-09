@@ -69,6 +69,7 @@ public:
 
     void gripper_feedback     ();
 
+    int reset_pybullet_ft_sensor();
     int reset_ur10e_ft_sensor ();
     double forceTopicCallback();
     double maxForce();
