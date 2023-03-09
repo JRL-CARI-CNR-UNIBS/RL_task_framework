@@ -195,14 +195,6 @@ int SkillsLearn::explore (const std::string &action_name, const std::string &ski
             param.clear();
             param.push_back(d_param);
         }
-//        if ( param.size() == 1 )
-//        {
-//            setParam(action_name, skill_name, name, param.at(0));
-//        }
-//        else
-//        {
-//            setParam(action_name, skill_name, name, param);
-//        }
         new_param = param;
 
         if ( !getParam(action_name, skill_name, name_max_var, param_max_var) )
@@ -548,7 +540,8 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
         printArrayParam(name,param);
         printArrayParam(name_old,param_old);
 
-        if ( total_reward_ > total_reward_old_ && reward >= reward_old )
+//        if ( total_reward_ > total_reward_old_ && reward >= reward_old )
+        if ( total_reward_ > total_reward_old_ )
         {
             if ( param.size() == 1 )
             {

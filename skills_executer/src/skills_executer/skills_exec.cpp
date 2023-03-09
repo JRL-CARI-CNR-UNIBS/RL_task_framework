@@ -99,7 +99,7 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
 
     if (!getParam(req.action_name, "executed", exec))
     {
-        ROS_RED_STREAM("No param /"<<req.action_name<<"/executed, considered equal to 0");
+        ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/executed, considered equal to 0");
         exec = 0;
     }
     ROS_WHITE_STREAM("executed: "<<exec);
@@ -111,13 +111,13 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
 
     if (!getParam(req.action_name, "duration", total_duration))
     {
-        ROS_RED_STREAM("No param /"<<req.action_name<<"/duration, considered equal to 0");
+        ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/duration, considered equal to 0");
         total_duration = 0;
         setParam(req.action_name, "duration", total_duration);
     }
     if (!getParam(req.action_name, "max_force", total_max_force))
     {
-        ROS_RED_STREAM("No param /"<<req.action_name<<"/max_force, considered equal to 0");
+        ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/max_force, considered equal to 0");
         total_max_force = 0;
         setParam(req.action_name, "max_force", total_max_force);
     }

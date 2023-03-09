@@ -65,7 +65,7 @@ private:
     std::map<std::string,std::vector<double>> skill_evaluation_weight_ = {
         {"cartesian_velocity",    {-0.001, -0.0001, 1}    },
         {"cartesian_position",    {-0.001, -0.0001, 1, -100000}    },
-        {"simple_touch",          {-0.5, 100000, 1} },
+        {"simple_touch",          {-0.5, -1, 1} },
         {"parallel_gripper_move", {1.0, fail_reward_} },
         {"robotiq_gripper_move",  {0.5, fail_reward_} },
         {"move_to",               {-0.001, -0.0001, 1, -100000} },
