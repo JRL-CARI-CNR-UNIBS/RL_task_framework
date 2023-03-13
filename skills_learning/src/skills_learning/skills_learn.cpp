@@ -16,6 +16,19 @@ bool SkillsLearn::skillsExplore(skills_learning_msgs::SkillExplore::Request  &re
     std::vector<std::string> skill_names;
     std::vector<std::string> params;
     std::map<std::string,std::string> skill_type_map;
+    int test_number;
+
+    if ( !getParam(req.action_name,"test_number",test_number) )
+    {
+        ROS_YELLOW_STREAM("/"<<req.action_name<<"/test_number not set. It considered equal to 0");
+        test_number = 0;
+        setParam(req.action_name,"test_number",test_number);
+    }
+
+    test_number += 1;
+    setParam(req.action_name,"test_number",test_number);
+    ROS_WHITE_STREAM("/"<<req.action_name<<"/test_number set to "<<test_number);
+
 
     if (!n_.getParamNames(params))
     {
@@ -23,7 +36,6 @@ bool SkillsLearn::skillsExplore(skills_learning_msgs::SkillExplore::Request  &re
         res.result = skills_learning_msgs::SkillExploreResponse::Error;
         return true;
     }
-
 
     for ( const std::string param: params )
     {
@@ -72,6 +84,39 @@ bool SkillsLearn::skillsLearning(skills_learning_msgs::SkillLearning::Request  &
     std::vector<std::string> skill_names;
     std::vector<std::string> params;
     std::map<std::string,std::string> skill_type_map;
+    int test_number, executed;
+
+    if ( !getParam(req.action_name, "executed", executed))
+    {
+        ROS_YELLOW_STREAM("No param: "<<req.action_name<<"/executed, set to 0");
+        executed = 0;
+        setParam(req.action_name, "executed", executed);
+    }
+
+    if ( executed )
+    {
+        if ( !getParam(req.action_name, "test_number", test_number))
+        {
+            ROS_YELLOW_STREAM("No param: "<<req.action_name<<"/test_number, set to 1");
+            test_number = 1;
+            setParam(req.action_name, "test_number", test_number);
+        }
+    }
+    else
+    {
+        if ( !getParam(req.action_name, "test_number", test_number))
+        {
+            ROS_YELLOW_STREAM("No param: "<<req.action_name<<"/test_number, set to 0");
+            test_number = 0;
+            setParam(req.action_name, "test_number", test_number);
+        }
+        else
+        {
+            test_number -= 1;
+            ROS_WHITE_STREAM("Action not executedt, /"<<req.action_name<<"/test_number set to "<<test_number);
+            setParam(req.action_name, "test_number", test_number);
+        }
+    }
 
     if (!n_.getParamNames(params))
     {
@@ -104,18 +149,18 @@ bool SkillsLearn::skillsLearning(skills_learning_msgs::SkillLearning::Request  &
     if ( !getParam(req.action_name, "total_reward", total_reward_) )
     {
         ROS_YELLOW_STREAM("The parameter "<<req.action_name<<"/total_reward is not set");
-        setParam(req.action_name, "total_reward", -10000000);
-        ROS_YELLOW_STREAM("Set /"<<req.action_name<<"/total_reward: "<<-10000000);
-        total_reward_ = -10000000;
+        setParam(req.action_name, "total_reward", -1000000000);
+        ROS_YELLOW_STREAM("Set /"<<req.action_name<<"/total_reward: "<<-1000000000);
+        total_reward_ = -1000000000;
     }
     ROS_WHITE_STREAM("total_reward: "<<total_reward_);
 
     if ( !getParam(req.action_name, "total_reward_old", total_reward_old_) )
     {
         ROS_YELLOW_STREAM("The parameter "<<req.action_name<<"/total_reward_old is not set");
-        setParam(req.action_name, "total_reward_old", -10000000);
-        ROS_WHITE_STREAM("Set /"<<req.action_name<<"/total_reward_old: "<<-10000000);
-        total_reward_old_ = -10000000;
+        setParam(req.action_name, "total_reward_old", -1000000000);
+        ROS_WHITE_STREAM("Set /"<<req.action_name<<"/total_reward_old: "<<-1000000000);
+        total_reward_old_ = -1000000000;
     }
     ROS_WHITE_STREAM("total_reward_old: "<<total_reward_old_);
 
@@ -130,6 +175,8 @@ bool SkillsLearn::skillsLearning(skills_learning_msgs::SkillLearning::Request  &
         ROS_WHITE_STREAM(total_reward_<<" > "<<total_reward_old_);
         setParam(req.action_name, "total_reward_old", total_reward_ );
         ROS_WHITE_STREAM("Set /"<<req.action_name<<"/total_reward_old: "<<total_reward_);
+        setParam(req.action_name, "test_number_star", test_number );
+        ROS_WHITE_STREAM("Set /"<<req.action_name<<"/test_number_star: "<<test_number);
     }
 
     setParam(req.action_name, "executed", 0);
