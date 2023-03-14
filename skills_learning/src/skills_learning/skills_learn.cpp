@@ -605,36 +605,15 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
                 int a = i * 3;
                 if ( param.at(i) < param_old.at(i) )
                 {
-                    if (param_test_number.at(a) == 1)
-                    {
-                        param_ratio.at(a) = 1;
-                    }
-                    else
-                    {
-                        param_ratio.at(a) = ((param_ratio.at(a)*(param_test_number.at(a)-1))+1) / param_test_number.at(a);
-                    }
+                    param_ratio.at(a) = ((param_ratio.at(a)*9)+1) / 10;
                 }
                 else if ( param.at(i) > param_old.at(i) )
                 {
-                    if (param_test_number.at(a+2) == 1)
-                    {
-                        param_ratio.at(a+2) = 1;
-                    }
-                    else
-                    {
-                        param_ratio.at(a+2) = ((param_ratio.at(a+2)*(param_test_number.at(a+2)-1))+1) / param_test_number.at(a+2);
-                    }
+                    param_ratio.at(a+2) = ((param_ratio.at(a+2)*9)+1) / 10;
                 }
                 else
                 {
-                    if (param_test_number.at(a+1) == 1)
-                    {
-                        param_ratio.at(a+1) = 1;
-                    }
-                    else
-                    {
-                        param_ratio.at(a+1) = ((param_ratio.at(a+1)*(param_test_number.at(a+1)-1))+1) / param_test_number.at(a+1);
-                    }
+                    param_ratio.at(a+1) = ((param_ratio.at(a+1)*9)+1) / 10;
                 }
             }
         }
@@ -655,36 +634,15 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
                 int a = i*3;
                 if ( param.at(i) < param_old.at(i) )
                 {
-                    if (param_test_number.at(a) == 1)
-                    {
-                        param_ratio.at(a) = param_ratio.at(a) / 2;
-                    }
-                    else
-                    {
-                        param_ratio.at(a) = (param_ratio.at(a)*(param_test_number.at(a)-1)) / param_test_number.at(a);
-                    }
+                    param_ratio.at(a) = param_ratio.at(a)*0.9;
                 }
                 else if ( param.at(i) > param_old.at(i) )
                 {
-                    if (param_test_number.at(a+2) == 1)
-                    {
-                        param_ratio.at(a+2) = param_ratio.at(a+2) / 2;
-                    }
-                    else
-                    {
-                        param_ratio.at(a+2) = (param_ratio.at(a+2)*(param_test_number.at(a+2)-1)) / param_test_number.at(a+2);
-                    }
+                    param_ratio.at(a+2) = param_ratio.at(a+2)*0.9;
                 }
                 else
                 {
-                    if (param_test_number.at(a+1) == 1)
-                    {
-                        param_ratio.at(a+1) = param_ratio.at(a+1) / 2;
-                    }
-                    else
-                    {
-                        param_ratio.at(a+1) = (param_ratio.at(a+1)*(param_test_number.at(a+1)-1)) / param_test_number.at(a+1);
-                    }
+                    param_ratio.at(a+1) = param_ratio.at(a+1)*0.9;
                 }
             }
         }
