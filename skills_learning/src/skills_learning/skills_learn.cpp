@@ -298,12 +298,12 @@ int SkillsLearn::explore (const std::string &action_name, const std::string &ski
 
             if (random_value < param_ratio.at(a))
             {
-                new_param.at(i) = param.at(i) - ((param_max_var.at(i) * (rand() % 100 + 1)) / 100.0);
+                new_param.at(i) = param.at(i) - ((param_max_var.at(i) * param_ratio.at(a) * (rand() % 100 + 1)) / 100.0);
                 new_param_test_number.at(a) = param_test_number.at(a) + 1;
             }
             else if ( random_value > (param_ratio.at(a)+param_ratio.at(a+1)) )
             {
-                new_param.at(i) = param.at(i) + ((param_max_var.at(i) * (rand() % 100 + 1)) / 100.0);
+                new_param.at(i) = param.at(i) + ((param_max_var.at(i) * param_ratio.at(a) * (rand() % 100 + 1)) / 100.0);
                 new_param_test_number.at(a+2) = param_test_number.at(a+2) + 1;
             }
             else
