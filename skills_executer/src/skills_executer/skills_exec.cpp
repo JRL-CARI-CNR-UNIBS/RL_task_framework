@@ -5,7 +5,8 @@ namespace skills_executer
 
 SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
 {
-    twist_pub_        = n_.advertise<geometry_msgs::TwistStamped>("/target_cart_twist",1);
+    twist_pub_ = n_.advertise<geometry_msgs::TwistStamped>("/target_cart_twist",1);
+    ur_script_command_pub_ = n_.advertise<std_msgs::String>("/ur10e_hw/script_command",1);
 
     std::string wrench_topic = "/" + robot_name_ + "/" + sensored_joint_ + "/wrench";
 
@@ -1926,6 +1927,71 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
 
     ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
     return skills_executer_msgs::SkillExecutionResponse::Success;
+}
+
+int SkillsExec::urScriptCommandExample(const std::string &action_name, const std::string &skill_name, const std::string &skill_type)
+{
+//    read all necessary params
+    std::map<std::string,double> params;
+
+    for ( std::string param_name: skill_params_names_[skill_type] )
+    {
+        double param_value;
+        if (!getParam(action_name, skill_name, param_name, param_value))
+        {
+            ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/param_name is not set" );
+            return skills_executer_msgs::SkillExecutionResponse::NoParam;
+        }
+        params.insert( std::make_pair(param_name,param_value) );
+    }
+//
+
+    std::string file_name = skill_type + ".urstring";
+
+    std::string path = ros::package::getPath("robothon2023_tree");
+    path.append("/ur_script/");
+    path.append(file_name);
+
+    std::ifstream read_file;
+    read_file.open(path);
+    if (!read_file)
+    {
+        ROS_ERROR_STREAM("Unable to open file "<<path);
+        return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+    std::string line_text;
+    std::string full_text;
+    while (std::getline (read_file, line_text)) {
+        full_text.append(line_text);
+    }
+
+//    change all "param_name" with their value
+    std::size_t index1,index2;
+    for ( std::string param_name: skill_params_names_[ur_linear_move_type_] )
+    {
+        index1 = full_text.find(param_name);
+        index2 = full_text.rfind(param_name);
+        if ( index1 != std::string::npos && index1 == index2 )
+        {
+            full_text.replace(index1, param_name.length(), std::to_string(params[param_name]));
+        }
+        else if ( index1 == std::string::npos )
+        {
+            ROS_ERROR_STREAM("No param "<<param_name<<" in the script");
+            return skills_executer_msgs::SkillExecutionResponse::Error;
+        }
+        else
+        {
+            ROS_ERROR_STREAM("Multi params "<<param_name<<" in the script");
+            return skills_executer_msgs::SkillExecutionResponse::Error;
+        }
+    }
+//
+
+    std_msgs::String str_msg;
+    str_msg.data = full_text;
+
+    ur_script_command_pub_.publish(str_msg);
 }
 
 } // end namespace skills_executer

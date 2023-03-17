@@ -2,6 +2,7 @@
 #define SKILLS_EXEC_H
 
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <skills_executer_msgs/SkillExecution.h>
 //#include <skills_arbitrator_msgs/SkillArbitration.h>
 //#include <skills_learning_msgs/SkillLearning.h>
@@ -33,6 +34,8 @@
 #include <Eigen/Geometry>
 #include <parallel_2f_gripper/MoveGripper.h>
 #include <pybullet_utils/SensorReset.h>
+#include <std_msgs/String.h>
+#include <fstream>
 
 //fjt part
 #include <control_msgs/FollowJointTrajectoryAction.h>
@@ -62,7 +65,7 @@ public:
     int cartPos               (const std::string &action_name, const std::string &skill_name, const int &move_type);
     int move_to               (const std::string &action_name, const std::string &skill_name, const int &move_type);
     int parallel2fGripperMove (const std::string &action_name, const std::string &skill_name);
-
+    int urScriptCommandExample(const std::string &action_name, const std::string &skill_name, const std::string &skill_type);
     int joint_move_to         (const std::string &action_name, const std::string &skill_name);
 
     double tf_distance (const std::string &reference_tf, const std::string &target_frame);
@@ -122,6 +125,7 @@ private:
     std::shared_ptr<actionlib::SimpleActionClient<relative_cartesian_controller_msgs::RelativeMoveAction>> relative_move_action_;
     std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
     ros::Publisher twist_pub_;
+    ros::Publisher ur_script_command_pub_;
     ros::Publisher gripper_move_pub_;
 
     std::shared_ptr<ros_helper::SubscriptionNotifier<geometry_msgs::WrenchStamped>> wrench_sub_;
@@ -144,6 +148,16 @@ private:
     std::string linear_move_type_              = "linear_move";
     std::string linear_move_to_type_           = "linear_move_to";
     std::string joint_move_to_type_           = "joint_move_to";
+
+    std::string ur_linear_move_type_  = "ur_linear_move";
+    std::string ur_simple_touch_type_ = "ur_simple_touch";
+    std::string ur_gripper_move_type_ = "ur_gripper_move";
+
+    std::map<std::string,std::vector<std::string>> skill_params_names_ = {
+        {"ur_linear_move",  { "DISTANCE_X", "DISTANCE_Y", "DISTANCE_Z", "VELOCITY"} },
+        {"ur_simple_touch", { "VELOCITY_X", "VELOCITY_Y", "VELOCITY_Z", "TARGET_FORCE"} },
+        {"ur_gripper_move", { "...", "...", "..."} },
+    };
 
     std::string watch_config_ = "watch";
 
