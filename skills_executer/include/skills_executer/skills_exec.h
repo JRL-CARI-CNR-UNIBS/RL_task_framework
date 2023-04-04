@@ -47,6 +47,10 @@
 #include <ik_solver_msgs/Configuration.h>
 #include <ik_solver_msgs/IkSolution.h>
 
+#include <std_srvs/Trigger.h>
+#include <ur_dashboard_msgs/GetProgramState.h>
+#include <ur_msgs/IOStates.h>
+
 namespace skills_executer
 {
 
@@ -67,6 +71,8 @@ public:
     int parallel2fGripperMove (const std::string &action_name, const std::string &skill_name);
     int urScriptCommandExample(const std::string &action_name, const std::string &skill_name, const std::string &skill_type);
     int joint_move_to         (const std::string &action_name, const std::string &skill_name);
+
+    int three_circular_point_calculation();
 
     double tf_distance (const std::string &reference_tf, const std::string &target_frame);
 
@@ -107,7 +113,7 @@ private:
     std::string param_ns_ = "RL_params";
     std::string end_link_frame_ = "flange";
     std::string gripper_frame_ = "closed_tip";
-    std::string robot_name_ = "kr_50_r2500";
+    std::string robot_name_ = "manipulator";
     std::string sensored_joint_ = "link6_to_flange";
     std::string attached_link_name_ = "gripper_base";
     std::vector<std::string> gripper_touch_links_{"right_crank", "left_crank", "right_phalanx", "left_phalanx"};
@@ -118,6 +124,10 @@ private:
     ros::ServiceClient start_config_clnt_;
     ros::ServiceClient skill_arbit_clnt_;
     ros::ServiceClient skill_explore_clnt_;
+
+    ros::ServiceClient ur_program_stop_clnt_;
+    ros::ServiceClient ur_program_start_clnt_;
+    ros::ServiceClient ur_program_state_clnt_;
 
     ros::ServiceClient get_ik_clnt_;
 
@@ -149,14 +159,20 @@ private:
     std::string linear_move_to_type_           = "linear_move_to";
     std::string joint_move_to_type_           = "joint_move_to";
 
-    std::string ur_linear_move_type_  = "ur_linear_move";
-    std::string ur_simple_touch_type_ = "ur_simple_touch";
-    std::string ur_gripper_move_type_ = "ur_gripper_move";
+    std::vector<std::string> ur_type_{"ur_linear_move_tool",
+                                      "ur_linear_move_base",
+                                      "ur_simple_touch_tool",
+                                      "ur_simple_touch_base",
+                                      "ur_movej",
+                                      };
 
     std::map<std::string,std::vector<std::string>> skill_params_names_ = {
-        {"ur_linear_move",  { "DISTANCE_X", "DISTANCE_Y", "DISTANCE_Z", "VELOCITY"} },
-        {"ur_simple_touch", { "VELOCITY_X", "VELOCITY_Y", "VELOCITY_Z", "TARGET_FORCE"} },
-        {"ur_gripper_move", { "...", "...", "..."} },
+        {"ur_linear_move_tool",  { "MOVEX", "MOVEY", "MOVEZ", "DISTANCE", "VELOCITY", "ACCELERATION"} },
+        {"ur_linear_move_base",  { "MOVEX", "MOVEY", "MOVEZ", "DISTANCE", "VELOCITY", "ACCELERATION"} },
+        {"ur_simple_touch_tool", { "MOVEX", "MOVEY", "MOVEZ", "MAX_DISTANCE", "RETURN_DISTANCE", "VELOCITY", "ACCELERATION"} },
+        {"ur_simple_touch_base", { "MOVEX", "MOVEY", "MOVEZ", "MAX_DISTANCE", "RETURN_DISTANCE", "VELOCITY", "ACCELERATION"} },
+        {"ur_movej", { "DISTX", "DISTY", "DISTZ", "ROTX", "ROTY", "ROTZ", "VELOCITY", "ACCELERATION"} },
+//        {"ur_movej", {} },
     };
 
     std::string watch_config_ = "watch";

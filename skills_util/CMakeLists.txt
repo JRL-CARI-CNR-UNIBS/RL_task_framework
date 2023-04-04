@@ -21,7 +21,13 @@ catkin_package(
  CATKIN_DEPENDS roscpp
                 rospy
                 std_msgs
+                tf
                 rosparam_utilities
+                skills_executer_msgs
+                skills_arbitrator_msgs
+                skills_learning_msgs
+                skills_util_msgs
+                behaviortree_cpp
  DEPENDS
 )
 

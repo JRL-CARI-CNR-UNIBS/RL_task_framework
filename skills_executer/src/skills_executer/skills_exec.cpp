@@ -6,9 +6,23 @@ namespace skills_executer
 SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
 {
     twist_pub_ = n_.advertise<geometry_msgs::TwistStamped>("/target_cart_twist",1);
-    ur_script_command_pub_ = n_.advertise<std_msgs::String>("/ur10e_hw/script_command",1);
+    ur_script_command_pub_ = n_.advertise<std_msgs::String>("/ur10e_hw/script_command",10);
 
-    std::string wrench_topic = "/" + robot_name_ + "/" + sensored_joint_ + "/wrench";
+    ur_program_stop_clnt_ = n_.serviceClient<std_srvs::Trigger>("/ur10e_hw/dashboard/stop");
+    ROS_YELLOW_STREAM("Waiting for "<<ur_program_stop_clnt_.getService());
+    ur_program_stop_clnt_.waitForExistence();
+    ROS_YELLOW_STREAM("Connection ok");
+    ur_program_start_clnt_ = n_.serviceClient<std_srvs::Trigger>("/ur10e_hw/dashboard/play");
+    ROS_YELLOW_STREAM("Waiting for "<<ur_program_start_clnt_.getService());
+    ur_program_start_clnt_.waitForExistence();
+    ROS_YELLOW_STREAM("Connection ok");
+    ur_program_state_clnt_ = n_.serviceClient<ur_dashboard_msgs::GetProgramState>("/ur10e_hw/dashboard/program_state");
+    ROS_YELLOW_STREAM("Waiting for "<<ur_program_state_clnt_.getService());
+    ur_program_state_clnt_.waitForExistence();
+    ROS_YELLOW_STREAM("Connection ok");
+
+
+    std::string wrench_topic = "/ur_10/wrench";
 
     wrench_sub_ = std::make_shared<ros_helper::SubscriptionNotifier<geometry_msgs::WrenchStamped>>(n_, wrench_topic, 10);
     js_sub_ = std::make_shared<ros_helper::SubscriptionNotifier<sensor_msgs::JointState>>(n_, "/joint_states", 10);
@@ -20,30 +34,10 @@ SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
     start_config_clnt_.waitForExistence();
     ROS_YELLOW_STREAM("Connection ok");
 
-    get_ik_clnt_ = n_.serviceClient<ik_solver_msgs::GetIk>("/kuka_coke/get_ik");
+    get_ik_clnt_ = n_.serviceClient<ik_solver_msgs::GetIk>("/manipulator/get_ik");
     ROS_YELLOW_STREAM("Waiting for "<<get_ik_clnt_.getService());
     get_ik_clnt_.waitForExistence();
     ROS_YELLOW_STREAM("Connection ok");
-
-//    if( ros::service::exists("/pybullet_sensor_reset") )
-//    {
-//        sensor_reset_clnt_ = n_.serviceClient<pybullet_utils::SensorReset>("/pybullet_sensor_reset");
-//        ROS_YELLOW_STREAM("Client to pybullet_sensor_reset service created");
-//    }
-//    else if( ros::service::exists("/another_sensor_topic") )
-//    {
-//        sensor_reset_clnt_ = n_.serviceClient<pybullet_utils::SensorReset>("/another_sensor_server");
-//        ROS_YELLOW_STREAM("Client to another_sensor_topic service created");
-//    }
-//    else
-//    {
-//        ROS_YELLOW_STREAM("No sensor server");
-//    }
-
-//    skill_arbit_clnt_ = n_.serviceClient<skills_arbitrator_msgs::SkillArbitration>("/skills_arbit/evaluate_skill");
-//    ROS_YELLOW_STREAM("Waiting for "<<skill_arbit_clnt_.getService());
-//    skill_arbit_clnt_.waitForExistence();
-//    ROS_YELLOW_STREAM("Connection ok");
 
     touch_action_         = std::make_shared<actionlib::SimpleActionClient<simple_touch_controller_msgs::SimpleTouchAction>>("simple_touch", true);
     relative_move_action_ = std::make_shared<actionlib::SimpleActionClient<relative_cartesian_controller_msgs::RelativeMoveAction>>("relative_move", true);
@@ -149,7 +143,7 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     contact_ = false;
     end_force_thread_ = false;
 
-    std::thread wrench_thread(&SkillsExec::maxWrenchCalculation, this);
+//    std::thread wrench_thread(&SkillsExec::maxWrenchCalculation, this);
 
     ros::Time initial_time = ros::Time::now();
 
@@ -204,6 +198,9 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     {
         res.result = joint_move_to(req.action_name, req.skill_name);
     }
+    else if(std::find(ur_type_.begin(), ur_type_.end(), skill_type) != ur_type_.end()) {
+        res.result = urScriptCommandExample(req.action_name, req.skill_name, skill_type);
+    }
     else
     {
         ROS_RED_STREAM("/"<<req.action_name<<"/"<<req.skill_name<<" result: NoSkillType");
@@ -229,7 +226,7 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
 
     end_force_thread_ = true;
 
-    wrench_thread.join();
+//    wrench_thread.join();
 
     end_force_thread_ = false;
 
@@ -616,18 +613,16 @@ int SkillsExec::robotiqGripperMove(const std::string &action_name, const std::st
 
     if (!getParam(action_name, skill_name, "property_id", gripper_srv.request.property_id))
     {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/property_id is not set" );
+        ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/property_id is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
     if (!getParam(action_name, skill_name, "skill_name", gripper_srv.request.skill_name))
     {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/skill_name is not set" );
-        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/skill_name is not set, not necessary" );
     }
     if (!getParam(action_name, skill_name, "tool_id", gripper_srv.request.tool_id))
     {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/tool_id is not set" );
-        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/tool_id is not set, not necessary" );
     }
 
     if ( !gripper_clnt.call(gripper_srv) )
@@ -1929,8 +1924,44 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
+int SkillsExec::three_circular_point_calculation()
+{
+  tf::StampedTransform gripper_link_transform;
+  try
+  {
+      tf_listener_.lookupTransform( "world", end_link_frame_, ros::Time(0), gripper_link_transform);
+  }
+  catch (tf::TransformException ex){
+      ROS_ERROR("%s",ex.what());
+      ros::Duration(1.0).sleep();
+  }
+  tf::transformTFToEigen( gripper_link_transform, T_gripper_link_);
+
+
+//  6.5 cm
+
+}
 int SkillsExec::urScriptCommandExample(const std::string &action_name, const std::string &skill_name, const std::string &skill_type)
 {
+    changeConfig("watch");
+    ros_helper::SubscriptionNotifier<ur_msgs::IOStates> io_state_sub(n_, "/ur10e_hw/io_states", 10);
+
+//    stop current ur program
+    std_srvs::Trigger stop_program_msg;
+    ur_program_stop_clnt_.call(stop_program_msg);
+
+    ROS_GREEN_STREAM("Waiting for stop current program");
+    ur_dashboard_msgs::GetProgramState program_state_msg;
+    while (true)
+    {
+      ur_program_state_clnt_.call(program_state_msg);
+      if (program_state_msg.response.state.state == "STOPPED")
+      {
+        break;
+      }
+      ros::Duration(0.01).sleep();
+    }
+
 //    read all necessary params
     std::map<std::string,double> params;
 
@@ -1946,7 +1977,7 @@ int SkillsExec::urScriptCommandExample(const std::string &action_name, const std
     }
 //
 
-    std::string file_name = skill_type + ".urstring";
+    std::string file_name = skill_type + ".script";
 
     std::string path = ros::package::getPath("robothon2023_tree");
     path.append("/ur_script/");
@@ -1963,11 +1994,12 @@ int SkillsExec::urScriptCommandExample(const std::string &action_name, const std
     std::string full_text;
     while (std::getline (read_file, line_text)) {
         full_text.append(line_text);
+        full_text.append("\n");
     }
-
+    ROS_GREEN_STREAM(full_text.c_str());
 //    change all "param_name" with their value
     std::size_t index1,index2;
-    for ( std::string param_name: skill_params_names_[ur_linear_move_type_] )
+    for ( std::string param_name: skill_params_names_[skill_type] )
     {
         index1 = full_text.find(param_name);
         index2 = full_text.rfind(param_name);
@@ -1987,11 +2019,56 @@ int SkillsExec::urScriptCommandExample(const std::string &action_name, const std
         }
     }
 //
+    ROS_GREEN_STREAM(full_text.c_str());
 
     std_msgs::String str_msg;
     str_msg.data = full_text;
 
     ur_script_command_pub_.publish(str_msg);
+
+    ROS_RED_STREAM("Waiting script start");
+    while (true)
+    {
+      if (io_state_sub.isANewDataAvailable())
+      {
+        if (io_state_sub.getData().digital_out_states[7].state)
+        {
+          break;
+        }
+      }
+      ros::Duration(0.001).sleep();
+    }
+
+    ROS_RED_STREAM("Waiting script end");
+    while (true)
+    {
+      if (io_state_sub.isANewDataAvailable())
+      {
+        if (!io_state_sub.getData().digital_out_states[7].state)
+        {
+          break;
+        }
+      }
+      ros::Duration(0.001).sleep();
+    }
+
+    //    start current ur program
+    std_srvs::Trigger start_program_msg;
+    ur_program_start_clnt_.call(start_program_msg);
+
+    ROS_GREEN_STREAM("Waiting for start current program");
+    while (true)
+    {
+      ur_program_state_clnt_.call(program_state_msg);
+      if (program_state_msg.response.state.state == "PLAYING")
+      {
+        break;
+      }
+      ros::Duration(0.01).sleep();
+      ur_program_start_clnt_.call(start_program_msg);
+    }
+
+    return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
 } // end namespace skills_executer

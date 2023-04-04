@@ -14,7 +14,7 @@ int main(int argc, char **argv)
     if ( ! ros::master::check() )
     {
         printf("false");
-        return false;
+        exit(0);
     }
     ros::start();
     ros::AsyncSpinner spinner(10);
