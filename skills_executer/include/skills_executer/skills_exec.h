@@ -72,7 +72,7 @@ public:
     int urScriptCommandExample(const std::string &action_name, const std::string &skill_name, const std::string &skill_type);
     int joint_move_to         (const std::string &action_name, const std::string &skill_name);
 
-    int three_circular_point_calculation();
+    int three_circular_point_calculation(const std::string &action_name, const std::string &skill_name);
 
     double tf_distance (const std::string &reference_tf, const std::string &target_frame);
 
@@ -97,7 +97,6 @@ private:
     bool default_execution_duration_monitoring_ = 1;
     double screw_accuracy_;
     double max_screw_accuracy_ = 10.0;
-    double pi_ = 3.14159265358979323846;
     double max_force_ = 0.0;
     double gripper_tollerance_ = 0.01;
     double max_force_variation_ = 500;
@@ -157,13 +156,15 @@ private:
     std::string move_to_type_                  = "move_to";
     std::string linear_move_type_              = "linear_move";
     std::string linear_move_to_type_           = "linear_move_to";
-    std::string joint_move_to_type_           = "joint_move_to";
+    std::string joint_move_to_type_            = "joint_move_to";
+    std::string ur_circula_point_type_         = "ur_circular_point";
 
     std::vector<std::string> ur_type_{"ur_linear_move_tool",
                                       "ur_linear_move_base",
                                       "ur_simple_touch_tool",
                                       "ur_simple_touch_base",
                                       "ur_movej",
+                                      "ur_circular_move",
                                       };
 
     std::map<std::string,std::vector<std::string>> skill_params_names_ = {
@@ -171,8 +172,11 @@ private:
         {"ur_linear_move_base",  { "MOVEX", "MOVEY", "MOVEZ", "DISTANCE", "VELOCITY", "ACCELERATION"} },
         {"ur_simple_touch_tool", { "MOVEX", "MOVEY", "MOVEZ", "MAX_DISTANCE", "RETURN_DISTANCE", "VELOCITY", "ACCELERATION"} },
         {"ur_simple_touch_base", { "MOVEX", "MOVEY", "MOVEZ", "MAX_DISTANCE", "RETURN_DISTANCE", "VELOCITY", "ACCELERATION"} },
-        {"ur_movej", { "DISTX", "DISTY", "DISTZ", "ROTX", "ROTY", "ROTZ", "VELOCITY", "ACCELERATION"} },
-//        {"ur_movej", {} },
+        {"ur_movej",             { "DISTX", "DISTY", "DISTZ", "ROTX", "ROTY", "ROTZ", "VELOCITY", "ACCELERATION"} },
+        {"ur_circular_move",     { "POS_START_X", "POS_START_Y", "POS_START_Z", "ROT_START_X", "ROT_START_Y", "ROT_START_Z",
+                                   "POS_VIA_X",   "POS_VIA_Y",   "POS_VIA_Z",   "ROT_VIA_X",   "ROT_VIA_Y",   "ROT_VIA_Z",
+                                   "POS_END_X",   "POS_END_Y",   "POS_END_Z",   "ROT_END_X",   "ROT_END_Y",   "ROT_END_Z",
+                                   "ACCELERATION", "VELOCITY"} },
     };
 
     std::string watch_config_ = "watch";

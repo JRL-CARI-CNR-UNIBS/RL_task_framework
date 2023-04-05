@@ -201,6 +201,9 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     else if(std::find(ur_type_.begin(), ur_type_.end(), skill_type) != ur_type_.end()) {
         res.result = urScriptCommandExample(req.action_name, req.skill_name, skill_type);
     }
+    else if( !skill_type.compare(ur_circula_point_type_) ) {
+        res.result = three_circular_point_calculation(req.action_name, req.skill_name);
+    }
     else
     {
         ROS_RED_STREAM("/"<<req.action_name<<"/"<<req.skill_name<<" result: NoSkillType");
@@ -756,11 +759,11 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         {
             ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/angular_velocity_rad_s or angular_velocity_deg_s is not set" );
             ROS_YELLOW_STREAM("The default value is angular_velocity_deg_s = 30 deg/sec");
-            target_angular_velocity = 30*pi_/180;
+            target_angular_velocity = 30*M_PI/180;
         }
         else
         {
-            target_angular_velocity = vel*pi_/180;
+            target_angular_velocity = vel*M_PI/180;
             ROS_WHITE_STREAM("Read angular_velocity_deg_s: "<<vel);
             ROS_WHITE_STREAM("Angular_velocity_rad_s: "<<target_angular_velocity);
         }
@@ -780,7 +783,7 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         }
         if ( getParam(action_name, skill_name, "rotZdeg", rotZdeg) )
         {
-            double angle = rotZdeg*pi_/180;
+            double angle = rotZdeg*M_PI/180;
             quat.setRPY(0,0,angle);
             //        relative_pose.pose.orientation=tf::createQuaternionFromRPY(0.0,0.0,angle);
             relative_pose.pose.orientation.x = quat.getX();
@@ -796,7 +799,7 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         }
         else if( getParam(action_name, skill_name, "rotYdeg", rotYdeg) )
         {
-            double angle = rotYdeg*pi_/180;
+            double angle = rotYdeg*M_PI/180;
             quat.setRPY(0,angle,0);
             //        relative_pose.pose.orientation=tf::createQuaternionFromRPY(0.0,angle,0.0);
             relative_pose.pose.orientation.x = quat.getX();
@@ -812,7 +815,7 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         }
         else if( getParam(action_name, skill_name, "rotXdeg", rotXdeg) )
         {
-            double angle = rotXdeg*pi_/180;
+            double angle = rotXdeg*M_PI/180;
             quat.setRPY(angle,0,0);
             //        relative_pose.pose.orientation=tf::createQuaternionFromRPY(angle,0.0,0.0);
             relative_pose.pose.orientation.x = quat.getX();
@@ -1924,23 +1927,111 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
-int SkillsExec::three_circular_point_calculation()
+int SkillsExec::three_circular_point_calculation(const std::string &action_name, const std::string &skill_name)
 {
-  tf::StampedTransform gripper_link_transform;
-  try
-  {
-      tf_listener_.lookupTransform( "world", end_link_frame_, ros::Time(0), gripper_link_transform);
-  }
-  catch (tf::TransformException ex){
-      ROS_ERROR("%s",ex.what());
-      ros::Duration(1.0).sleep();
-  }
-  tf::transformTFToEigen( gripper_link_transform, T_gripper_link_);
+    std::string act_name, sk_name;
+    if (!getParam(action_name, skill_name, "action_name", act_name))
+    {
+        ROS_RED_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/action_name is not set" );
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
 
+    if (!getParam(action_name, skill_name, "skill_name", sk_name))
+    {
+        ROS_RED_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/skill_name is not set" );
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
 
-//  6.5 cm
+    tf::Vector3 pos1, pos2;
+    tf::Quaternion quat1, quat2;
+    double radius = 0.065;
 
+    tf::StampedTransform pose1_in_gripper_transform, pose1_in_base_transform;
+    Eigen::Affine3d T_pose1_in_gripper, T_pose1_in_base;
+    tf::StampedTransform pose2_in_gripper_transform, pose2_in_base_transform;
+    Eigen::Affine3d T_pose2_in_gripper, T_pose2_in_base;
+
+    pos1.setX(0.0);
+    pos1.setY(-(radius * (1 - sin(M_PI/4))));
+    pos1.setZ(-radius * cos(M_PI/4));
+    quat1.setX(-0.3826834);
+    quat1.setY(0.0);
+    quat1.setZ(0.0);
+    quat1.setW(0.9238795);
+
+    pose1_in_gripper_transform.setOrigin(pos1);
+    pose1_in_gripper_transform.setRotation(quat1);
+    ROS_INFO("A10");
+
+    pos2.setX(0.0);
+    pos2.setY(-radius);
+    pos2.setZ(-radius);
+    quat2.setX(-0.7071068);
+    quat2.setY(0.0);
+    quat2.setZ(0.0);
+    quat2.setW(0.7071068);
+
+    pose2_in_gripper_transform.setOrigin(pos2);
+    pose2_in_gripper_transform.setRotation(quat2);
+    ROS_INFO("A11");
+
+    tf::StampedTransform pose0_in_base_transform;
+    bool ok = false;
+    while ( !ok )
+    {
+        try
+        {
+            tf_listener_.lookupTransform( "base_link", "closed_tip", ros::Time(0), pose0_in_base_transform);
+            ok = true;
+        }
+        catch (tf::TransformException ex){
+            ROS_ERROR("%s",ex.what());
+            ros::Duration(1.0).sleep();
+        }
+    }
+
+    Eigen::Affine3d T_pose0_in_base;
+    tf::transformTFToEigen( pose0_in_base_transform, T_pose0_in_base);
+    tf::transformTFToEigen( pose1_in_gripper_transform, T_pose1_in_gripper);
+    tf::transformTFToEigen( pose2_in_gripper_transform, T_pose2_in_gripper);
+    T_pose1_in_base = T_pose0_in_base * T_pose1_in_gripper;
+    T_pose2_in_base = T_pose0_in_base * T_pose2_in_gripper;
+
+    tf::transformEigenToTF(T_pose1_in_base, pose1_in_base_transform);
+    tf::transformEigenToTF(T_pose2_in_base, pose2_in_base_transform);
+
+//    Ora si settano i parametri della skill che ci interessa
+    tf::Vector3 rot0 = pose0_in_base_transform.getRotation().getAngle() * pose0_in_base_transform.getRotation().getAxis();
+    tf::Vector3 rot1 = pose1_in_base_transform.getRotation().getAngle() * pose1_in_base_transform.getRotation().getAxis();
+    tf::Vector3 rot2 = pose2_in_base_transform.getRotation().getAngle() * pose2_in_base_transform.getRotation().getAxis();
+
+    setParam(act_name,sk_name,"POS_START_X",pose0_in_base_transform.getOrigin().getX());
+    setParam(act_name,sk_name,"POS_START_Y",pose0_in_base_transform.getOrigin().getY());
+    setParam(act_name,sk_name,"POS_START_Z",pose0_in_base_transform.getOrigin().getZ());
+
+    setParam(act_name,sk_name,"POS_VIA_X",  pose1_in_base_transform.getOrigin().getX());
+    setParam(act_name,sk_name,"POS_VIA_Y",  pose1_in_base_transform.getOrigin().getY());
+    setParam(act_name,sk_name,"POS_VIA_Z",  pose1_in_base_transform.getOrigin().getZ());
+
+    setParam(act_name,sk_name,"POS_END_X",  pose2_in_base_transform.getOrigin().getX());
+    setParam(act_name,sk_name,"POS_END_Y",  pose2_in_base_transform.getOrigin().getY());
+    setParam(act_name,sk_name,"POS_END_Z",  pose2_in_base_transform.getOrigin().getZ());
+
+    setParam(act_name,sk_name,"ROT_START_X", rot0.getX());
+    setParam(act_name,sk_name,"ROT_START_Y", rot0.getY());
+    setParam(act_name,sk_name,"ROT_START_Z", rot0.getZ());
+
+    setParam(act_name,sk_name,"ROT_VIA_X", rot1.getX());
+    setParam(act_name,sk_name,"ROT_VIA_Y", rot1.getY());
+    setParam(act_name,sk_name,"ROT_VIA_Z", rot1.getZ());
+
+    setParam(act_name,sk_name,"ROT_END_X", rot2.getX());
+    setParam(act_name,sk_name,"ROT_END_Y", rot2.getY());
+    setParam(act_name,sk_name,"ROT_END_Z", rot2.getZ());
+
+    return skills_executer_msgs::SkillExecutionResponse::Success;
 }
+
 int SkillsExec::urScriptCommandExample(const std::string &action_name, const std::string &skill_name, const std::string &skill_type)
 {
     changeConfig("watch");

@@ -32,6 +32,7 @@
   <depend>parallel_2f_gripper</depend>
   <depend>pybullet_utils</depend>
   <depend>ik_solver_msgs</depend>
+  <depend>ur_msgs</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

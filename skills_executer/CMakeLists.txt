@@ -25,6 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
   parallel_2f_gripper
   pybullet_utils
   ik_solver_msgs
+  ur_msgs
 )
 
 catkin_package(
@@ -40,6 +41,7 @@ catkin_package(
                  eigen_conversions
                  tf_conversions
                  ik_solver_msgs
+                 ur_msgs
   DEPENDS
 )
 
