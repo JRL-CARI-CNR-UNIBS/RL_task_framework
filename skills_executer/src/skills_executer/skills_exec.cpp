@@ -1955,24 +1955,24 @@ int SkillsExec::three_circular_point_calculation(const std::string &action_name,
     Eigen::Affine3d T_pose2_in_gripper, T_pose2_in_base;
 
     pos1.setX(0.0);
-    pos1.setY(-(radius * (1 - sin(M_PI/4))));
-    pos1.setZ(-radius * cos(M_PI/4));
-    quat1.setX(-0.3826834);
+    pos1.setY(-(radius * (1 - cos(M_PI/4))));
+    pos1.setZ(-radius * sin(M_PI/4));
+    quat1.setX(0.0);
     quat1.setY(0.0);
     quat1.setZ(0.0);
-    quat1.setW(0.9238795);
+    quat1.setW(1.0);
 
     pose1_in_gripper_transform.setOrigin(pos1);
     pose1_in_gripper_transform.setRotation(quat1);
     ROS_INFO("A10");
 
     pos2.setX(0.0);
-    pos2.setY(-radius);
-    pos2.setZ(-radius);
-    quat2.setX(-0.7071068);
+    pos2.setY(-radius * (1 - cos(3*M_PI/4)));
+    pos2.setZ(-radius * sin(3*M_PI/4));
+    quat2.setX(0.0);
     quat2.setY(0.0);
     quat2.setZ(0.0);
-    quat2.setW(0.7071068);
+    quat2.setW(1.0);
 
     pose2_in_gripper_transform.setOrigin(pos2);
     pose2_in_gripper_transform.setRotation(quat2);
@@ -1984,7 +1984,7 @@ int SkillsExec::three_circular_point_calculation(const std::string &action_name,
     {
         try
         {
-            tf_listener_.lookupTransform( "base_link", "closed_tip", ros::Time(0), pose0_in_base_transform);
+            tf_listener_.lookupTransform( "base", "closed_tip", ros::Time(0), pose0_in_base_transform);
             ok = true;
         }
         catch (tf::TransformException ex){
@@ -2032,6 +2032,10 @@ int SkillsExec::three_circular_point_calculation(const std::string &action_name,
     setParam(act_name,sk_name,"ROT_END_Y", rot2.getY());
     setParam(act_name,sk_name,"ROT_END_Z", rot2.getZ());
 
+    tf_br_.sendTransform( tf::StampedTransform(pose0_in_base_transform, ros::Time::now(), "base", "pose0") );
+    tf_br_.sendTransform( tf::StampedTransform(pose1_in_base_transform, ros::Time::now(), "base", "pose1") );
+    tf_br_.sendTransform( tf::StampedTransform(pose2_in_base_transform, ros::Time::now(), "base", "pose2") );
+
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
@@ -2064,7 +2068,7 @@ int SkillsExec::urScriptCommandExample(const std::string &action_name, const std
         double param_value;
         if (!getParam(action_name, skill_name, param_name, param_value))
         {
-            ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/param_name is not set" );
+            ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/"<<param_name<<" is not set" );
             return skills_executer_msgs::SkillExecutionResponse::NoParam;
         }
         params.insert( std::make_pair(param_name,param_value) );
