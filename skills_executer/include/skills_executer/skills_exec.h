@@ -72,6 +72,8 @@ public:
     int urScriptCommandExample(const std::string &action_name, const std::string &skill_name, const std::string &skill_type);
     int joint_move_to         (const std::string &action_name, const std::string &skill_name);
 
+    int ur_movel(const std::string &action_name, const std::string &skill_name);
+    int ur_script_movej(const std::string &action_name, const std::string &skill_name);
     int three_circular_point_calculation(const std::string &action_name, const std::string &skill_name);
 
     double tf_distance (const std::string &reference_tf, const std::string &target_frame);
@@ -158,6 +160,7 @@ private:
     std::string linear_move_to_type_           = "linear_move_to";
     std::string joint_move_to_type_            = "joint_move_to";
     std::string ur_circula_point_type_         = "ur_circular_point";
+    std::string ur_movel_type_                 = "ur_movel";
 
     std::vector<std::string> ur_type_{"ur_linear_move_tool",
                                       "ur_linear_move_base",
