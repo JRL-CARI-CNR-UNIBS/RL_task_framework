@@ -8,18 +8,18 @@ SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
     twist_pub_ = n_.advertise<geometry_msgs::TwistStamped>("/target_cart_twist",1);
     ur_script_command_pub_ = n_.advertise<std_msgs::String>("/ur10e_hw/script_command",10);
 
-//    ur_program_stop_clnt_ = n_.serviceClient<std_srvs::Trigger>("/ur10e_hw/dashboard/stop");
-//    ROS_YELLOW_STREAM("Waiting for "<<ur_program_stop_clnt_.getService());
-//    ur_program_stop_clnt_.waitForExistence();
-//    ROS_YELLOW_STREAM("Connection ok");
-//    ur_program_start_clnt_ = n_.serviceClient<std_srvs::Trigger>("/ur10e_hw/dashboard/play");
-//    ROS_YELLOW_STREAM("Waiting for "<<ur_program_start_clnt_.getService());
-//    ur_program_start_clnt_.waitForExistence();
-//    ROS_YELLOW_STREAM("Connection ok");
-//    ur_program_state_clnt_ = n_.serviceClient<ur_dashboard_msgs::GetProgramState>("/ur10e_hw/dashboard/program_state");
-//    ROS_YELLOW_STREAM("Waiting for "<<ur_program_state_clnt_.getService());
-//    ur_program_state_clnt_.waitForExistence();
-//    ROS_YELLOW_STREAM("Connection ok");
+    ur_program_stop_clnt_ = n_.serviceClient<std_srvs::Trigger>("/ur10e_hw/dashboard/stop");
+    ROS_YELLOW_STREAM("Waiting for "<<ur_program_stop_clnt_.getService());
+    ur_program_stop_clnt_.waitForExistence();
+    ROS_YELLOW_STREAM("Connection ok");
+    ur_program_start_clnt_ = n_.serviceClient<std_srvs::Trigger>("/ur10e_hw/dashboard/play");
+    ROS_YELLOW_STREAM("Waiting for "<<ur_program_start_clnt_.getService());
+    ur_program_start_clnt_.waitForExistence();
+    ROS_YELLOW_STREAM("Connection ok");
+    ur_program_state_clnt_ = n_.serviceClient<ur_dashboard_msgs::GetProgramState>("/ur10e_hw/dashboard/program_state");
+    ROS_YELLOW_STREAM("Waiting for "<<ur_program_state_clnt_.getService());
+    ur_program_state_clnt_.waitForExistence();
+    ROS_YELLOW_STREAM("Connection ok");
 
 
     std::string wrench_topic = "/ur_10/wrench";
@@ -2189,6 +2189,8 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
       }
       ros::Duration(0.01).sleep();
     }
+    ROS_GREEN_STREAM("Start movel");
+
 
     std::string reference_frame, tool_frame;
     if (!getParam(action_name, skill_name, "reference_frame", reference_frame))
@@ -2222,6 +2224,11 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
         ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/traslation is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
+    if (traslation.size() != 3)
+    {
+      ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/traslation size is not 3" );
+      return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
     tras.setX(traslation[0]);
     tras.setY(traslation[1]);
     tras.setZ(traslation[2]);
@@ -2231,6 +2238,12 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
         ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/rotation is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
+    if (rotation.size() != 4)
+    {
+      ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/rotation size is not 4" );
+      return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+
     rot.setX(rotation[0]);
     rot.setY(rotation[1]);
     rot.setZ(rotation[2]);
@@ -2297,18 +2310,53 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
     tf::StampedTransform base_to_tool_final_transform;
     tf::transformEigenToTF(T_base_to_tool_final, base_to_tool_final_transform);
 
+    std::string mesg = "   base_to_reference_transform: ["+
+            std::to_string(base_to_reference_transform.getOrigin().getX())+","+
+            std::to_string(base_to_reference_transform.getOrigin().getY())+","+
+            std::to_string(base_to_reference_transform.getOrigin().getZ())+"] ["+
+            std::to_string(base_to_reference_transform.getRotation().getAngle() * base_to_reference_transform.getRotation().getAxis().getX())+","+
+            std::to_string(base_to_reference_transform.getRotation().getAngle() * base_to_reference_transform.getRotation().getAxis().getY())+","+
+            std::to_string(base_to_reference_transform.getRotation().getAngle() * base_to_reference_transform.getRotation().getAxis().getZ())+"]";
+    ROS_WARN_STREAM(mesg);
+
+    mesg = "   traslation_reference_to_tool_transform: ["+
+            std::to_string(traslation_reference_to_tool_transform.getOrigin().getX())+","+
+            std::to_string(traslation_reference_to_tool_transform.getOrigin().getY())+","+
+            std::to_string(traslation_reference_to_tool_transform.getOrigin().getZ())+"] ["+
+            std::to_string(traslation_reference_to_tool_transform.getRotation().getAngle() * traslation_reference_to_tool_transform.getRotation().getAxis().getX())+","+
+            std::to_string(traslation_reference_to_tool_transform.getRotation().getAngle() * traslation_reference_to_tool_transform.getRotation().getAxis().getY())+","+
+            std::to_string(traslation_reference_to_tool_transform.getRotation().getAngle() * traslation_reference_to_tool_transform.getRotation().getAxis().getZ())+"]";
+    ROS_WARN_STREAM(mesg);
+
+    mesg = "   movement_transform: ["+
+            std::to_string(movement_transform.getOrigin().getX())+","+
+            std::to_string(movement_transform.getOrigin().getY())+","+
+            std::to_string(movement_transform.getOrigin().getZ())+"] ["+
+            std::to_string(movement_transform.getRotation().getAngle() * movement_transform.getRotation().getAxis().getX())+","+
+            std::to_string(movement_transform.getRotation().getAngle() * movement_transform.getRotation().getAxis().getY())+","+
+            std::to_string(movement_transform.getRotation().getAngle() * movement_transform.getRotation().getAxis().getZ())+"]";
+    ROS_WARN_STREAM(mesg);
+
+    mesg = "   rotation_reference_to_tool_transform: ["+
+            std::to_string(rotation_reference_to_tool_transform.getOrigin().getX())+","+
+            std::to_string(rotation_reference_to_tool_transform.getOrigin().getY())+","+
+            std::to_string(rotation_reference_to_tool_transform.getOrigin().getZ())+"] ["+
+            std::to_string(rotation_reference_to_tool_transform.getRotation().getAngle() * rotation_reference_to_tool_transform.getRotation().getAxis().getX())+","+
+            std::to_string(rotation_reference_to_tool_transform.getRotation().getAngle() * rotation_reference_to_tool_transform.getRotation().getAxis().getY())+","+
+            std::to_string(rotation_reference_to_tool_transform.getRotation().getAngle() * rotation_reference_to_tool_transform.getRotation().getAxis().getZ())+"]";
+    ROS_WARN_STREAM(mesg);
+
+    mesg = "   tool_to_closed_tip_trasform: ["+
+            std::to_string(tool_to_closed_tip_trasform.getOrigin().getX())+","+
+            std::to_string(tool_to_closed_tip_trasform.getOrigin().getY())+","+
+            std::to_string(tool_to_closed_tip_trasform.getOrigin().getZ())+"] ["+
+            std::to_string(tool_to_closed_tip_trasform.getRotation().getAngle() * tool_to_closed_tip_trasform.getRotation().getAxis().getX())+","+
+            std::to_string(tool_to_closed_tip_trasform.getRotation().getAngle() * tool_to_closed_tip_trasform.getRotation().getAxis().getY())+","+
+            std::to_string(tool_to_closed_tip_trasform.getRotation().getAngle() * tool_to_closed_tip_trasform.getRotation().getAxis().getZ())+"]";
+    ROS_WARN_STREAM(mesg);
+
     tf_br_.sendTransform( tf::StampedTransform(base_to_closed_tip_final_transform, ros::Time::now(), "base", "final_closed_tip") );
     tf_br_.sendTransform( tf::StampedTransform(base_to_tool_final_transform, ros::Time::now(), "base", "final_"+tool_frame) );
-
-    std::map<std::string,double> movel_params =
-    {
-        {"TRASX", base_to_closed_tip_final_transform.getOrigin().getX()},
-        {"TRASY", base_to_closed_tip_final_transform.getOrigin().getY()},
-        {"TRASZ", base_to_closed_tip_final_transform.getOrigin().getZ()},
-        {"ROTX",  base_to_closed_tip_final_transform.getRotation().getAngle() * base_to_closed_tip_final_transform.getRotation().getAxis().getX()},
-        {"ROTY",  base_to_closed_tip_final_transform.getRotation().getAngle() * base_to_closed_tip_final_transform.getRotation().getAxis().getY()},
-        {"ROTZ",  base_to_closed_tip_final_transform.getRotation().getAngle() * base_to_closed_tip_final_transform.getRotation().getAxis().getZ()},
-    };
 
     std::string message = "  set_standard_digital_out(7, True) \n  movel(p["+
             std::to_string(base_to_closed_tip_final_transform.getOrigin().getX())+","+
