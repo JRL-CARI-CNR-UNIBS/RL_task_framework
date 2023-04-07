@@ -2443,9 +2443,9 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
 
     std::string message = "set_standard_digital_out(7, True)\n";
 
-    for ( int i = 0; i < n_point+1; i++ )
+    if ( n_point == 1 )
     {
-        message = message + "movej(p["+
+        message = message + "movel(p["+
                 std::to_string(real_tool_poses_transform.at(i).getOrigin().getX())+","+
                 std::to_string(real_tool_poses_transform.at(i).getOrigin().getY())+","+
                 std::to_string(real_tool_poses_transform.at(i).getOrigin().getZ())+","+
@@ -2454,15 +2454,30 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
                 std::to_string(real_tool_poses_transform.at(i).getRotation().getAngle() * real_tool_poses_transform.at(i).getRotation().getAxis().getZ())+"], a="+
                 std::to_string(acceleration)+", v="+
                 std::to_string(velocity);
-        if ( i == 0 || i == n_point)
+    }
+    else
+    {
+        for ( int i = 0; i < n_point+1; i++ )
         {
-          message = message + ")\n";
-        }
-        else{
-          message = message + ", r=0.02)\n";
+            message = message + "movej(p["+
+                    std::to_string(real_tool_poses_transform.at(i).getOrigin().getX())+","+
+                    std::to_string(real_tool_poses_transform.at(i).getOrigin().getY())+","+
+                    std::to_string(real_tool_poses_transform.at(i).getOrigin().getZ())+","+
+                    std::to_string(real_tool_poses_transform.at(i).getRotation().getAngle() * real_tool_poses_transform.at(i).getRotation().getAxis().getX())+","+
+                    std::to_string(real_tool_poses_transform.at(i).getRotation().getAngle() * real_tool_poses_transform.at(i).getRotation().getAxis().getY())+","+
+                    std::to_string(real_tool_poses_transform.at(i).getRotation().getAngle() * real_tool_poses_transform.at(i).getRotation().getAxis().getZ())+"], a="+
+                    std::to_string(acceleration)+", v="+
+                    std::to_string(velocity);
+            if ( i == 0 || i == n_point)
+            {
+                message = message + ")\n";
+            }
+            else{
+                message = message + ", r=0.01)\n";
+            }
         }
     }
-        message = message + "set_standard_digital_out(7, False)";
+    message = message + "set_standard_digital_out(7, False)";
 
     ROS_GREEN_STREAM(message);
 
