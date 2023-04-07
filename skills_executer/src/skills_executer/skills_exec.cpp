@@ -2493,7 +2493,7 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
 
     for ( int i = 0; i < n_point+1; i++ )
     {
-        message = message + "movel(p["+
+        message = message + "movej(p["+
                 std::to_string(real_tool_poses_transform.at(i).getOrigin().getX())+","+
                 std::to_string(real_tool_poses_transform.at(i).getOrigin().getY())+","+
                 std::to_string(real_tool_poses_transform.at(i).getOrigin().getZ())+","+
@@ -2501,7 +2501,14 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
                 std::to_string(real_tool_poses_transform.at(i).getRotation().getAngle() * real_tool_poses_transform.at(i).getRotation().getAxis().getY())+","+
                 std::to_string(real_tool_poses_transform.at(i).getRotation().getAngle() * real_tool_poses_transform.at(i).getRotation().getAxis().getZ())+"], a="+
                 std::to_string(acceleration)+", v="+
-                std::to_string(velocity)+")\n";
+                std::to_string(velocity);
+        if ( i == 0 || i == n_point)
+        {
+          message = message + ")\n";
+        }
+        else{
+          message = message + ", r=0.02)\n";
+        }
     }
         message = message + "set_standard_digital_out(7, False)";
 
