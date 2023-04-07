@@ -1984,7 +1984,7 @@ int SkillsExec::three_circular_point_calculation(const std::string &action_name,
     {
         try
         {
-            tf_listener_.lookupTransform( "base", "closed_tip", ros::Time(0), pose0_in_base_transform);
+            tf_listener_.lookupTransform( "base", "real_tool", ros::Time(0), pose0_in_base_transform);
             ok = true;
         }
         catch (tf::TransformException ex){
@@ -2216,6 +2216,13 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
 
+    int n_point;
+    if (!getParam(action_name, skill_name, "n_point", n_point))
+    {
+        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/n_point is not set, default value: 1" );
+        n_point = 1;
+    }
+
     std::vector<double> traslation, rotation;
     tf::Vector3 tras;
     tf::Quaternion rot;
@@ -2249,7 +2256,20 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
     rot.setZ(rotation[2]);
     rot.setW(rotation[3]);
 
-    tf::StampedTransform base_to_reference_transform, reference_to_tool_transform, tool_to_closed_tip_trasform;
+    tf::Vector3 delta_tras = tras / n_point;
+    tf::Quaternion delta_rot;
+    double rot_x, rot_y, rot_z;
+    rot_x = rot.getAngle() * rot.getAxis().getX();
+    rot_y = rot.getAngle() * rot.getAxis().getY();
+    rot_z = rot.getAngle() * rot.getAxis().getZ();
+    ROS_GREEN_STREAM("Rot: ["<<rot_x<<","<<rot_y<<","<<rot_z<<"]");
+
+    if ( (rot_x != 0 && rot_y != 0) || (rot_x != 0 && rot_z != 0) || (rot_y != 0 && rot_z != 0) )
+    {
+        ROS_RED_STREAM("More than one rotation is different from 0");
+    }
+
+    tf::StampedTransform base_to_reference_transform, reference_to_tool_transform, tool_to_real_tool_trasform;
 
     try
     {
@@ -2271,13 +2291,14 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
     }
     try
     {
-        tf_listener_.lookupTransform( tool_frame, "closed_tip", ros::Time(0), tool_to_closed_tip_trasform);
+        tf_listener_.lookupTransform( tool_frame, "real_tool", ros::Time(0), tool_to_real_tool_trasform);
     }
     catch (tf::TransformException ex){
         ROS_ERROR("%s",ex.what());
         ros::Duration(1.0).sleep();
         return skills_executer_msgs::SkillExecutionResponse::Error;
     }
+
     tf::Vector3 null_vec;
     null_vec.setX(0);
     null_vec.setY(0);
@@ -2296,17 +2317,17 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
     rotation_reference_to_tool_transform.setOrigin(null_vec);
     rotation_reference_to_tool_transform.setRotation(reference_to_tool_transform.getRotation());
 
-    Eigen::Affine3d T_base_to_reference, T_traslation_ref_to_tool, T_movement, T_rotation_ref_to_tool, T_tool_to_closed_tip;
+    Eigen::Affine3d T_base_to_reference, T_traslation_ref_to_tool, T_movement, T_rotation_ref_to_tool, T_tool_to_real_tool;
     tf::transformTFToEigen(base_to_reference_transform, T_base_to_reference);
     tf::transformTFToEigen(traslation_reference_to_tool_transform, T_traslation_ref_to_tool);
     tf::transformTFToEigen(movement_transform, T_movement);
     tf::transformTFToEigen(rotation_reference_to_tool_transform, T_rotation_ref_to_tool);
-    tf::transformTFToEigen(tool_to_closed_tip_trasform, T_tool_to_closed_tip);
+    tf::transformTFToEigen(tool_to_real_tool_trasform, T_tool_to_real_tool);
 
-    Eigen::Affine3d T_base_to_closed_tip_final = T_base_to_reference * T_traslation_ref_to_tool * T_movement * T_rotation_ref_to_tool * T_tool_to_closed_tip;
+    Eigen::Affine3d T_base_to_real_tool_final = T_base_to_reference * T_traslation_ref_to_tool * T_movement * T_rotation_ref_to_tool * T_tool_to_real_tool;
     Eigen::Affine3d T_base_to_tool_final = T_base_to_reference * T_traslation_ref_to_tool * T_movement * T_rotation_ref_to_tool;
-    tf::StampedTransform base_to_closed_tip_final_transform;
-    tf::transformEigenToTF(T_base_to_closed_tip_final, base_to_closed_tip_final_transform);
+    tf::StampedTransform base_to_real_tool_final_transform;
+    tf::transformEigenToTF(T_base_to_real_tool_final, base_to_real_tool_final_transform);
     tf::StampedTransform base_to_tool_final_transform;
     tf::transformEigenToTF(T_base_to_tool_final, base_to_tool_final_transform);
 
@@ -2346,34 +2367,74 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
             std::to_string(rotation_reference_to_tool_transform.getRotation().getAngle() * rotation_reference_to_tool_transform.getRotation().getAxis().getZ())+"]";
     ROS_WARN_STREAM(mesg);
 
-    mesg = "   tool_to_closed_tip_trasform: ["+
-            std::to_string(tool_to_closed_tip_trasform.getOrigin().getX())+","+
-            std::to_string(tool_to_closed_tip_trasform.getOrigin().getY())+","+
-            std::to_string(tool_to_closed_tip_trasform.getOrigin().getZ())+"] ["+
-            std::to_string(tool_to_closed_tip_trasform.getRotation().getAngle() * tool_to_closed_tip_trasform.getRotation().getAxis().getX())+","+
-            std::to_string(tool_to_closed_tip_trasform.getRotation().getAngle() * tool_to_closed_tip_trasform.getRotation().getAxis().getY())+","+
-            std::to_string(tool_to_closed_tip_trasform.getRotation().getAngle() * tool_to_closed_tip_trasform.getRotation().getAxis().getZ())+"]";
+    mesg = "   tool_to_real_tool_trasform: ["+
+            std::to_string(tool_to_real_tool_trasform.getOrigin().getX())+","+
+            std::to_string(tool_to_real_tool_trasform.getOrigin().getY())+","+
+            std::to_string(tool_to_real_tool_trasform.getOrigin().getZ())+"] ["+
+            std::to_string(tool_to_real_tool_trasform.getRotation().getAngle() * tool_to_real_tool_trasform.getRotation().getAxis().getX())+","+
+            std::to_string(tool_to_real_tool_trasform.getRotation().getAngle() * tool_to_real_tool_trasform.getRotation().getAxis().getY())+","+
+            std::to_string(tool_to_real_tool_trasform.getRotation().getAngle() * tool_to_real_tool_trasform.getRotation().getAxis().getZ())+"]";
     ROS_WARN_STREAM(mesg);
 
-    tf_br_.sendTransform( tf::StampedTransform(base_to_closed_tip_final_transform, ros::Time::now(), "base", "final_closed_tip") );
+    tf_br_.sendTransform( tf::StampedTransform(base_to_real_tool_final_transform, ros::Time::now(), "base", "final_real_tool") );
     tf_br_.sendTransform( tf::StampedTransform(base_to_tool_final_transform, ros::Time::now(), "base", "final_"+tool_frame) );
 
-    std::string message = "set_standard_digital_out(7, False)\n";
+    std::string file_name = "ur_script.script";
+
+    std::string path = ros::package::getPath("robothon2023_tree");
+    path.append("/ur_script/");
+    path.append(file_name);
+
+    std::ifstream read_file;
+    read_file.open(path);
+    if (!read_file)
+    {
+        ROS_ERROR_STREAM("Unable to open file "<<path);
+        return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+    std::string line_text;
+    std::string full_text;
+    while (std::getline (read_file, line_text)) {
+        full_text.append(line_text);
+        full_text.append("\n");
+    }
+    ROS_GREEN_STREAM(full_text.c_str());
+
+    std::string message = "set_standard_digital_out(7, True)\n";
     message = message + "movel(p["+
-            std::to_string(base_to_closed_tip_final_transform.getOrigin().getX())+","+
-            std::to_string(base_to_closed_tip_final_transform.getOrigin().getY())+","+
-            std::to_string(base_to_closed_tip_final_transform.getOrigin().getZ())+","+
-            std::to_string(base_to_closed_tip_final_transform.getRotation().getAngle() * base_to_closed_tip_final_transform.getRotation().getAxis().getX())+","+
-            std::to_string(base_to_closed_tip_final_transform.getRotation().getAngle() * base_to_closed_tip_final_transform.getRotation().getAxis().getY())+","+
-            std::to_string(base_to_closed_tip_final_transform.getRotation().getAngle() * base_to_closed_tip_final_transform.getRotation().getAxis().getZ())+"], a="+
+            std::to_string(base_to_real_tool_final_transform.getOrigin().getX())+","+
+            std::to_string(base_to_real_tool_final_transform.getOrigin().getY())+","+
+            std::to_string(base_to_real_tool_final_transform.getOrigin().getZ())+","+
+            std::to_string(base_to_real_tool_final_transform.getRotation().getAngle() * base_to_real_tool_final_transform.getRotation().getAxis().getX())+","+
+            std::to_string(base_to_real_tool_final_transform.getRotation().getAngle() * base_to_real_tool_final_transform.getRotation().getAxis().getY())+","+
+            std::to_string(base_to_real_tool_final_transform.getRotation().getAngle() * base_to_real_tool_final_transform.getRotation().getAxis().getZ())+"], a="+
             std::to_string(acceleration)+", v="+
             std::to_string(velocity)+")\n";
-//    message = message + "set_standard_digital_out(7, True)";
+    message = message + "set_standard_digital_out(7, False)";
 
-    ROS_WARN_STREAM(message);
+    ROS_GREEN_STREAM(message);
+
+    std::size_t index1,index2;
+    std::string param_name = "SCRIPT";
+    index1 = full_text.find(param_name);
+    index2 = full_text.rfind(param_name);
+    if ( index1 != std::string::npos && index1 == index2 )
+    {
+        full_text.replace(index1, param_name.length(), message);
+    }
+    else if ( index1 == std::string::npos )
+    {
+        ROS_ERROR_STREAM("No param "<<param_name<<" in the script");
+        return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Multi params "<<param_name<<" in the script");
+        return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
 
     std_msgs::String str_msg;
-    str_msg.data = message;
+    str_msg.data = full_text;
 
     ur_script_command_pub_.publish(str_msg);
 

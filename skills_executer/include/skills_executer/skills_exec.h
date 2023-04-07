@@ -113,7 +113,7 @@ private:
     tf::TransformBroadcaster tf_br_;
     std::string param_ns_ = "RL_params";
     std::string end_link_frame_ = "flange";
-    std::string gripper_frame_ = "closed_tip";
+    std::string gripper_frame_ = "real_tool";
     std::string robot_name_ = "manipulator";
     std::string sensored_joint_ = "link6_to_flange";
     std::string attached_link_name_ = "gripper_base";
