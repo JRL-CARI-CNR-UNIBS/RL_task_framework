@@ -2264,9 +2264,15 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
     rot_z = rot.getAngle() * rot.getAxis().getZ();
     ROS_GREEN_STREAM("Rot: ["<<rot_x<<","<<rot_y<<","<<rot_z<<"]");
 
+    double delta_rot_x = rot_x / n_point;
+    double delta_rot_y = rot_y / n_point;
+    double delta_rot_z = rot_z / n_point;
+    delta_rot.setRPY(delta_rot_x,delta_rot_y,delta_rot_z);
+
     if ( (rot_x != 0 && rot_y != 0) || (rot_x != 0 && rot_z != 0) || (rot_y != 0 && rot_z != 0) )
     {
         ROS_RED_STREAM("More than one rotation is different from 0");
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
 
     tf::StampedTransform base_to_reference_transform, reference_to_tool_transform, tool_to_real_tool_trasform;
@@ -2308,12 +2314,15 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
     null_quat.setY(0);
     null_quat.setZ(0);
     null_quat.setW(1);
+    tf::StampedTransform variable_trasform;
 
     tf::StampedTransform traslation_reference_to_tool_transform, movement_transform, rotation_reference_to_tool_transform;
     traslation_reference_to_tool_transform.setOrigin(reference_to_tool_transform.getOrigin());
     traslation_reference_to_tool_transform.setRotation(null_quat);
-    movement_transform.setOrigin(tras);
-    movement_transform.setRotation(rot);
+//    movement_transform.setOrigin(tras);
+//    movement_transform.setRotation(rot);
+    movement_transform.setOrigin(delta_tras);
+    movement_transform.setRotation(delta_rot);
     rotation_reference_to_tool_transform.setOrigin(null_vec);
     rotation_reference_to_tool_transform.setRotation(reference_to_tool_transform.getRotation());
 
@@ -2324,60 +2333,140 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
     tf::transformTFToEigen(rotation_reference_to_tool_transform, T_rotation_ref_to_tool);
     tf::transformTFToEigen(tool_to_real_tool_trasform, T_tool_to_real_tool);
 
-    Eigen::Affine3d T_base_to_real_tool_final = T_base_to_reference * T_traslation_ref_to_tool * T_movement * T_rotation_ref_to_tool * T_tool_to_real_tool;
-    Eigen::Affine3d T_base_to_tool_final = T_base_to_reference * T_traslation_ref_to_tool * T_movement * T_rotation_ref_to_tool;
-    tf::StampedTransform base_to_real_tool_final_transform;
-    tf::transformEigenToTF(T_base_to_real_tool_final, base_to_real_tool_final_transform);
-    tf::StampedTransform base_to_tool_final_transform;
-    tf::transformEigenToTF(T_base_to_tool_final, base_to_tool_final_transform);
+    std::vector<Eigen::Affine3d> T_base_parallel_tool_poses, T_tool_poses, T_real_tool_poses;
+    std::vector<tf::StampedTransform> base_parallel_tool_poses_transform, tool_poses_transform, real_tool_poses_transform;
 
-    std::string mesg = "   base_to_reference_transform: ["+
-            std::to_string(base_to_reference_transform.getOrigin().getX())+","+
-            std::to_string(base_to_reference_transform.getOrigin().getY())+","+
-            std::to_string(base_to_reference_transform.getOrigin().getZ())+"] ["+
-            std::to_string(base_to_reference_transform.getRotation().getAngle() * base_to_reference_transform.getRotation().getAxis().getX())+","+
-            std::to_string(base_to_reference_transform.getRotation().getAngle() * base_to_reference_transform.getRotation().getAxis().getY())+","+
-            std::to_string(base_to_reference_transform.getRotation().getAngle() * base_to_reference_transform.getRotation().getAxis().getZ())+"]";
-    ROS_WARN_STREAM(mesg);
+    T_base_parallel_tool_poses.push_back(T_base_to_reference * T_traslation_ref_to_tool);
+    T_tool_poses.push_back(T_base_parallel_tool_poses.back() * T_rotation_ref_to_tool);
+    T_real_tool_poses.push_back(T_tool_poses.back() * T_tool_to_real_tool);
+    tf::transformEigenToTF(T_base_parallel_tool_poses.back(), variable_trasform);
+    base_parallel_tool_poses_transform.push_back(variable_trasform);
+    tf::transformEigenToTF(T_tool_poses.back(), variable_trasform);
+    tool_poses_transform.push_back(variable_trasform);
+    tf::transformEigenToTF(T_real_tool_poses.back(), variable_trasform);
+    real_tool_poses_transform.push_back(variable_trasform);
+    std::string mesg = "   base_parallel_tool_poses_transform_: ["+
+            std::to_string(base_parallel_tool_poses_transform.back().getOrigin().getX())+","+
+            std::to_string(base_parallel_tool_poses_transform.back().getOrigin().getY())+","+
+            std::to_string(base_parallel_tool_poses_transform.back().getOrigin().getZ())+"] ["+
+            std::to_string(base_parallel_tool_poses_transform.back().getRotation().getAngle() * base_parallel_tool_poses_transform.back().getRotation().getAxis().getX())+","+
+            std::to_string(base_parallel_tool_poses_transform.back().getRotation().getAngle() * base_parallel_tool_poses_transform.back().getRotation().getAxis().getY())+","+
+            std::to_string(base_parallel_tool_poses_transform.back().getRotation().getAngle() * base_parallel_tool_poses_transform.back().getRotation().getAxis().getZ())+"]";
+    ROS_GREEN_STREAM(mesg);
+    mesg = "   tool_poses_transform_: ["+
+            std::to_string(tool_poses_transform.back().getOrigin().getX())+","+
+            std::to_string(tool_poses_transform.back().getOrigin().getY())+","+
+            std::to_string(tool_poses_transform.back().getOrigin().getZ())+"] ["+
+            std::to_string(tool_poses_transform.back().getRotation().getAngle() * tool_poses_transform.back().getRotation().getAxis().getX())+","+
+            std::to_string(tool_poses_transform.back().getRotation().getAngle() * tool_poses_transform.back().getRotation().getAxis().getY())+","+
+            std::to_string(tool_poses_transform.back().getRotation().getAngle() * tool_poses_transform.back().getRotation().getAxis().getZ())+"]";
+    ROS_GREEN_STREAM(mesg);
+    mesg = "   real_tool_poses_transform_: ["+
+            std::to_string(real_tool_poses_transform.back().getOrigin().getX())+","+
+            std::to_string(real_tool_poses_transform.back().getOrigin().getY())+","+
+            std::to_string(real_tool_poses_transform.back().getOrigin().getZ())+"] ["+
+            std::to_string(real_tool_poses_transform.back().getRotation().getAngle() * real_tool_poses_transform.back().getRotation().getAxis().getX())+","+
+            std::to_string(real_tool_poses_transform.back().getRotation().getAngle() * real_tool_poses_transform.back().getRotation().getAxis().getY())+","+
+            std::to_string(real_tool_poses_transform.back().getRotation().getAngle() * real_tool_poses_transform.back().getRotation().getAxis().getZ())+"]";
+    ROS_GREEN_STREAM(mesg);
 
-    mesg = "   traslation_reference_to_tool_transform: ["+
-            std::to_string(traslation_reference_to_tool_transform.getOrigin().getX())+","+
-            std::to_string(traslation_reference_to_tool_transform.getOrigin().getY())+","+
-            std::to_string(traslation_reference_to_tool_transform.getOrigin().getZ())+"] ["+
-            std::to_string(traslation_reference_to_tool_transform.getRotation().getAngle() * traslation_reference_to_tool_transform.getRotation().getAxis().getX())+","+
-            std::to_string(traslation_reference_to_tool_transform.getRotation().getAngle() * traslation_reference_to_tool_transform.getRotation().getAxis().getY())+","+
-            std::to_string(traslation_reference_to_tool_transform.getRotation().getAngle() * traslation_reference_to_tool_transform.getRotation().getAxis().getZ())+"]";
-    ROS_WARN_STREAM(mesg);
+    for ( int i = 0; i < n_point; i++ )
+    {
+        T_base_parallel_tool_poses.push_back(T_base_parallel_tool_poses.back() * T_movement);
+        T_tool_poses.push_back(T_base_parallel_tool_poses.back() * T_rotation_ref_to_tool);
+        T_real_tool_poses.push_back(T_tool_poses.back() * T_tool_to_real_tool);
+        tf::transformEigenToTF(T_base_parallel_tool_poses.back(), variable_trasform);
+        base_parallel_tool_poses_transform.push_back(variable_trasform);
+        tf::transformEigenToTF(T_tool_poses.back(), variable_trasform);
+        tool_poses_transform.push_back(variable_trasform);
+        tf::transformEigenToTF(T_real_tool_poses.back(), variable_trasform);
+        real_tool_poses_transform.push_back(variable_trasform);
 
-    mesg = "   movement_transform: ["+
-            std::to_string(movement_transform.getOrigin().getX())+","+
-            std::to_string(movement_transform.getOrigin().getY())+","+
-            std::to_string(movement_transform.getOrigin().getZ())+"] ["+
-            std::to_string(movement_transform.getRotation().getAngle() * movement_transform.getRotation().getAxis().getX())+","+
-            std::to_string(movement_transform.getRotation().getAngle() * movement_transform.getRotation().getAxis().getY())+","+
-            std::to_string(movement_transform.getRotation().getAngle() * movement_transform.getRotation().getAxis().getZ())+"]";
-    ROS_WARN_STREAM(mesg);
+        std::string mesg = "   base_parallel_tool_poses_transform"+std::to_string(i)+": ["+
+                std::to_string(base_parallel_tool_poses_transform.back().getOrigin().getX())+","+
+                std::to_string(base_parallel_tool_poses_transform.back().getOrigin().getY())+","+
+                std::to_string(base_parallel_tool_poses_transform.back().getOrigin().getZ())+"] ["+
+                std::to_string(base_parallel_tool_poses_transform.back().getRotation().getAngle() * base_parallel_tool_poses_transform.back().getRotation().getAxis().getX())+","+
+                std::to_string(base_parallel_tool_poses_transform.back().getRotation().getAngle() * base_parallel_tool_poses_transform.back().getRotation().getAxis().getY())+","+
+                std::to_string(base_parallel_tool_poses_transform.back().getRotation().getAngle() * base_parallel_tool_poses_transform.back().getRotation().getAxis().getZ())+"]";
+        ROS_GREEN_STREAM(mesg);
+        mesg = "   tool_poses_transform"+std::to_string(i)+": ["+
+                std::to_string(tool_poses_transform.back().getOrigin().getX())+","+
+                std::to_string(tool_poses_transform.back().getOrigin().getY())+","+
+                std::to_string(tool_poses_transform.back().getOrigin().getZ())+"] ["+
+                std::to_string(tool_poses_transform.back().getRotation().getAngle() * tool_poses_transform.back().getRotation().getAxis().getX())+","+
+                std::to_string(tool_poses_transform.back().getRotation().getAngle() * tool_poses_transform.back().getRotation().getAxis().getY())+","+
+                std::to_string(tool_poses_transform.back().getRotation().getAngle() * tool_poses_transform.back().getRotation().getAxis().getZ())+"]";
+        ROS_GREEN_STREAM(mesg);
+        mesg = "   real_tool_poses_transform"+std::to_string(i)+": ["+
+                std::to_string(real_tool_poses_transform.back().getOrigin().getX())+","+
+                std::to_string(real_tool_poses_transform.back().getOrigin().getY())+","+
+                std::to_string(real_tool_poses_transform.back().getOrigin().getZ())+"] ["+
+                std::to_string(real_tool_poses_transform.back().getRotation().getAngle() * real_tool_poses_transform.back().getRotation().getAxis().getX())+","+
+                std::to_string(real_tool_poses_transform.back().getRotation().getAngle() * real_tool_poses_transform.back().getRotation().getAxis().getY())+","+
+                std::to_string(real_tool_poses_transform.back().getRotation().getAngle() * real_tool_poses_transform.back().getRotation().getAxis().getZ())+"]";
+        ROS_GREEN_STREAM(mesg);
 
-    mesg = "   rotation_reference_to_tool_transform: ["+
-            std::to_string(rotation_reference_to_tool_transform.getOrigin().getX())+","+
-            std::to_string(rotation_reference_to_tool_transform.getOrigin().getY())+","+
-            std::to_string(rotation_reference_to_tool_transform.getOrigin().getZ())+"] ["+
-            std::to_string(rotation_reference_to_tool_transform.getRotation().getAngle() * rotation_reference_to_tool_transform.getRotation().getAxis().getX())+","+
-            std::to_string(rotation_reference_to_tool_transform.getRotation().getAngle() * rotation_reference_to_tool_transform.getRotation().getAxis().getY())+","+
-            std::to_string(rotation_reference_to_tool_transform.getRotation().getAngle() * rotation_reference_to_tool_transform.getRotation().getAxis().getZ())+"]";
-    ROS_WARN_STREAM(mesg);
 
-    mesg = "   tool_to_real_tool_trasform: ["+
-            std::to_string(tool_to_real_tool_trasform.getOrigin().getX())+","+
-            std::to_string(tool_to_real_tool_trasform.getOrigin().getY())+","+
-            std::to_string(tool_to_real_tool_trasform.getOrigin().getZ())+"] ["+
-            std::to_string(tool_to_real_tool_trasform.getRotation().getAngle() * tool_to_real_tool_trasform.getRotation().getAxis().getX())+","+
-            std::to_string(tool_to_real_tool_trasform.getRotation().getAngle() * tool_to_real_tool_trasform.getRotation().getAxis().getY())+","+
-            std::to_string(tool_to_real_tool_trasform.getRotation().getAngle() * tool_to_real_tool_trasform.getRotation().getAxis().getZ())+"]";
-    ROS_WARN_STREAM(mesg);
+        tf_br_.sendTransform( tf::StampedTransform(tool_poses_transform.back(), ros::Time::now(), "base", "tool_n_"+std::to_string(i)) );
+        tf_br_.sendTransform( tf::StampedTransform(real_tool_poses_transform.back(), ros::Time::now(), "base", "real_tool_n_"+std::to_string(i)) );
+    }
 
-    tf_br_.sendTransform( tf::StampedTransform(base_to_real_tool_final_transform, ros::Time::now(), "base", "final_real_tool") );
-    tf_br_.sendTransform( tf::StampedTransform(base_to_tool_final_transform, ros::Time::now(), "base", "final_"+tool_frame) );
+
+//    Eigen::Affine3d T_base_to_real_tool_final = T_base_to_reference * T_traslation_ref_to_tool * T_movement * T_rotation_ref_to_tool * T_tool_to_real_tool;
+//    Eigen::Affine3d T_base_to_tool_final = T_base_to_reference * T_traslation_ref_to_tool * T_movement * T_rotation_ref_to_tool;
+//    tf::StampedTransform base_to_real_tool_final_transform;
+//    tf::transformEigenToTF(T_base_to_real_tool_final, base_to_real_tool_final_transform);
+//    tf::StampedTransform base_to_tool_final_transform;
+//    tf::transformEigenToTF(T_base_to_tool_final, base_to_tool_final_transform);
+
+//    std::string mesg = "   base_to_reference_transform: ["+
+//            std::to_string(base_to_reference_transform.getOrigin().getX())+","+
+//            std::to_string(base_to_reference_transform.getOrigin().getY())+","+
+//            std::to_string(base_to_reference_transform.getOrigin().getZ())+"] ["+
+//            std::to_string(base_to_reference_transform.getRotation().getAngle() * base_to_reference_transform.getRotation().getAxis().getX())+","+
+//            std::to_string(base_to_reference_transform.getRotation().getAngle() * base_to_reference_transform.getRotation().getAxis().getY())+","+
+//            std::to_string(base_to_reference_transform.getRotation().getAngle() * base_to_reference_transform.getRotation().getAxis().getZ())+"]";
+//    ROS_WARN_STREAM(mesg);
+
+//    mesg = "   traslation_reference_to_tool_transform: ["+
+//            std::to_string(traslation_reference_to_tool_transform.getOrigin().getX())+","+
+//            std::to_string(traslation_reference_to_tool_transform.getOrigin().getY())+","+
+//            std::to_string(traslation_reference_to_tool_transform.getOrigin().getZ())+"] ["+
+//            std::to_string(traslation_reference_to_tool_transform.getRotation().getAngle() * traslation_reference_to_tool_transform.getRotation().getAxis().getX())+","+
+//            std::to_string(traslation_reference_to_tool_transform.getRotation().getAngle() * traslation_reference_to_tool_transform.getRotation().getAxis().getY())+","+
+//            std::to_string(traslation_reference_to_tool_transform.getRotation().getAngle() * traslation_reference_to_tool_transform.getRotation().getAxis().getZ())+"]";
+//    ROS_WARN_STREAM(mesg);
+
+//    mesg = "   movement_transform: ["+
+//            std::to_string(movement_transform.getOrigin().getX())+","+
+//            std::to_string(movement_transform.getOrigin().getY())+","+
+//            std::to_string(movement_transform.getOrigin().getZ())+"] ["+
+//            std::to_string(movement_transform.getRotation().getAngle() * movement_transform.getRotation().getAxis().getX())+","+
+//            std::to_string(movement_transform.getRotation().getAngle() * movement_transform.getRotation().getAxis().getY())+","+
+//            std::to_string(movement_transform.getRotation().getAngle() * movement_transform.getRotation().getAxis().getZ())+"]";
+//    ROS_WARN_STREAM(mesg);
+
+//    mesg = "   rotation_reference_to_tool_transform: ["+
+//            std::to_string(rotation_reference_to_tool_transform.getOrigin().getX())+","+
+//            std::to_string(rotation_reference_to_tool_transform.getOrigin().getY())+","+
+//            std::to_string(rotation_reference_to_tool_transform.getOrigin().getZ())+"] ["+
+//            std::to_string(rotation_reference_to_tool_transform.getRotation().getAngle() * rotation_reference_to_tool_transform.getRotation().getAxis().getX())+","+
+//            std::to_string(rotation_reference_to_tool_transform.getRotation().getAngle() * rotation_reference_to_tool_transform.getRotation().getAxis().getY())+","+
+//            std::to_string(rotation_reference_to_tool_transform.getRotation().getAngle() * rotation_reference_to_tool_transform.getRotation().getAxis().getZ())+"]";
+//    ROS_WARN_STREAM(mesg);
+
+//    mesg = "   tool_to_real_tool_trasform: ["+
+//            std::to_string(tool_to_real_tool_trasform.getOrigin().getX())+","+
+//            std::to_string(tool_to_real_tool_trasform.getOrigin().getY())+","+
+//            std::to_string(tool_to_real_tool_trasform.getOrigin().getZ())+"] ["+
+//            std::to_string(tool_to_real_tool_trasform.getRotation().getAngle() * tool_to_real_tool_trasform.getRotation().getAxis().getX())+","+
+//            std::to_string(tool_to_real_tool_trasform.getRotation().getAngle() * tool_to_real_tool_trasform.getRotation().getAxis().getY())+","+
+//            std::to_string(tool_to_real_tool_trasform.getRotation().getAngle() * tool_to_real_tool_trasform.getRotation().getAxis().getZ())+"]";
+//    ROS_WARN_STREAM(mesg);
+
+//    tf_br_.sendTransform( tf::StampedTransform(base_to_real_tool_final_transform, ros::Time::now(), "base", "final_real_tool") );
+//    tf_br_.sendTransform( tf::StampedTransform(base_to_tool_final_transform, ros::Time::now(), "base", "final_"+tool_frame) );
 
     std::string file_name = "ur_script.script";
 
@@ -2401,16 +2490,20 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
     ROS_GREEN_STREAM(full_text.c_str());
 
     std::string message = "set_standard_digital_out(7, True)\n";
-    message = message + "movel(p["+
-            std::to_string(base_to_real_tool_final_transform.getOrigin().getX())+","+
-            std::to_string(base_to_real_tool_final_transform.getOrigin().getY())+","+
-            std::to_string(base_to_real_tool_final_transform.getOrigin().getZ())+","+
-            std::to_string(base_to_real_tool_final_transform.getRotation().getAngle() * base_to_real_tool_final_transform.getRotation().getAxis().getX())+","+
-            std::to_string(base_to_real_tool_final_transform.getRotation().getAngle() * base_to_real_tool_final_transform.getRotation().getAxis().getY())+","+
-            std::to_string(base_to_real_tool_final_transform.getRotation().getAngle() * base_to_real_tool_final_transform.getRotation().getAxis().getZ())+"], a="+
-            std::to_string(acceleration)+", v="+
-            std::to_string(velocity)+")\n";
-    message = message + "set_standard_digital_out(7, False)";
+
+    for ( int i = 0; i < n_point+1; i++ )
+    {
+        message = message + "movel(p["+
+                std::to_string(real_tool_poses_transform.at(i).getOrigin().getX())+","+
+                std::to_string(real_tool_poses_transform.at(i).getOrigin().getY())+","+
+                std::to_string(real_tool_poses_transform.at(i).getOrigin().getZ())+","+
+                std::to_string(real_tool_poses_transform.at(i).getRotation().getAngle() * real_tool_poses_transform.at(i).getRotation().getAxis().getX())+","+
+                std::to_string(real_tool_poses_transform.at(i).getRotation().getAngle() * real_tool_poses_transform.at(i).getRotation().getAxis().getY())+","+
+                std::to_string(real_tool_poses_transform.at(i).getRotation().getAngle() * real_tool_poses_transform.at(i).getRotation().getAxis().getZ())+"], a="+
+                std::to_string(acceleration)+", v="+
+                std::to_string(velocity)+")\n";
+    }
+        message = message + "set_standard_digital_out(7, False)";
 
     ROS_GREEN_STREAM(message);
 
