@@ -2358,7 +2358,8 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
     tf_br_.sendTransform( tf::StampedTransform(base_to_closed_tip_final_transform, ros::Time::now(), "base", "final_closed_tip") );
     tf_br_.sendTransform( tf::StampedTransform(base_to_tool_final_transform, ros::Time::now(), "base", "final_"+tool_frame) );
 
-    std::string message = "  set_standard_digital_out(7, True) \n  movel(p["+
+    std::string message = "set_standard_digital_out(7, False)\n";
+    message = message + "movel(p["+
             std::to_string(base_to_closed_tip_final_transform.getOrigin().getX())+","+
             std::to_string(base_to_closed_tip_final_transform.getOrigin().getY())+","+
             std::to_string(base_to_closed_tip_final_transform.getOrigin().getZ())+","+
@@ -2366,7 +2367,8 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
             std::to_string(base_to_closed_tip_final_transform.getRotation().getAngle() * base_to_closed_tip_final_transform.getRotation().getAxis().getY())+","+
             std::to_string(base_to_closed_tip_final_transform.getRotation().getAngle() * base_to_closed_tip_final_transform.getRotation().getAxis().getZ())+"], a="+
             std::to_string(acceleration)+", v="+
-            std::to_string(velocity)+") \n  set_standard_digital_out(7, False)";
+            std::to_string(velocity)+")\n";
+//    message = message + "set_standard_digital_out(7, True)";
 
     ROS_WARN_STREAM(message);
 
