@@ -204,8 +204,11 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     else if( !skill_type.compare(ur_circula_point_type_) ) {
         res.result = three_circular_point_calculation(req.action_name, req.skill_name);
     }
-    else if( !skill_type.compare(ur_movel_type_) ) {
-        res.result = ur_movel(req.action_name, req.skill_name);
+    else if( !skill_type.compare(ur_linear_move_type_) ) {
+        res.result = ur_linear_move(req.action_name, req.skill_name);
+    }
+    else if( !skill_type.compare(ur_move_to_type_) ) {
+        res.result = ur_move_to(req.action_name, req.skill_name);
     }
     else
     {
@@ -2192,9 +2195,8 @@ int SkillsExec::urScriptCommandExample(const std::string &action_name, const std
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
-int SkillsExec::ur_movel(const std::string &action_name, const std::string &skill_name)
+int SkillsExec::ur_linear_move(const std::string &action_name, const std::string &skill_name)
 {
-    changeConfig("watch");
     ros_helper::SubscriptionNotifier<ur_msgs::IOStates> io_state_sub(n_, "/ur10e_hw/io_states", 10);
 
 //    stop current ur program
@@ -2559,9 +2561,176 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
-int SkillsExec::ur_script_movej(const std::string &action_name, const std::string &skill_name)
+int SkillsExec::ur_move_to(const std::string &action_name, const std::string &skill_name)
 {
+    ros_helper::SubscriptionNotifier<ur_msgs::IOStates> io_state_sub(n_, "/ur10e_hw/io_states", 10);
+
+//    stop current ur program
+    std_srvs::Trigger stop_program_msg;
+    ur_program_stop_clnt_.call(stop_program_msg);
+
+    ROS_GREEN_STREAM("Waiting for stop current program");
+    ur_dashboard_msgs::GetProgramState program_state_msg;
+    while (true)
+    {
+      ur_program_state_clnt_.call(program_state_msg);
+      if (program_state_msg.response.state.state == "STOPPED")
+      {
+        break;
+      }
+      ros::Duration(0.01).sleep();
+    }
+    ROS_GREEN_STREAM("Start movel");
+
+
+    std::string goal_frame, tool_frame;
+    if (!getParam(action_name, skill_name, "goal_frame", goal_frame))
+    {
+        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/goal_frame is not set" );
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+    if (!getParam(action_name, skill_name, "tool_frame", tool_frame))
+    {
+        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/tool_frame is not set" );
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+
+    double velocity, acceleration;
+    if (!getParam(action_name, skill_name, "velocity", velocity))
+    {
+        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/velocity is not set" );
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+    if (!getParam(action_name, skill_name, "acceleration", acceleration))
+    {
+        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/acceleration is not set" );
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+
+    tf::StampedTransform base_to_goal_frame_transform, tool_frame_to_real_tool_transform, base_to_real_tool_goal_frame_transform;
+
+    try
+    {
+        tf_listener_.lookupTransform( "base", goal_frame, ros::Time(0), base_to_goal_frame_transform);
+    }
+    catch (tf::TransformException ex){
+        ROS_ERROR("%s",ex.what());
+        ros::Duration(1.0).sleep();
+        return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+    try
+    {
+        tf_listener_.lookupTransform( goal_frame, "real_tool", ros::Time(0), tool_frame_to_real_tool_transform);
+    }
+    catch (tf::TransformException ex){
+        ROS_ERROR("%s",ex.what());
+        ros::Duration(1.0).sleep();
+        return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+
+    Eigen::Affine3d T_base_to_goal_frame, T_tool_frame_to_real_tool, T_base_to_real_tool_goal_frame;
+    tf::transformTFToEigen(base_to_goal_frame_transform, T_base_to_goal_frame);
+    tf::transformTFToEigen(tool_frame_to_real_tool_transform, T_tool_frame_to_real_tool);
+    T_base_to_real_tool_goal_frame = T_base_to_goal_frame * T_tool_frame_to_real_tool;
+    tf::transformEigenToTF(T_base_to_real_tool_goal_frame, base_to_real_tool_goal_frame_transform);
+
+    std::string message = "set_standard_digital_out(7, True)\n";
+    message = message + "movej(p["+
+            std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getX())+","+
+            std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getY())+","+
+            std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getZ())+","+
+            std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getX())+","+
+            std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getY())+","+
+            std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getZ())+"], a="+
+            std::to_string(acceleration)+", v="+
+            std::to_string(velocity)+ ")\n";
+    message = message + "set_standard_digital_out(7, False)";
+
+    ROS_GREEN_STREAM(message);
+
+    if( !fill_the_script(message) )
+    {
+        return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+    ROS_CYAN_STREAM(message);
+
+    std_msgs::String str_msg;
+    str_msg.data = message;
+
+    ur_script_command_pub_.publish(str_msg);
+
+    ROS_RED_STREAM("Waiting script start");
+    while (true)
+    {
+      if (io_state_sub.isANewDataAvailable())
+      {
+        if (io_state_sub.getData().digital_out_states[7].state)
+        {
+          break;
+        }
+      }
+      ros::Duration(0.001).sleep();
+    }
+
+    ROS_RED_STREAM("Waiting script end");
+    while (true)
+    {
+      if (io_state_sub.isANewDataAvailable())
+      {
+        if (!io_state_sub.getData().digital_out_states[7].state)
+        {
+          break;
+        }
+      }
+      ros::Duration(0.001).sleep();
+    }
+
+    return skills_executer_msgs::SkillExecutionResponse::Success;
 
 }
 
+bool SkillsExec::fill_the_script(std::string &script_string)
+{
+    std::string line_text, full_text;
+    std::size_t index1,index2;
+    std::string param_name = "SCRIPT";
+    std::string file_name = "ur_script.script";
+    std::string path = ros::package::getPath("robothon2023_tree");
+    path.append("/ur_script/");
+    path.append(file_name);
+
+    std::ifstream read_file;
+
+    read_file.open(path);
+    if (!read_file)
+    {
+        ROS_ERROR_STREAM("Unable to open file "<<path);
+        return false;
+    }
+
+    while (std::getline (read_file, line_text)) {
+        full_text.append(line_text);
+        full_text.append("\n");
+    }
+    ROS_GREEN_STREAM(full_text.c_str());
+
+    index1 = full_text.find(param_name);
+    index2 = full_text.rfind(param_name);
+    if ( index1 != std::string::npos && index1 == index2 )
+    {
+        full_text.replace(index1, param_name.length(), script_string);
+    }
+    else if ( index1 == std::string::npos )
+    {
+        ROS_ERROR_STREAM("No param "<<param_name<<" in the script");
+        return false;
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Multi params "<<param_name<<" in the script");
+        return false;
+    }
+    script_string = full_text;
+    return true;
+}
 } // end namespace skills_executer
