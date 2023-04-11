@@ -8,18 +8,18 @@ SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
     twist_pub_ = n_.advertise<geometry_msgs::TwistStamped>("/target_cart_twist",1);
     ur_script_command_pub_ = n_.advertise<std_msgs::String>("/ur10e_hw/script_command",10);
 
-//    ur_program_stop_clnt_ = n_.serviceClient<std_srvs::Trigger>("/ur10e_hw/dashboard/stop");
-//    ROS_YELLOW_STREAM("Waiting for "<<ur_program_stop_clnt_.getService());
-//    ur_program_stop_clnt_.waitForExistence();
-//    ROS_YELLOW_STREAM("Connection ok");
-//    ur_program_start_clnt_ = n_.serviceClient<std_srvs::Trigger>("/ur10e_hw/dashboard/play");
-//    ROS_YELLOW_STREAM("Waiting for "<<ur_program_start_clnt_.getService());
-//    ur_program_start_clnt_.waitForExistence();
-//    ROS_YELLOW_STREAM("Connection ok");
-//    ur_program_state_clnt_ = n_.serviceClient<ur_dashboard_msgs::GetProgramState>("/ur10e_hw/dashboard/program_state");
-//    ROS_YELLOW_STREAM("Waiting for "<<ur_program_state_clnt_.getService());
-//    ur_program_state_clnt_.waitForExistence();
-//    ROS_YELLOW_STREAM("Connection ok");
+    ur_program_stop_clnt_ = n_.serviceClient<std_srvs::Trigger>("/ur10e_hw/dashboard/stop");
+    ROS_YELLOW_STREAM("Waiting for "<<ur_program_stop_clnt_.getService());
+    ur_program_stop_clnt_.waitForExistence();
+    ROS_YELLOW_STREAM("Connection ok");
+    ur_program_start_clnt_ = n_.serviceClient<std_srvs::Trigger>("/ur10e_hw/dashboard/play");
+    ROS_YELLOW_STREAM("Waiting for "<<ur_program_start_clnt_.getService());
+    ur_program_start_clnt_.waitForExistence();
+    ROS_YELLOW_STREAM("Connection ok");
+    ur_program_state_clnt_ = n_.serviceClient<ur_dashboard_msgs::GetProgramState>("/ur10e_hw/dashboard/program_state");
+    ROS_YELLOW_STREAM("Waiting for "<<ur_program_state_clnt_.getService());
+    ur_program_state_clnt_.waitForExistence();
+    ROS_YELLOW_STREAM("Connection ok");
 
 
     std::string wrench_topic = "/ur_10/wrench";
@@ -1590,6 +1590,10 @@ bool SkillsExec::changeConfig(std::string config_name)
     start_config_srv.request.start_configuration = config_name;
     start_config_srv.request.strictness = 1;
 
+    ROS_YELLOW_STREAM("Waiting for "<<start_config_clnt_.getService());
+    start_config_clnt_.waitForExistence();
+    ROS_YELLOW_STREAM("Connection ok");
+
     if (!start_config_clnt_.call(start_config_srv))
     {
       ROS_ERROR("Unable to call %s service to set controller %s",start_config_clnt_.getService().c_str(),config_name.c_str());
@@ -1731,6 +1735,25 @@ void SkillsExec::gripper_feedback()
 int SkillsExec::joint_move_to(const std::string &action_name, const std::string &skill_name)
 {
     ROS_WHITE_STREAM("In joint_move_to");
+
+    //    start current ur program
+    std_srvs::Trigger start_program_msg;
+    ur_dashboard_msgs::GetProgramState program_state_msg;
+    ur_program_start_clnt_.call(start_program_msg);
+
+    ROS_GREEN_STREAM("Waiting for start current program");
+    while (true)
+    {
+        ur_program_state_clnt_.call(program_state_msg);
+        if (program_state_msg.response.state.state == "PLAYING")
+        {
+            break;
+        }
+        ros::Duration(0.01).sleep();
+        ur_program_start_clnt_.call(start_program_msg);
+    }
+
+
     if ( !changeConfig("trajectory_tracking") )
     {
         ROS_RED_STREAM("Problem with configuration manager");
@@ -2175,21 +2198,21 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
     ros_helper::SubscriptionNotifier<ur_msgs::IOStates> io_state_sub(n_, "/ur10e_hw/io_states", 10);
 
 //    stop current ur program
-//    std_srvs::Trigger stop_program_msg;
-//    ur_program_stop_clnt_.call(stop_program_msg);
+    std_srvs::Trigger stop_program_msg;
+    ur_program_stop_clnt_.call(stop_program_msg);
 
-//    ROS_GREEN_STREAM("Waiting for stop current program");
-//    ur_dashboard_msgs::GetProgramState program_state_msg;
-//    while (true)
-//    {
-//      ur_program_state_clnt_.call(program_state_msg);
-//      if (program_state_msg.response.state.state == "STOPPED")
-//      {
-//        break;
-//      }
-//      ros::Duration(0.01).sleep();
-//    }
-//    ROS_GREEN_STREAM("Start movel");
+    ROS_GREEN_STREAM("Waiting for stop current program");
+    ur_dashboard_msgs::GetProgramState program_state_msg;
+    while (true)
+    {
+      ur_program_state_clnt_.call(program_state_msg);
+      if (program_state_msg.response.state.state == "STOPPED")
+      {
+        break;
+      }
+      ros::Duration(0.01).sleep();
+    }
+    ROS_GREEN_STREAM("Start movel");
 
 
     std::string reference_frame, tool_frame;
@@ -2418,8 +2441,6 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
         tf_br_.sendTransform( tf::StampedTransform(real_tool_poses_transform.back(), ros::Time::now(), "base", "real_tool_n_"+std::to_string(i)) );
     }
 
-
-
     std::string file_name = "ur_script.script";
 
     std::string path = ros::package::getPath("robothon2023_tree");
@@ -2445,15 +2466,19 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
 
     if ( n_point == 1 )
     {
-        message = message + "movel(p["+
-                std::to_string(real_tool_poses_transform.at(i).getOrigin().getX())+","+
-                std::to_string(real_tool_poses_transform.at(i).getOrigin().getY())+","+
-                std::to_string(real_tool_poses_transform.at(i).getOrigin().getZ())+","+
-                std::to_string(real_tool_poses_transform.at(i).getRotation().getAngle() * real_tool_poses_transform.at(i).getRotation().getAxis().getX())+","+
-                std::to_string(real_tool_poses_transform.at(i).getRotation().getAngle() * real_tool_poses_transform.at(i).getRotation().getAxis().getY())+","+
-                std::to_string(real_tool_poses_transform.at(i).getRotation().getAngle() * real_tool_poses_transform.at(i).getRotation().getAxis().getZ())+"], a="+
-                std::to_string(acceleration)+", v="+
-                std::to_string(velocity);
+        for ( int i = 0; i < n_point+1; i++ )
+        {
+
+            message = message + "movel(p["+
+                    std::to_string(real_tool_poses_transform.at(i).getOrigin().getX())+","+
+                    std::to_string(real_tool_poses_transform.at(i).getOrigin().getY())+","+
+                    std::to_string(real_tool_poses_transform.at(i).getOrigin().getZ())+","+
+                    std::to_string(real_tool_poses_transform.at(i).getRotation().getAngle() * real_tool_poses_transform.at(i).getRotation().getAxis().getX())+","+
+                    std::to_string(real_tool_poses_transform.at(i).getRotation().getAngle() * real_tool_poses_transform.at(i).getRotation().getAxis().getY())+","+
+                    std::to_string(real_tool_poses_transform.at(i).getRotation().getAngle() * real_tool_poses_transform.at(i).getRotation().getAxis().getZ())+"], a="+
+                    std::to_string(acceleration)+", v="+
+                    std::to_string(velocity)+ ")\n";
+        }
     }
     else
     {
@@ -2505,50 +2530,35 @@ int SkillsExec::ur_movel(const std::string &action_name, const std::string &skil
 
     ur_script_command_pub_.publish(str_msg);
 
-//    ROS_RED_STREAM("Waiting script start");
-//    while (true)
-//    {
-//      if (io_state_sub.isANewDataAvailable())
-//      {
-//        if (io_state_sub.getData().digital_out_states[7].state)
-//        {
-//          break;
-//        }
-//      }
-//      ros::Duration(0.001).sleep();
-//    }
+    ROS_RED_STREAM("Waiting script start");
+    while (true)
+    {
+      if (io_state_sub.isANewDataAvailable())
+      {
+        if (io_state_sub.getData().digital_out_states[7].state)
+        {
+          break;
+        }
+      }
+      ros::Duration(0.001).sleep();
+    }
 
-//    ROS_RED_STREAM("Waiting script end");
-//    while (true)
-//    {
-//      if (io_state_sub.isANewDataAvailable())
-//      {
-//        if (!io_state_sub.getData().digital_out_states[7].state)
-//        {
-//          break;
-//        }
-//      }
-//      ros::Duration(0.001).sleep();
-//    }
-
-//    //    start current ur program
-//    std_srvs::Trigger start_program_msg;
-//    ur_program_start_clnt_.call(start_program_msg);
-
-//    ROS_GREEN_STREAM("Waiting for start current program");
-//    while (true)
-//    {
-//      ur_program_state_clnt_.call(program_state_msg);
-//      if (program_state_msg.response.state.state == "PLAYING")
-//      {
-//        break;
-//      }
-//      ros::Duration(0.01).sleep();
-//      ur_program_start_clnt_.call(start_program_msg);
-//    }
+    ROS_RED_STREAM("Waiting script end");
+    while (true)
+    {
+      if (io_state_sub.isANewDataAvailable())
+      {
+        if (!io_state_sub.getData().digital_out_states[7].state)
+        {
+          break;
+        }
+      }
+      ros::Duration(0.001).sleep();
+    }
 
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
+
 int SkillsExec::ur_script_movej(const std::string &action_name, const std::string &skill_name)
 {
 
