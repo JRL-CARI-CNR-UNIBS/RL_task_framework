@@ -1,4 +1,4 @@
 string tree_name
-string folder_path
+string foulder_path
 ---
 int8 result

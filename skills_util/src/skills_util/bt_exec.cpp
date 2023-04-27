@@ -23,7 +23,7 @@ BTExec::BTExec(const ros::NodeHandle & n) : n_(n)
 bool BTExec::runTree(skills_util_msgs::RunTree::Request  &req,
                      skills_util_msgs::RunTree::Response &res)
 {
-    std::string repo = req.folder_path;
+    std::string repo = req.foulder_path;
     repo.append("/");
     for ( auto const& entry : std::filesystem::directory_iterator(repo))
     {
