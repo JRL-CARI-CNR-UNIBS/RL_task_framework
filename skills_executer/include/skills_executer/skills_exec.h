@@ -72,9 +72,14 @@ public:
     int urScriptCommandExample(const std::string &action_name, const std::string &skill_name, const std::string &skill_type);
     int joint_move_to         (const std::string &action_name, const std::string &skill_name);
 
+    int ur_movej(const std::string &action_name, const std::string &skill_name);
     int ur_linear_move(const std::string &action_name, const std::string &skill_name);
     int ur_move_to(const std::string &action_name, const std::string &skill_name);
     int three_circular_point_calculation(const std::string &action_name, const std::string &skill_name);
+    int board_localization();
+    int display_localization();
+    int display_localization_init();
+    int display_alignment();
 
     bool fill_the_script(std::string &script_string);
 
@@ -127,6 +132,11 @@ private:
     ros::ServiceClient start_config_clnt_;
     ros::ServiceClient skill_arbit_clnt_;
     ros::ServiceClient skill_explore_clnt_;
+    ros::ServiceClient board_localization_clnt_;
+    ros::ServiceClient display_localization_clnt_;
+    ros::ServiceClient display_localization_init_clnt_;
+    ros::ServiceClient display_alignment_clnt_;
+
 
     ros::ServiceClient ur_program_stop_clnt_;
     ros::ServiceClient ur_program_start_clnt_;
@@ -164,21 +174,25 @@ private:
     std::string ur_circula_point_type_         = "ur_circular_point";
     std::string ur_linear_move_type_           = "ur_linear_move";
     std::string ur_move_to_type_               = "ur_move_to";
+    std::string board_localization_type_       = "board_localization";
+    std::string display_localization_type_     = "display_localization";
+    std::string display_localization_init_type_= "display_localization_init";
+    std::string display_alignment_type_        = "display_alignment";
+
+    std::string ur_movej_type_                 = "ur_movej";
 
     std::vector<std::string> ur_type_{"ur_linear_move_tool",
                                       "ur_linear_move_base",
                                       "ur_simple_touch_tool",
                                       "ur_simple_touch_base",
-                                      "ur_movej",
                                       "ur_circular_move",
                                       };
 
     std::map<std::string,std::vector<std::string>> skill_params_names_ = {
         {"ur_linear_move_tool",  { "MOVEX", "MOVEY", "MOVEZ", "DISTANCE", "VELOCITY", "ACCELERATION"} },
         {"ur_linear_move_base",  { "MOVEX", "MOVEY", "MOVEZ", "DISTANCE", "VELOCITY", "ACCELERATION"} },
-        {"ur_simple_touch_tool", { "MOVEX", "MOVEY", "MOVEZ", "MAX_DISTANCE", "RETURN_DISTANCE", "VELOCITY", "ACCELERATION"} },
-        {"ur_simple_touch_base", { "MOVEX", "MOVEY", "MOVEZ", "MAX_DISTANCE", "RETURN_DISTANCE", "VELOCITY", "ACCELERATION"} },
-        {"ur_movej",             { "DISTX", "DISTY", "DISTZ", "ROTX", "ROTY", "ROTZ", "VELOCITY", "ACCELERATION"} },
+        {"ur_simple_touch_tool", { "MOVEX", "MOVEY", "MOVEZ", "FORCE", "VELOCITY", "ACCELERATION"} },
+        {"ur_simple_touch_base", { "MOVEX", "MOVEY", "MOVEZ", "FORCE", "VELOCITY", "ACCELERATION"} },
         {"ur_circular_move",     { "POS_START_X", "POS_START_Y", "POS_START_Z", "ROT_START_X", "ROT_START_Y", "ROT_START_Z",
                                    "POS_VIA_X",   "POS_VIA_Y",   "POS_VIA_Z",   "ROT_VIA_X",   "ROT_VIA_Y",   "ROT_VIA_Z",
                                    "POS_END_X",   "POS_END_Y",   "POS_END_Z",   "ROT_END_X",   "ROT_END_Y",   "ROT_END_Z",

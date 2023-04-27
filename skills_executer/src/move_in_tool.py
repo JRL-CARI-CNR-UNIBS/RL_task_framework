@@ -139,15 +139,15 @@ def test_robotiq(serviceName):
                 rospy.sleep(0.01)
 
             # restart
-            print("restart script")
-            play_srv()
-            print("waiting for program restart")
-            while True:
-                lg_state=state_srv();
-                if lg_state.state.state=="PLAYING":
-                    break
-                rospy.sleep(0.01)
-                play_srv()
+#            print("restart script")
+#            play_srv()
+#            print("waiting for program restart")
+#            while True:
+#                lg_state=state_srv();
+#                if lg_state.state.state=="PLAYING":
+#                    break
+#                rospy.sleep(0.01)
+#                play_srv()
             print("fine")
             new_command = False
         r.sleep()

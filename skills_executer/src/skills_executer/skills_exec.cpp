@@ -21,6 +21,22 @@ SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
     ur_program_state_clnt_.waitForExistence();
     ROS_YELLOW_STREAM("Connection ok");
 
+    board_localization_clnt_ = n_.serviceClient<std_srvs::Trigger>("/robothon2023/board_localization");
+    ROS_YELLOW_STREAM("Waiting for "<<board_localization_clnt_.getService());
+    board_localization_clnt_.waitForExistence();
+    ROS_YELLOW_STREAM("Connection ok");
+    display_localization_clnt_ = n_.serviceClient<std_srvs::Trigger>("/robothon2023/screen_target");
+    ROS_YELLOW_STREAM("Waiting for "<<display_localization_clnt_.getService());
+    display_localization_clnt_.waitForExistence();
+    display_localization_init_clnt_ = n_.serviceClient<std_srvs::Trigger>("/robothon2023/screen_target_init");
+    ROS_YELLOW_STREAM("Waiting for "<<display_localization_init_clnt_.getService());
+    display_localization_init_clnt_.waitForExistence();
+
+    display_alignment_clnt_ = n_.serviceClient<std_srvs::Trigger>("/robothon2023/align_screen");
+    ROS_YELLOW_STREAM("Waiting for "<<display_alignment_clnt_.getService());
+    display_alignment_clnt_.waitForExistence();
+
+    ROS_YELLOW_STREAM("Connection ok");
 
     std::string wrench_topic = "/ur_10/wrench";
 
@@ -209,6 +225,21 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     }
     else if( !skill_type.compare(ur_move_to_type_) ) {
         res.result = ur_move_to(req.action_name, req.skill_name);
+    }
+    else if( !skill_type.compare(board_localization_type_) ) {
+        res.result = board_localization();
+    }
+    else if( !skill_type.compare(display_localization_type_) ) {
+        res.result = display_localization();
+    }
+    else if( !skill_type.compare(display_alignment_type_) ) {
+        res.result = display_alignment();
+    }
+    else if( !skill_type.compare(display_localization_init_type_) ) {
+        res.result = display_localization_init();
+    }
+    else if( !skill_type.compare(ur_movej_type_) ) {
+        res.result = ur_movej(req.action_name, req.skill_name);
     }
     else
     {
@@ -619,6 +650,7 @@ int SkillsExec::robotiqGripperMove(const std::string &action_name, const std::st
     gripper_clnt.waitForExistence();
     ROS_YELLOW_STREAM("Connection ok");
     manipulation_msgs::JobExecution gripper_srv;
+    bool asinc;
 
     if (!getParam(action_name, skill_name, "property_id", gripper_srv.request.property_id))
     {
@@ -632,6 +664,18 @@ int SkillsExec::robotiqGripperMove(const std::string &action_name, const std::st
     if (!getParam(action_name, skill_name, "tool_id", gripper_srv.request.tool_id))
     {
         ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/tool_id is not set, not necessary" );
+    }
+    if (!getParam(action_name, skill_name, "asinc", asinc))
+    {
+        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/asinc is not set, not necessary, considered False" );
+    }
+    if (asinc)
+    {
+      gripper_srv.request.object_id = "asinc";
+    }
+    else
+    {
+      gripper_srv.request.object_id = "sinc";
     }
 
     if ( !gripper_clnt.call(gripper_srv) )
@@ -2120,7 +2164,7 @@ int SkillsExec::urScriptCommandExample(const std::string &action_name, const std
         full_text.append(line_text);
         full_text.append("\n");
     }
-    ROS_GREEN_STREAM(full_text.c_str());
+//    ROS_GREEN_STREAM(full_text.c_str());
 //    change all "param_name" with their value
     std::size_t index1,index2;
     for ( std::string param_name: skill_params_names_[skill_type] )
@@ -2143,7 +2187,7 @@ int SkillsExec::urScriptCommandExample(const std::string &action_name, const std
         }
     }
 //
-    ROS_GREEN_STREAM(full_text.c_str());
+//    ROS_GREEN_STREAM(full_text.c_str());
 
     std_msgs::String str_msg;
     str_msg.data = full_text;
@@ -2151,6 +2195,7 @@ int SkillsExec::urScriptCommandExample(const std::string &action_name, const std
     ur_script_command_pub_.publish(str_msg);
 
     ROS_RED_STREAM("Waiting script start");
+    ros::Time start_time = ros::Time::now();
     while (true)
     {
       if (io_state_sub.isANewDataAvailable())
@@ -2161,6 +2206,10 @@ int SkillsExec::urScriptCommandExample(const std::string &action_name, const std
         }
       }
       ros::Duration(0.001).sleep();
+      if ( (ros::Time::now().toSec() - start_time.toSec()) > 1.0 )
+      {
+        break;
+      }
     }
 
     ROS_RED_STREAM("Waiting script end");
@@ -2174,22 +2223,6 @@ int SkillsExec::urScriptCommandExample(const std::string &action_name, const std
         }
       }
       ros::Duration(0.001).sleep();
-    }
-
-    //    start current ur program
-    std_srvs::Trigger start_program_msg;
-    ur_program_start_clnt_.call(start_program_msg);
-
-    ROS_GREEN_STREAM("Waiting for start current program");
-    while (true)
-    {
-      ur_program_state_clnt_.call(program_state_msg);
-      if (program_state_msg.response.state.state == "PLAYING")
-      {
-        break;
-      }
-      ros::Duration(0.01).sleep();
-      ur_program_start_clnt_.call(start_program_msg);
     }
 
     return skills_executer_msgs::SkillExecutionResponse::Success;
@@ -2301,7 +2334,7 @@ int SkillsExec::ur_linear_move(const std::string &action_name, const std::string
     }
 
     tf::StampedTransform base_to_reference_transform, reference_to_tool_transform, tool_to_real_tool_trasform;
-
+    ros::Time time_now = ros::Time::now();
     try
     {
         tf_listener_.lookupTransform( "base", reference_frame, ros::Time(0), base_to_reference_transform);
@@ -2329,6 +2362,10 @@ int SkillsExec::ur_linear_move(const std::string &action_name, const std::string
         ros::Duration(1.0).sleep();
         return skills_executer_msgs::SkillExecutionResponse::Error;
     }
+//    ROS_GREEN_STREAM("Time_now: "<<time_now.toSec());
+    ROS_GREEN_STREAM("Time_now - base_to_reference_transform: "<<time_now.toSec()-base_to_reference_transform.stamp_.toSec());
+    ROS_GREEN_STREAM("Time_now - reference_to_tool_transform: "<<time_now.toSec()-reference_to_tool_transform.stamp_.toSec());
+    ROS_GREEN_STREAM("Time_now - tool_to_real_tool_trasform: "<<time_now.toSec()-tool_to_real_tool_trasform.stamp_.toSec());
 
     tf::Vector3 null_vec;
     null_vec.setX(0);
@@ -2462,13 +2499,12 @@ int SkillsExec::ur_linear_move(const std::string &action_name, const std::string
         full_text.append(line_text);
         full_text.append("\n");
     }
-    ROS_GREEN_STREAM(full_text.c_str());
 
     std::string message = "set_standard_digital_out(7, True)\n";
 
     if ( n_point == 1 )
     {
-        for ( int i = 0; i < n_point+1; i++ )
+        for ( int i = 1; i < n_point+1; i++ )
         {
 
             message = message + "movel(p["+
@@ -2484,7 +2520,7 @@ int SkillsExec::ur_linear_move(const std::string &action_name, const std::string
     }
     else
     {
-        for ( int i = 0; i < n_point+1; i++ )
+        for ( int i = 1; i < n_point+1; i++ )
         {
             message = message + "movej(p["+
                     std::to_string(real_tool_poses_transform.at(i).getOrigin().getX())+","+
@@ -2500,7 +2536,7 @@ int SkillsExec::ur_linear_move(const std::string &action_name, const std::string
                 message = message + ")\n";
             }
             else{
-                message = message + ", r=0.01)\n";
+                message = message + ", r=0.005)\n";
             }
         }
     }
@@ -2533,6 +2569,7 @@ int SkillsExec::ur_linear_move(const std::string &action_name, const std::string
     ur_script_command_pub_.publish(str_msg);
 
     ROS_RED_STREAM("Waiting script start");
+    ros::Time start_time = ros::Time::now();
     while (true)
     {
       if (io_state_sub.isANewDataAvailable())
@@ -2543,6 +2580,10 @@ int SkillsExec::ur_linear_move(const std::string &action_name, const std::string
         }
       }
       ros::Duration(0.001).sleep();
+      if ( (ros::Time::now().toSec() - start_time.toSec()) > 1.0 )
+      {
+        break;
+      }
     }
 
     ROS_RED_STREAM("Waiting script end");
@@ -2620,7 +2661,7 @@ int SkillsExec::ur_move_to(const std::string &action_name, const std::string &sk
     }
     try
     {
-        tf_listener_.lookupTransform( goal_frame, "real_tool", ros::Time(0), tool_frame_to_real_tool_transform);
+        tf_listener_.lookupTransform( tool_frame, "real_tool", ros::Time(0), tool_frame_to_real_tool_transform);
     }
     catch (tf::TransformException ex){
         ROS_ERROR("%s",ex.what());
@@ -2635,7 +2676,7 @@ int SkillsExec::ur_move_to(const std::string &action_name, const std::string &sk
     tf::transformEigenToTF(T_base_to_real_tool_goal_frame, base_to_real_tool_goal_frame_transform);
 
     std::string message = "set_standard_digital_out(7, True)\n";
-    message = message + "movej(p["+
+    message = message + "  movel(p["+
             std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getX())+","+
             std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getY())+","+
             std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getZ())+","+
@@ -2644,7 +2685,16 @@ int SkillsExec::ur_move_to(const std::string &action_name, const std::string &sk
             std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getZ())+"], a="+
             std::to_string(acceleration)+", v="+
             std::to_string(velocity)+ ")\n";
-    message = message + "set_standard_digital_out(7, False)";
+    message = message + "  movej(p["+
+            std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getX())+","+
+            std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getY())+","+
+            std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getZ())+","+
+            std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getX())+","+
+            std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getY())+","+
+            std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getZ())+"], a="+
+            std::to_string(acceleration)+", v="+
+            std::to_string(velocity)+ ")\n";
+    message = message + "  set_standard_digital_out(7, False)";
 
     ROS_GREEN_STREAM(message);
 
@@ -2652,7 +2702,6 @@ int SkillsExec::ur_move_to(const std::string &action_name, const std::string &sk
     {
         return skills_executer_msgs::SkillExecutionResponse::Error;
     }
-    ROS_CYAN_STREAM(message);
 
     std_msgs::String str_msg;
     str_msg.data = message;
@@ -2660,6 +2709,7 @@ int SkillsExec::ur_move_to(const std::string &action_name, const std::string &sk
     ur_script_command_pub_.publish(str_msg);
 
     ROS_RED_STREAM("Waiting script start");
+    ros::Time start_time = ros::Time::now();
     while (true)
     {
       if (io_state_sub.isANewDataAvailable())
@@ -2670,6 +2720,10 @@ int SkillsExec::ur_move_to(const std::string &action_name, const std::string &sk
         }
       }
       ros::Duration(0.001).sleep();
+      if ( (ros::Time::now().toSec() - start_time.toSec()) > 1.0 )
+      {
+        break;
+      }
     }
 
     ROS_RED_STREAM("Waiting script end");
@@ -2689,6 +2743,176 @@ int SkillsExec::ur_move_to(const std::string &action_name, const std::string &sk
 
 }
 
+int SkillsExec::ur_movej(const std::string &action_name, const std::string &skill_name)
+{
+    ros_helper::SubscriptionNotifier<ur_msgs::IOStates> io_state_sub(n_, "/ur10e_hw/io_states", 10);
+
+//    stop current ur program
+    std_srvs::Trigger stop_program_msg;
+    ur_program_stop_clnt_.call(stop_program_msg);
+
+    ROS_GREEN_STREAM("Waiting for stop current program");
+    ur_dashboard_msgs::GetProgramState program_state_msg;
+    while (true)
+    {
+      ur_program_state_clnt_.call(program_state_msg);
+      if (program_state_msg.response.state.state == "STOPPED")
+      {
+        break;
+      }
+      ros::Duration(0.01).sleep();
+    }
+    ROS_GREEN_STREAM("Start movel");
+
+    std::vector<double> joint_target;
+
+    if ( !getParam(action_name, skill_name, "joint_target", joint_target) )
+    {
+        ROS_RED_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/joint_target is not set.");
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+    if ( joint_target.size() != 6)
+    {
+        ROS_RED_STREAM("Joint target size is not 6");
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+
+    double velocity, acceleration;
+    if (!getParam(action_name, skill_name, "velocity", velocity))
+    {
+        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/velocity is not set" );
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+    if (!getParam(action_name, skill_name, "acceleration", acceleration))
+    {
+        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/acceleration is not set" );
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+
+    std::string message = "set_standard_digital_out(7, True)\n";
+    message = message + "  movej(["+
+            std::to_string(joint_target.at(0))+","+
+            std::to_string(joint_target.at(1))+","+
+            std::to_string(joint_target.at(2))+","+
+            std::to_string(joint_target.at(3))+","+
+            std::to_string(joint_target.at(4))+","+
+            std::to_string(joint_target.at(5))+"], a="+
+            std::to_string(acceleration)+", v="+
+            std::to_string(velocity)+ ")\n";
+    message = message + "  set_standard_digital_out(7, False)";
+
+    ROS_GREEN_STREAM(message);
+
+    if( !fill_the_script(message) )
+    {
+        return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+
+    std_msgs::String str_msg;
+    str_msg.data = message;
+
+    ur_script_command_pub_.publish(str_msg);
+
+    ROS_RED_STREAM("Waiting script start");
+    ros::Time start_time = ros::Time::now();
+    while (true)
+    {
+      if (io_state_sub.isANewDataAvailable())
+      {
+        if (io_state_sub.getData().digital_out_states[7].state)
+        {
+          break;
+        }
+      }
+      ros::Duration(0.001).sleep();
+      if ( (ros::Time::now().toSec() - start_time.toSec()) > 1.0 )
+      {
+        break;
+      }
+    }
+
+    ROS_RED_STREAM("Waiting script end");
+    while (true)
+    {
+      if (io_state_sub.isANewDataAvailable())
+      {
+        if (!io_state_sub.getData().digital_out_states[7].state)
+        {
+          break;
+        }
+      }
+      ros::Duration(0.001).sleep();
+    }
+
+    return skills_executer_msgs::SkillExecutionResponse::Success;
+
+}
+
+int SkillsExec::board_localization()
+{
+    std_srvs::Trigger msg;
+
+    if ( !board_localization_clnt_.call(msg) )
+    {
+      ROS_RED_STREAM("Board localization server don't work");
+      return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+    else
+    {
+      if(not msg.response.success)
+        return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
+    return skills_executer_msgs::SkillExecutionResponse::Success;
+}
+
+int SkillsExec::display_localization()
+{
+    std_srvs::Trigger msg;
+
+    if ( !display_localization_clnt_.call(msg) )
+    {
+      ROS_RED_STREAM("Display localization server don't work");
+      return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+    else
+    {
+      if(not msg.response.success)
+        return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
+    return skills_executer_msgs::SkillExecutionResponse::Success;
+}
+int SkillsExec::display_alignment()
+{
+    std_srvs::Trigger msg;
+
+    if ( !display_alignment_clnt_.call(msg) )
+    {
+      ROS_RED_STREAM("display alignment server don't work");
+      return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+    else
+    {
+      if(not msg.response.success)
+        return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
+    return skills_executer_msgs::SkillExecutionResponse::Success;
+}
+int SkillsExec::display_localization_init()
+{
+    std_srvs::Trigger msg;
+
+    if ( !display_localization_init_clnt_.call(msg) )
+    {
+      ROS_RED_STREAM("Display localization init server don't work");
+      return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+    else
+    {
+      if(not msg.response.success)
+        return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
+    return skills_executer_msgs::SkillExecutionResponse::Success;
+}
 bool SkillsExec::fill_the_script(std::string &script_string)
 {
     std::string line_text, full_text;
@@ -2712,7 +2936,7 @@ bool SkillsExec::fill_the_script(std::string &script_string)
         full_text.append(line_text);
         full_text.append("\n");
     }
-    ROS_GREEN_STREAM(full_text.c_str());
+//    ROS_GREEN_STREAM(full_text.c_str());
 
     index1 = full_text.find(param_name);
     index2 = full_text.rfind(param_name);
