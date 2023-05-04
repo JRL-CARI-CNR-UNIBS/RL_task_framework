@@ -25,6 +25,7 @@
   <depend>ur_dashboard_msgs</depend>
   <depend>subscription_notifier</depend>
   <depend>tf</depend>
+  <depend>tf2_ros</depend>
   <depend>moveit_ros_planning_interface</depend>
   <depend>rosparam_utilities</depend>
   <depend>eigen_conversions</depend>

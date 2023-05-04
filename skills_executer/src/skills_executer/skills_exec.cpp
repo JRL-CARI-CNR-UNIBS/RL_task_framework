@@ -25,6 +25,10 @@ SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
     ROS_YELLOW_STREAM("Waiting for "<<board_localization_clnt_.getService());
     board_localization_clnt_.waitForExistence();
     ROS_YELLOW_STREAM("Connection ok");
+    circuit_localization_clnt_ = n_.serviceClient<std_srvs::Trigger>("/robothon2023/circuit_localization");
+    ROS_YELLOW_STREAM("Waiting for "<<circuit_localization_clnt_.getService());
+    circuit_localization_clnt_.waitForExistence();
+    ROS_YELLOW_STREAM("Connection ok");
     display_localization_clnt_ = n_.serviceClient<std_srvs::Trigger>("/robothon2023/screen_target");
     ROS_YELLOW_STREAM("Waiting for "<<display_localization_clnt_.getService());
     display_localization_clnt_.waitForExistence();
@@ -232,6 +236,9 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     else if( !skill_type.compare(board_localization_type_) ) {
         res.result = board_localization();
     }
+    else if( !skill_type.compare(circuit_localization_type_) ) {
+        res.result = circuit_localization();
+    }
     else if( !skill_type.compare(display_localization_type_) ) {
         res.result = display_localization();
     }
@@ -243,6 +250,9 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     }
     else if( !skill_type.compare(ur_movej_type_) ) {
         res.result = ur_movej(req.action_name, req.skill_name);
+    }
+    else if( !skill_type.compare(pose_publication_type_) ) {
+        res.result = pose_publication(req.action_name, req.skill_name);
     }
     else
     {
@@ -2943,6 +2953,23 @@ int SkillsExec::board_localization()
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
+int SkillsExec::circuit_localization()
+{
+    std_srvs::Trigger msg;
+
+    if ( !circuit_localization_clnt_.call(msg) )
+    {
+      ROS_RED_STREAM("Circuit localization server don't work");
+      return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+    else
+    {
+      if(not msg.response.success)
+        return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
+    return skills_executer_msgs::SkillExecutionResponse::Success;
+}
+
 int SkillsExec::display_localization()
 {
     std_srvs::Trigger msg;
@@ -2993,6 +3020,7 @@ int SkillsExec::display_localization_init()
     }
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
+
 bool SkillsExec::fill_the_script(std::string &script_string)
 {
     std::string line_text, full_text;
@@ -3037,4 +3065,46 @@ bool SkillsExec::fill_the_script(std::string &script_string)
     script_string = full_text;
     return true;
 }
+
+int SkillsExec::pose_publication(const std::string &action_name, const std::string &skill_name)
+{
+    std::string tf_name, target_frame;
+    if ( !getParam(action_name, skill_name, "tf_name", tf_name) )
+    {
+        ROS_RED_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/tf_name is not set.");
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+    if ( !getParam(action_name, skill_name, "target_frame", target_frame) )
+    {
+        ROS_RED_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/tf_name is not set.");
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+
+    tf::StampedTransform transform;
+    try
+    {
+        tf_listener_.lookupTransform( "world", target_frame, ros::Time(0), transform);
+    }
+    catch (tf::TransformException &ex) {
+       ROS_ERROR("%s",ex.what());
+       ros::Duration(1.0).sleep();
+       return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+
+    geometry_msgs::TransformStamped static_transformStamped;
+    static_transformStamped.header.stamp = ros::Time::now();
+    static_transformStamped.header.frame_id = transform.frame_id_;
+    static_transformStamped.child_frame_id = tf_name;
+    static_transformStamped.transform.translation.x = transform.getOrigin().getX();
+    static_transformStamped.transform.translation.y = transform.getOrigin().getY();
+    static_transformStamped.transform.translation.z = transform.getOrigin().getZ();
+    static_transformStamped.transform.rotation.x    = transform.getRotation().getX();
+    static_transformStamped.transform.rotation.y    = transform.getRotation().getY();
+    static_transformStamped.transform.rotation.z    = transform.getRotation().getZ();
+    static_transformStamped.transform.rotation.w    = transform.getRotation().getW();
+    static_tf_br_.sendTransform(static_transformStamped);
+
+    return skills_executer_msgs::SkillExecutionResponse::Success;
+}
+
 } // end namespace skills_executer

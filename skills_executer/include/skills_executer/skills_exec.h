@@ -12,6 +12,7 @@
 #include <simple_touch_controller_msgs/SimpleTouchActionGoal.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/WrenchStamped.h>
+#include <geometry_msgs/TransformStamped.h>
 #include <sensor_msgs/JointState.h>
 #include <manipulation_msgs/JobExecution.h>
 #include <std_srvs/Trigger.h>
@@ -36,6 +37,7 @@
 #include <pybullet_utils/SensorReset.h>
 #include <std_msgs/String.h>
 #include <fstream>
+#include <tf2_ros/static_transform_broadcaster.h>
 
 //fjt part
 #include <control_msgs/FollowJointTrajectoryAction.h>
@@ -71,12 +73,14 @@ public:
     int parallel2fGripperMove (const std::string &action_name, const std::string &skill_name);
     int urScriptCommandExample(const std::string &action_name, const std::string &skill_name, const std::string &skill_type);
     int joint_move_to         (const std::string &action_name, const std::string &skill_name);
+    int pose_publication      (const std::string &action_name, const std::string &skill_name);
 
     int ur_movej(const std::string &action_name, const std::string &skill_name);
     int ur_linear_move(const std::string &action_name, const std::string &skill_name);
     int ur_move_to(const std::string &action_name, const std::string &skill_name);
     int three_circular_point_calculation(const std::string &action_name, const std::string &skill_name);
     int board_localization();
+    int circuit_localization();
     int display_localization();
     int display_localization_init();
     int digit_screen_reading();
@@ -118,6 +122,7 @@ private:
 
     tf::TransformListener tf_listener_;
     tf::TransformBroadcaster tf_br_;
+    tf2_ros::StaticTransformBroadcaster static_tf_br_;
     std::string param_ns_ = "RL_params";
     std::string end_link_frame_ = "flange";
     std::string gripper_frame_ = "real_tool";
@@ -133,6 +138,7 @@ private:
     ros::ServiceClient skill_arbit_clnt_;
     ros::ServiceClient skill_explore_clnt_;
     ros::ServiceClient board_localization_clnt_;
+    ros::ServiceClient circuit_localization_clnt_;
     ros::ServiceClient display_localization_clnt_;
     ros::ServiceClient display_localization_init_clnt_;
     ros::ServiceClient digit_screen_reading_clnt_;
@@ -175,9 +181,11 @@ private:
     std::string ur_linear_move_type_           = "ur_linear_move";
     std::string ur_move_to_type_               = "ur_move_to";
     std::string board_localization_type_       = "board_localization";
+    std::string circuit_localization_type_     = "circuit_localization";
     std::string display_localization_type_     = "display_localization";
     std::string display_localization_init_type_= "display_localization_init";
     std::string digit_screen_reading_type_     = "digit_screen_reading";
+    std::string pose_publication_type_         = "pose_publication";
 
     std::string ur_movej_type_                 = "ur_movej";
 
