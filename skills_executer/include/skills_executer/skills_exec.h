@@ -79,7 +79,7 @@ public:
     int board_localization();
     int display_localization();
     int display_localization_init();
-    int display_alignment();
+    int digit_screen_reading();
 
     bool fill_the_script(std::string &script_string);
 
@@ -135,7 +135,7 @@ private:
     ros::ServiceClient board_localization_clnt_;
     ros::ServiceClient display_localization_clnt_;
     ros::ServiceClient display_localization_init_clnt_;
-    ros::ServiceClient display_alignment_clnt_;
+    ros::ServiceClient digit_screen_reading_clnt_;
 
 
     ros::ServiceClient ur_program_stop_clnt_;
@@ -177,7 +177,7 @@ private:
     std::string board_localization_type_       = "board_localization";
     std::string display_localization_type_     = "display_localization";
     std::string display_localization_init_type_= "display_localization_init";
-    std::string display_alignment_type_        = "display_alignment";
+    std::string digit_screen_reading_type_     = "digit_screen_reading";
 
     std::string ur_movej_type_                 = "ur_movej";
 

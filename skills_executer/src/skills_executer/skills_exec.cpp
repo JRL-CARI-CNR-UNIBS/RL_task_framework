@@ -32,9 +32,9 @@ SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
     ROS_YELLOW_STREAM("Waiting for "<<display_localization_init_clnt_.getService());
     display_localization_init_clnt_.waitForExistence();
 
-    display_alignment_clnt_ = n_.serviceClient<std_srvs::Trigger>("/robothon2023/align_screen");
-    ROS_YELLOW_STREAM("Waiting for "<<display_alignment_clnt_.getService());
-    display_alignment_clnt_.waitForExistence();
+    digit_screen_reading_clnt_ = n_.serviceClient<std_srvs::Trigger>("/robothon2023/screen_digits");
+    ROS_YELLOW_STREAM("Waiting for "<<digit_screen_reading_clnt_.getService());
+    digit_screen_reading_clnt_.waitForExistence();
 
     ROS_YELLOW_STREAM("Connection ok");
 
@@ -77,6 +77,9 @@ SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
     {
         trajectory_joint_tollerance_.push_back(0.001);
     }
+
+    std_srvs::Trigger stop_program_msg;
+    ur_program_stop_clnt_.call(stop_program_msg);
     //    end
 
 }
@@ -232,11 +235,11 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     else if( !skill_type.compare(display_localization_type_) ) {
         res.result = display_localization();
     }
-    else if( !skill_type.compare(display_alignment_type_) ) {
-        res.result = display_alignment();
-    }
     else if( !skill_type.compare(display_localization_init_type_) ) {
         res.result = display_localization_init();
+    }
+    else if( !skill_type.compare(digit_screen_reading_type_) ) {
+        res.result = digit_screen_reading();
     }
     else if( !skill_type.compare(ur_movej_type_) ) {
         res.result = ur_movej(req.action_name, req.skill_name);
@@ -668,6 +671,7 @@ int SkillsExec::robotiqGripperMove(const std::string &action_name, const std::st
     if (!getParam(action_name, skill_name, "asinc", asinc))
     {
         ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/asinc is not set, not necessary, considered False" );
+        asinc = false;
     }
     if (asinc)
     {
@@ -678,6 +682,7 @@ int SkillsExec::robotiqGripperMove(const std::string &action_name, const std::st
       gripper_srv.request.object_id = "sinc";
     }
 
+    ROS_GREEN_STREAM("Ros time"<<ros::Time::now().toSec());
     if ( !gripper_clnt.call(gripper_srv) )
     {
         ROS_ERROR("Unable to move gripper to %s state",gripper_srv.request.property_id.c_str());
@@ -2102,9 +2107,9 @@ int SkillsExec::three_circular_point_calculation(const std::string &action_name,
     setParam(act_name,sk_name,"ROT_END_Y", rot2.getY());
     setParam(act_name,sk_name,"ROT_END_Z", rot2.getZ());
 
-    tf_br_.sendTransform( tf::StampedTransform(pose0_in_base_transform, ros::Time::now(), "base", "pose0") );
-    tf_br_.sendTransform( tf::StampedTransform(pose1_in_base_transform, ros::Time::now(), "base", "pose1") );
-    tf_br_.sendTransform( tf::StampedTransform(pose2_in_base_transform, ros::Time::now(), "base", "pose2") );
+//    tf_br_.sendTransform( tf::StampedTransform(pose0_in_base_transform, ros::Time::now(), "base", "pose0") );
+//    tf_br_.sendTransform( tf::StampedTransform(pose1_in_base_transform, ros::Time::now(), "base", "pose1") );
+//    tf_br_.sendTransform( tf::StampedTransform(pose2_in_base_transform, ros::Time::now(), "base", "pose2") );
 
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
@@ -2231,10 +2236,10 @@ int SkillsExec::urScriptCommandExample(const std::string &action_name, const std
 int SkillsExec::ur_linear_move(const std::string &action_name, const std::string &skill_name)
 {
     ros_helper::SubscriptionNotifier<ur_msgs::IOStates> io_state_sub(n_, "/ur10e_hw/io_states", 10);
-
+    //ik_solver::UrIkSolver ur_solver()
 //    stop current ur program
-    std_srvs::Trigger stop_program_msg;
-    ur_program_stop_clnt_.call(stop_program_msg);
+//    std_srvs::Trigger stop_program_msg;
+//    ur_program_stop_clnt_.call(stop_program_msg);
 
     ROS_GREEN_STREAM("Waiting for stop current program");
     ur_dashboard_msgs::GetProgramState program_state_msg;
@@ -2297,6 +2302,7 @@ int SkillsExec::ur_linear_move(const std::string &action_name, const std::string
     tras.setX(traslation[0]);
     tras.setY(traslation[1]);
     tras.setZ(traslation[2]);
+    ROS_GREEN_STREAM("Traslation: ["<<traslation.at(0)<<","<<traslation.at(1)<<","<<traslation.at(2)<<"]");
 
     if (!getParam(action_name, skill_name, "rotation", rotation))
     {
@@ -2309,10 +2315,20 @@ int SkillsExec::ur_linear_move(const std::string &action_name, const std::string
       return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
 
+    ROS_GREEN_STREAM("Rotation: ["<<rotation.at(0)<<","<<rotation.at(1)<<","<<rotation.at(2)<<","<<rotation.at(3)<<"]");
+
     rot.setX(rotation[0]);
     rot.setY(rotation[1]);
     rot.setZ(rotation[2]);
     rot.setW(rotation[3]);
+
+    std::vector<double> v1 = {0,0,0};
+    std::vector<double> v2 = {0,0,0,1};
+
+    if ( traslation == v1 && rotation == v2 )
+    {
+      return skills_executer_msgs::SkillExecutionResponse::Success;
+    }
 
     tf::Vector3 delta_tras = tras / n_point;
     tf::Quaternion delta_rot;
@@ -2625,6 +2641,7 @@ int SkillsExec::ur_move_to(const std::string &action_name, const std::string &sk
 
 
     std::string goal_frame, tool_frame;
+    bool ik;
     if (!getParam(action_name, skill_name, "goal_frame", goal_frame))
     {
         ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/goal_frame is not set" );
@@ -2647,7 +2664,11 @@ int SkillsExec::ur_move_to(const std::string &action_name, const std::string &sk
         ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/acceleration is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
-
+    if (!getParam(action_name, skill_name, "ik", ik))
+    {
+        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/ik is not set, default false" );
+        ik = false;
+    }
     tf::StampedTransform base_to_goal_frame_transform, tool_frame_to_real_tool_transform, base_to_real_tool_goal_frame_transform;
 
     try
@@ -2669,6 +2690,55 @@ int SkillsExec::ur_move_to(const std::string &action_name, const std::string &sk
         return skills_executer_msgs::SkillExecutionResponse::Error;
     }
 
+    ik_solver_msgs::GetIk get_ik_msg;
+    if (ik)
+    {
+      ik_solver_msgs::Configuration ik_configuration;
+
+      ik_configuration.configuration = move_group_->getCurrentJointValues();
+
+      get_ik_msg.request.tf_name = goal_frame;
+      get_ik_msg.request.seeds.push_back(ik_configuration);
+      get_ik_msg.request.seed_joint_names = move_group_->getJointNames();
+      get_ik_msg.request.max_number_of_solutions = 6;
+      get_ik_msg.request.stall_iterations = 10;
+
+      int max_iter = 5;
+      int iter = 0;
+
+      while ( ros::ok() )
+      {
+          if (!get_ik_clnt_.call(get_ik_msg))
+          {
+              ROS_ERROR("Unable to call %s service",get_ik_clnt_.getService().c_str());
+              return skills_executer_msgs::SkillExecutionResponse::Fail;
+          }
+          if ( get_ik_msg.response.solution.configurations.size() != 0 )
+          {
+              break;
+          }
+          else
+          {
+              iter += 1;
+              if ( iter == max_iter)
+              {
+                  ROS_RED_STREAM("Goal configuration not found");
+                  return skills_executer_msgs::SkillExecutionResponse::Fail;
+              }
+          }
+      }
+
+      if ( get_ik_msg.response.solution.configurations.at(0).configuration.at(5) > M_PI)
+      {
+        get_ik_msg.response.solution.configurations.at(0).configuration.at(5) = get_ik_msg.response.solution.configurations.at(0).configuration.at(5) - (2*M_PI);
+      }
+      else if ( get_ik_msg.response.solution.configurations.at(0).configuration.at(5) < -M_PI)
+      {
+        get_ik_msg.response.solution.configurations.at(0).configuration.at(5) = get_ik_msg.response.solution.configurations.at(0).configuration.at(5) + (2*M_PI);
+      }
+
+    }
+
     Eigen::Affine3d T_base_to_goal_frame, T_tool_frame_to_real_tool, T_base_to_real_tool_goal_frame;
     tf::transformTFToEigen(base_to_goal_frame_transform, T_base_to_goal_frame);
     tf::transformTFToEigen(tool_frame_to_real_tool_transform, T_tool_frame_to_real_tool);
@@ -2676,24 +2746,30 @@ int SkillsExec::ur_move_to(const std::string &action_name, const std::string &sk
     tf::transformEigenToTF(T_base_to_real_tool_goal_frame, base_to_real_tool_goal_frame_transform);
 
     std::string message = "set_standard_digital_out(7, True)\n";
-    message = message + "  movel(p["+
-            std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getX())+","+
-            std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getY())+","+
-            std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getZ())+","+
-            std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getX())+","+
-            std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getY())+","+
-            std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getZ())+"], a="+
-            std::to_string(acceleration)+", v="+
-            std::to_string(velocity)+ ")\n";
-    message = message + "  movej(p["+
-            std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getX())+","+
-            std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getY())+","+
-            std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getZ())+","+
-            std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getX())+","+
-            std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getY())+","+
-            std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getZ())+"], a="+
-            std::to_string(acceleration)+", v="+
-            std::to_string(velocity)+ ")\n";
+    if ( ik )
+    {
+      message = message + "  movej(["+
+          std::to_string(get_ik_msg.response.solution.configurations.at(0).configuration.at(0))+","+
+          std::to_string(get_ik_msg.response.solution.configurations.at(0).configuration.at(1))+","+
+          std::to_string(get_ik_msg.response.solution.configurations.at(0).configuration.at(2))+","+
+          std::to_string(get_ik_msg.response.solution.configurations.at(0).configuration.at(3))+","+
+          std::to_string(get_ik_msg.response.solution.configurations.at(0).configuration.at(4))+","+
+          std::to_string(get_ik_msg.response.solution.configurations.at(0).configuration.at(5))+"], a="+
+          std::to_string(acceleration)+", v="+
+          std::to_string(velocity)+ ")\n";
+    }
+    else
+    {
+      message = message + "  movel(p["+
+          std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getX())+","+
+          std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getY())+","+
+          std::to_string(base_to_real_tool_goal_frame_transform.getOrigin().getZ())+","+
+          std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getX())+","+
+          std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getY())+","+
+          std::to_string(base_to_real_tool_goal_frame_transform.getRotation().getAngle() * base_to_real_tool_goal_frame_transform.getRotation().getAxis().getZ())+"], a="+
+          std::to_string(acceleration)+", v="+
+          std::to_string(velocity)+ ")\n";
+    }
     message = message + "  set_standard_digital_out(7, False)";
 
     ROS_GREEN_STREAM(message);
@@ -2705,6 +2781,8 @@ int SkillsExec::ur_move_to(const std::string &action_name, const std::string &sk
 
     std_msgs::String str_msg;
     str_msg.data = message;
+
+    ROS_GREEN_STREAM("Ros time"<<ros::Time::now().toSec());
 
     ur_script_command_pub_.publish(str_msg);
 
@@ -2881,13 +2959,14 @@ int SkillsExec::display_localization()
     }
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
-int SkillsExec::display_alignment()
+
+int SkillsExec::digit_screen_reading()
 {
     std_srvs::Trigger msg;
 
-    if ( !display_alignment_clnt_.call(msg) )
+    if ( !digit_screen_reading_clnt_.call(msg) )
     {
-      ROS_RED_STREAM("display alignment server don't work");
+      ROS_RED_STREAM("Digit screen reading server don't work");
       return skills_executer_msgs::SkillExecutionResponse::Error;
     }
     else
@@ -2897,6 +2976,7 @@ int SkillsExec::display_alignment()
     }
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
+
 int SkillsExec::display_localization_init()
 {
     std_srvs::Trigger msg;
