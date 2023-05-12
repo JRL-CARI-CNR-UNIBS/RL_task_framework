@@ -84,6 +84,7 @@ public:
     int display_localization();
     int display_localization_init();
     int digit_screen_reading();
+    int set_ref_params();
 
     bool fill_the_script(std::string &script_string);
 
@@ -143,6 +144,8 @@ private:
     ros::ServiceClient display_localization_init_clnt_;
     ros::ServiceClient digit_screen_reading_clnt_;
 
+    ros::ServiceClient set_ref_params_clnt_;
+
 
     ros::ServiceClient ur_program_stop_clnt_;
     ros::ServiceClient ur_program_start_clnt_;
@@ -187,6 +190,8 @@ private:
     std::string digit_screen_reading_type_     = "digit_screen_reading";
     std::string pose_publication_type_         = "pose_publication";
 
+    std::string set_ref_params_type_      = "set_ref_params";
+
     std::string ur_movej_type_                 = "ur_movej";
 
     std::vector<std::string> ur_type_{"ur_linear_move_tool",
@@ -194,6 +199,7 @@ private:
                                       "ur_simple_touch_tool",
                                       "ur_simple_touch_base",
                                       "ur_circular_move",
+                                      "ur_load_program_and_replace"
                                       };
 
     std::map<std::string,std::vector<std::string>> skill_params_names_ = {
@@ -205,6 +211,7 @@ private:
                                    "POS_VIA_X",   "POS_VIA_Y",   "POS_VIA_Z",   "ROT_VIA_X",   "ROT_VIA_Y",   "ROT_VIA_Z",
                                    "POS_END_X",   "POS_END_Y",   "POS_END_Z",   "ROT_END_X",   "ROT_END_Y",   "ROT_END_Z",
                                    "ACCELERATION", "VELOCITY"} },
+        {"ur_load_program_and_replace",  { "REF_X", "REF_Y", "REF_Z", "REF_ROTX", "REF_ROTY", "REF_ROTZ"} },
     };
 
     std::string watch_config_ = "watch";

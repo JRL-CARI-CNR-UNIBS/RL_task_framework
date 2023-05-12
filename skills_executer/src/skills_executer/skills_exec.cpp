@@ -25,7 +25,7 @@ SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
     ROS_YELLOW_STREAM("Waiting for "<<board_localization_clnt_.getService());
     board_localization_clnt_.waitForExistence();
     ROS_YELLOW_STREAM("Connection ok");
-    circuit_localization_clnt_ = n_.serviceClient<std_srvs::Trigger>("/robothon2023/circuit_localization");
+    circuit_localization_clnt_ = n_.serviceClient<std_srvs::Trigger>("/robothon2023/transferability/circuit_localization");
     ROS_YELLOW_STREAM("Waiting for "<<circuit_localization_clnt_.getService());
     circuit_localization_clnt_.waitForExistence();
     ROS_YELLOW_STREAM("Connection ok");
@@ -36,9 +36,13 @@ SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
     ROS_YELLOW_STREAM("Waiting for "<<display_localization_init_clnt_.getService());
     display_localization_init_clnt_.waitForExistence();
 
-    digit_screen_reading_clnt_ = n_.serviceClient<std_srvs::Trigger>("/robothon2023/screen_digits");
+    digit_screen_reading_clnt_ = n_.serviceClient<std_srvs::Trigger>("/robothon2023/transferability/digits_detection");
     ROS_YELLOW_STREAM("Waiting for "<<digit_screen_reading_clnt_.getService());
     digit_screen_reading_clnt_.waitForExistence();
+
+    set_ref_params_clnt_ = n_.serviceClient<std_srvs::Trigger>("/robothon2023/transferability/set_ref_params");
+    ROS_YELLOW_STREAM("Waiting for "<<set_ref_params_clnt_.getService());
+    set_ref_params_clnt_.waitForExistence();
 
     ROS_YELLOW_STREAM("Connection ok");
 
@@ -254,6 +258,9 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     else if( !skill_type.compare(pose_publication_type_) ) {
         res.result = pose_publication(req.action_name, req.skill_name);
     }
+    else if( !skill_type.compare(set_ref_params_type_)){
+        res.result = set_ref_params();
+    }
     else
     {
         ROS_RED_STREAM("/"<<req.action_name<<"/"<<req.skill_name<<" result: NoSkillType");
@@ -334,6 +341,7 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
 
 int SkillsExec::urLoadProgram(const std::string &action_name, const std::string &skill_name)
 {
+  ros_helper::SubscriptionNotifier<ur_msgs::IOStates> io_state_sub(n_, "/ur10e_hw/io_states", 10);
   std::string hw_name;
   if (not getParam(action_name, skill_name, "ur_hw_name", hw_name))
   {
@@ -379,6 +387,7 @@ int SkillsExec::urLoadProgram(const std::string &action_name, const std::string 
     }
 
     ROS_YELLOW_STREAM("Program "<<load_srv.request.filename<<" loaded");
+    ROS_YELLOW_STREAM("Play: "<< play);
 
     if(play)
     {
@@ -390,10 +399,46 @@ int SkillsExec::urLoadProgram(const std::string &action_name, const std::string 
       else
       {
         if(not play_srv.response.success)
+        {
+          ROS_WARN("Play program returns fail");
           return skills_executer_msgs::SkillExecutionResponse::Fail;
+        }
       }
 
       ROS_YELLOW_STREAM("Program "<<load_srv.request.filename<<" launched");
+
+      ros::Time start_time = ros::Time::now();
+      ROS_RED_STREAM("Waiting script start");
+
+      while (true)
+      {
+        if (io_state_sub.isANewDataAvailable())
+        {
+          if (io_state_sub.getData().digital_out_states[7].state)
+          {
+            break;
+          }
+        }
+        ros::Duration(0.001).sleep();
+        if ( (ros::Time::now().toSec() - start_time.toSec()) > 1.0 )
+        {
+          break;
+        }
+      }
+
+      ROS_RED_STREAM("Waiting script end");
+      while (true)
+      {
+        if (io_state_sub.isANewDataAvailable())
+        {
+          if (!io_state_sub.getData().digital_out_states[7].state)
+          {
+            break;
+          }
+        }
+        ros::Duration(0.001).sleep();
+      }
+
     }
   }
 
@@ -3105,6 +3150,26 @@ int SkillsExec::pose_publication(const std::string &action_name, const std::stri
     static_tf_br_.sendTransform(static_transformStamped);
 
     return skills_executer_msgs::SkillExecutionResponse::Success;
+}
+
+int SkillsExec::set_ref_params()
+{
+  std_srvs::Trigger msg;
+
+  if ( !set_ref_params_clnt_.call(msg) )
+  {
+    ROS_ERROR("Cannot call service to set circuit reference");
+    return skills_executer_msgs::SkillExecutionResponse::Error;
+  }
+  else
+  {
+    if(not msg.response.success)
+    {
+      ROS_WARN("Should not be here");
+      return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
+  }
+  return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
 } // end namespace skills_executer
