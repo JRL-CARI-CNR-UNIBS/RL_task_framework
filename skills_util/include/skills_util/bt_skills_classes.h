@@ -35,9 +35,14 @@ private:
 class ActionLearningNode : public BT::SyncActionNode
 {
 public:
-    ActionLearningNode(const std::string& name);
+    ActionLearningNode(const std::string& name, const BT::NodeConfig& config);
 
     BT::NodeStatus tick() override;
+
+    static BT::PortsList providedPorts()
+      {
+        return{BT::InputPort<std::string>("type")};
+      }
 
 private:
     ros::NodeHandle n_;
@@ -47,9 +52,14 @@ private:
 class ActionExploretionNode : public BT::SyncActionNode
 {
 public:
-    ActionExploretionNode(const std::string& name);
+    ActionExploretionNode(const std::string& name, const BT::NodeConfig& config);
 
     BT::NodeStatus tick() override;
+
+    static BT::PortsList providedPorts()
+      {
+        return{BT::InputPort<std::string>("type")};
+      }
 
 private:
     ros::NodeHandle n_;

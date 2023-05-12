@@ -22,6 +22,10 @@ public:
     int explore (const std::string &action_name, const std::string &skill_name, const std::vector<std::string> &params_name);
     int learning(const std::string &action_name, const std::string &skill_name, const std::vector<std::string> &params_name);
 
+    int explore_variable_range (const std::string &action_name, const std::string &skill_name, const std::vector<std::string> &params_name);
+    int learning_latest_more_weight(const std::string &action_name, const std::string &skill_name, const std::vector<std::string> &params_name);
+
+
     void printNewOldParam (std::string name, std::vector<double> param, std::vector<double> param_old);
     void printNewOldParam (std::string name, std::vector<int> param, std::vector<int> param_old);
     void printArrayParam (std::string name, std::vector<int> param);

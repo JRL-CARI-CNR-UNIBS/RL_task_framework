@@ -255,7 +255,7 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
             ROS_WHITE_STREAM("/"<<req.action_name<<"/"<<req.skill_name<<"/final_distance: "<<final_distance);
             setParam(req.action_name,"final_distance",final_distance);
             ROS_WHITE_STREAM("Set /"<<req.action_name<<"/final_distance: "<<final_distance);
-            if (!getParam(req.action_name, "tollerance", place_tollerance))
+            if (!getParam(req.action_name, "place_tollerance", place_tollerance))
             {
                 ROS_YELLOW_STREAM("No param: /"<<req.action_name<<"/place_tollerance, default: 0.01");
                 place_tollerance = 0.01;

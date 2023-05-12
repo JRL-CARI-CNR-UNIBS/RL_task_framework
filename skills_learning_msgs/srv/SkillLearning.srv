@@ -1,4 +1,5 @@
 string action_name
+string learning_type
 ---
 int8 result
 int8 Success=0

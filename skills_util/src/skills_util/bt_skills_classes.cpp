@@ -58,7 +58,7 @@ BT::NodeStatus SkillActionNode::tick()
     return BT::NodeStatus::SUCCESS;
 }
 
-SkillExecutionNode::SkillExecutionNode(const std::string &name) : BT::SyncActionNode(name, {})
+SkillExecutionNode::SkillExecutionNode(const std::string &name) : BT::SyncActionNode(name,  {})
 {
     ROS_INFO("Init of SkillExecutionNode, action name: %s", name.c_str());
 
@@ -98,7 +98,7 @@ BT::NodeStatus SkillExecutionNode::tick()
     return BT::NodeStatus::SUCCESS;
 }
 
-ActionLearningNode::ActionLearningNode(const std::string &name) : BT::SyncActionNode(name, {})
+ActionLearningNode::ActionLearningNode(const std::string &name, const BT::NodeConfig &config) : BT::SyncActionNode(name, config)
 {
     ROS_INFO("Init of ActionLearningNode, action name: %s", name.c_str());
 
@@ -106,7 +106,6 @@ ActionLearningNode::ActionLearningNode(const std::string &name) : BT::SyncAction
     ROS_WARN("Waiting for %s", skill_learn_clnt_.getService().c_str() );
     skill_learn_clnt_.waitForExistence();
     ROS_WARN("Connection ok");
-
 }
 
 BT::NodeStatus ActionLearningNode::tick()
@@ -118,8 +117,16 @@ BT::NodeStatus ActionLearningNode::tick()
         return BT::NodeStatus::FAILURE;
     }
 
+    std::string learning_type;
+    if(!ActionLearningNode::getInput<std::string>("type",learning_type))
+      {
+        ROS_ERROR("Missing required input [type]");
+        throw BT::RuntimeError("Missing required input [type]");
+      }
+
     skills_learning_msgs::SkillLearning skill_learn_srv;
     skill_learn_srv.request.action_name = name();
+    skill_learn_srv.request.learning_type = learning_type;
     if (!skill_learn_clnt_.call(skill_learn_srv))
     {
         ROS_ERROR("Fail to call service: %s", skill_learn_clnt_.getService().c_str());
@@ -130,7 +137,7 @@ BT::NodeStatus ActionLearningNode::tick()
     return BT::NodeStatus::SUCCESS;
 }
 
-ActionExploretionNode::ActionExploretionNode(const std::string &name) : BT::SyncActionNode(name, {})
+ActionExploretionNode::ActionExploretionNode(const std::string &name, const BT::NodeConfig& config) : BT::SyncActionNode(name, config)
 {
     ROS_INFO("Init of ActionExploreNode, action name: %s", name.c_str());
 
@@ -149,8 +156,16 @@ BT::NodeStatus ActionExploretionNode::tick()
         return BT::NodeStatus::FAILURE;
     }
 
+    std::string exploration_type;
+    if(!ActionExploretionNode::getInput<std::string>("type",exploration_type))
+      {
+        ROS_ERROR("Missing required input [type]");
+        throw BT::RuntimeError("Missing required input [type]");
+      }
+
     skills_learning_msgs::SkillExplore skill_explore_srv;
     skill_explore_srv.request.action_name = name();
+    skill_explore_srv.request.exploration_type = exploration_type;
     if (!skill_explore_clnt_.call(skill_explore_srv))
     {
         ROS_ERROR("Fail to call service: %s", skill_explore_clnt_.getService().c_str());
