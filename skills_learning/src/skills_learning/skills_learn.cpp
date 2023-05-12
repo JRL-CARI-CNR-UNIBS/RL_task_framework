@@ -727,7 +727,7 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
 
 int SkillsLearn::explore_variable_range(const std::string &action_name, const std::string &skill_name, const std::vector<std::string> &params_name)
 {
-    ROS_ERROR('In explore_variable_range');
+    ROS_ERROR("In explore_variable_range");
 
     std::vector<double> param, param_max_var, param_ratio, new_param;
     std::vector<int> param_test_number, new_param_test_number;
