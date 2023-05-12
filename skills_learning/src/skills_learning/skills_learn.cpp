@@ -859,7 +859,7 @@ int SkillsLearn::explore_variable_range(const std::string &action_name, const st
 
 int SkillsLearn::learning_latest_more_weight(const std::string &action_name, const std::string &skill_name, const std::vector<std::string> &params_name)
 {
-    ROS_ERROR('In learning_latest_more_weight');
+    ROS_ERROR("In learning_latest_more_weight");
     double reward, reward_old;
     std::vector<double> param, param_ratio, param_old, param_ratio_old;
     std::vector<int> param_test_number;
