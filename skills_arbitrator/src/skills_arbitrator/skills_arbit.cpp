@@ -59,6 +59,7 @@ bool SkillsArbit::skillsArbitration(skills_arbitrator_msgs::SkillArbitration::Re
             ROS_WHITE_STREAM("/"<<req.action_name<<"/"<<action_evaluation_parameters_[action_type].at(i)<<": "<<value);
             ROS_WHITE_STREAM("Total_reward + "<<value<<" * "<<action_evaluation_weight_[action_type].at(i));
             total_reward = total_reward + ( value * action_evaluation_weight_[action_type].at(i) );
+            setParam(req.action_name,action_evaluation_parameters_[action_type].at(i)+"_reward",value * action_evaluation_weight_[action_type].at(i));
         }
 
         setParam(req.action_name,"total_reward",total_reward);
