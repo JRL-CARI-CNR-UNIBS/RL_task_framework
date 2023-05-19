@@ -1747,7 +1747,7 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
     double acc, vel, p_time;
     int r_att;
     std::vector<double> relative_position, relative_quaternion;
-    tf::Transform transform;
+    geometry_msgs::TransformStamped transform_stamped;
 
     if (!getParam(action_name, skill_name, "acceleration_scaling", acc))
     {
@@ -1849,12 +1849,21 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
             ROS_WHITE_STREAM("  relative_orientation: ["<<relative_quaternion.at(0)<<","<<relative_quaternion.at(1)<<","<<relative_quaternion.at(2)<<","<<relative_quaternion.at(3)<<"]");
         }
     }
-    transform.setOrigin( tf::Vector3( relative_position.at(0),relative_position.at(1),relative_position.at(2) ) );
-    transform.setRotation( tf::Quaternion( relative_quaternion.at(0),relative_quaternion.at(1),relative_quaternion.at(2),relative_quaternion.at(3) ) );
 
     std::string TF_name = target_TF;
     TF_name.append("_goal");
-    tf_br_.sendTransform( tf::StampedTransform(transform, ros::Time::now(), target_TF, TF_name) );
+    transform_stamped.transform.translation.x = relative_position.at(0);
+    transform_stamped.transform.translation.y = relative_position.at(1);
+    transform_stamped.transform.translation.z = relative_position.at(2);
+    transform_stamped.transform.rotation.x = relative_quaternion.at(0);
+    transform_stamped.transform.rotation.y = relative_quaternion.at(1);
+    transform_stamped.transform.rotation.z = relative_quaternion.at(2);
+    transform_stamped.transform.rotation.w = relative_quaternion.at(3);
+    transform_stamped.header.stamp = ros::Time::now();
+    transform_stamped.header.frame_id = target_TF;
+    transform_stamped.child_frame_id = TF_name;
+
+    tf_br_.sendTransform(transform_stamped);
 
     move_group_->clearPoseTargets();
 

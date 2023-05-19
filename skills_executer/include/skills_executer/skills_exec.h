@@ -19,7 +19,6 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
-#include <tf/transform_broadcaster.h>
 #include <ur_dashboard_msgs/Load.h>
 #include <std_srvs/Trigger.h>
 #include <thread>
@@ -33,6 +32,7 @@
 #include <Eigen/Geometry>
 #include <parallel_2f_gripper/MoveGripper.h>
 #include <pybullet_utils/SensorReset.h>
+#include <tf2_ros/static_transform_broadcaster.h>
 
 //fjt part
 #include <control_msgs/FollowJointTrajectoryAction.h>
@@ -100,7 +100,7 @@ private:
     double closed_gripper_position_ = -0.79;
 
     tf::TransformListener tf_listener_;
-    tf::TransformBroadcaster tf_br_;
+    tf2_ros::StaticTransformBroadcaster tf_br_;
     std::string param_ns_ = "RL_params";
     std::string end_link_frame_ = "flange";
     std::string gripper_frame_ = "closed_tip";
