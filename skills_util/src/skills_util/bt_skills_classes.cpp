@@ -62,6 +62,17 @@ SkillExecutionNode::SkillExecutionNode(const std::string &name) : BT::SyncAction
 {
     ROS_INFO("Init of SkillExecutionNode, action name: %s", name.c_str());
 
+    if ( !ros::service::exists("/move_parallel_gripper", false) ||
+         !ros::service::exists("/pybullet_sensor_reset", false) ||
+         !ros::service::exists("/configuration_manager/start_configuration", false) ||
+         !ros::service::exists("/skills_arbit/evaluate_skill", false) ||
+         !ros::service::exists("/skills_learn/explore_skill", false) ||
+         !ros::service::exists("/kuka_coke/get_ik", false) ||
+         !ros::service::exists("/skills_exec/execute_skill", false) )
+    {
+        throw std::runtime_error("failed to construct");;
+    }
+
     skill_exec_clnt_ = n_.serviceClient<skills_executer_msgs::SkillExecution>("/skills_exec/execute_skill");
     ROS_WARN("Waiting for %s", skill_exec_clnt_.getService().c_str() );
     skill_exec_clnt_.waitForExistence();
@@ -90,11 +101,17 @@ BT::NodeStatus SkillExecutionNode::tick()
         return BT::NodeStatus::FAILURE;
     }
 
-    if ( skill_exec_srv.response.result < 0 )
+    if ( skill_exec_srv.response.result == -1 )
     {
         ROS_WARN("/%s/%s has failed", skill_exec_srv.request.action_name.c_str(), skill_exec_srv.request.skill_name.c_str());
         return BT::NodeStatus::FAILURE;
     }
+    else if ( skill_exec_srv.response.result < -1 )
+    {
+        ROS_ERROR("Error with /%s/%s", skill_exec_srv.request.action_name.c_str(), skill_exec_srv.request.skill_name.c_str());
+        return BT::NodeStatus::FAILURE;
+    }
+
     return BT::NodeStatus::SUCCESS;
 }
 

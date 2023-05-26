@@ -115,7 +115,6 @@ private:
     ros::ServiceClient start_config_clnt_;
     ros::ServiceClient skill_arbit_clnt_;
     ros::ServiceClient skill_explore_clnt_;
-
     ros::ServiceClient get_ik_clnt_;
 
     std::shared_ptr<actionlib::SimpleActionClient<simple_touch_controller_msgs::SimpleTouchAction>>        touch_action_;

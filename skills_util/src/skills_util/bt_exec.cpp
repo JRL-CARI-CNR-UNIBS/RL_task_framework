@@ -36,10 +36,13 @@ bool BTExec::runTree(skills_util_msgs::RunTree::Request  &req,
 
     BT::Tree tree = factory_.createTree(req.tree_name);
 
-    res.result =  int( tree.tickWhileRunning() );
+    BT::NodeStatus result;
+    result = tree.tickWhileRunning();
+    res.result =  int( result );
 
     factory_.clearRegisteredBehaviorTrees();
 
+    ROS_INFO("BT success");
     return true;
 }
 
