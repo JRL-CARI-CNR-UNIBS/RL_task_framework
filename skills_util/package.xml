@@ -26,6 +26,7 @@
   <depend>skills_arbitrator_msgs</depend>
   <depend>skills_learning_msgs</depend>
   <depend>skills_util_msgs</depend>
+  <depend>configuration_msgs</depend>
   <depend>behaviortree_cpp</depend>
 
   <!-- The export tag contains other, unspecified, tags -->

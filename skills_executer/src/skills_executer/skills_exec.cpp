@@ -3,23 +3,46 @@
 namespace skills_executer
 {
 
-SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
+SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n), robot_name_(name)
 {
-    twist_pub_        = n_.advertise<geometry_msgs::TwistStamped>("/target_cart_twist",1);
+    if (!n_.getParam("/skills_executer/" + robot_name_ + "/end_link_frame", end_link_frame_))
+    {
+        ROS_ERRORE_RED_STREAM("No end_link_frame param for " << robot_name_ << " robot");
+        return;
+    }
+    if (!n_.getParam("/skills_executer/" + robot_name_ + "/initial_reference_end_effector_frame", reference_end_effector_frame_))
+    {
+        ROS_WARN_BOLDYELLOW_STREAM("No reference_end_effector_frame param for " << robot_name_ << " robot");
+        reference_end_effector_frame_ = end_link_frame_;
+    }
+    if (!n_.getParam("/skills_executer/" + robot_name_ + "/sensored_joint",                       sensored_joint_))
+    {
+        ROS_WARN_BOLDYELLOW_STREAM("No sensored_joint param for " << robot_name_ << " robot");
+    }
+    if (!n_.getParam("/skills_executer/" + robot_name_ + "/initial_attached_link_name",           attached_link_name_))
+    {
+        ROS_WARN_BOLDYELLOW_STREAM("No attached_link_name param for " << robot_name_ << " robot");
+    }
+    if (!n_.getParam("/skills_executer/" + robot_name_ + "/initial_end_effector_touch_links",     end_effector_touch_links_))
+    {
+        ROS_WARN_BOLDYELLOW_STREAM("No end_effector_touch_links param for " << robot_name_ << " robot");
+    }
+
+    twist_pub_ = n_.advertise<geometry_msgs::TwistStamped>("/" + robot_name_ + "/target_cart_twist",1);
 
     std::string wrench_topic = "/" + robot_name_ + "/" + sensored_joint_ + "/wrench";
 
     wrench_sub_ = std::make_shared<ros_helper::SubscriptionNotifier<geometry_msgs::WrenchStamped>>(n_, wrench_topic, 10);
     js_sub_ = std::make_shared<ros_helper::SubscriptionNotifier<sensor_msgs::JointState>>(n_, "/joint_states", 10);
 
-    skill_exec_srv_ = n_.advertiseService("/skills_exec/execute_skill", &SkillsExec::skillsExecution, this);
+    skill_exec_srv_ = n_.advertiseService("/" + robot_name_ + "/skills_exec/execute_skill", &SkillsExec::skillsExecution, this);
 
-    start_config_clnt_ = n_.serviceClient<configuration_msgs::StartConfiguration>("/configuration_manager/start_configuration");
-    ROS_YELLOW_STREAM("Waiting for "<<start_config_clnt_.getService());
-    start_config_clnt_.waitForExistence();
+    change_config_clnt_ = n_.serviceClient<skills_util_msgs::ChangeConfig>("/skills_util/change_config");
+    ROS_YELLOW_STREAM("Waiting for "<<change_config_clnt_.getService());
+    change_config_clnt_.waitForExistence();
     ROS_YELLOW_STREAM("Connection ok");
 
-    get_ik_clnt_ = n_.serviceClient<ik_solver_msgs::GetIk>("/kuka_coke/get_ik");
+    get_ik_clnt_ = n_.serviceClient<ik_solver_msgs::GetIk>("/" + robot_name_ + "/get_ik");
     ROS_YELLOW_STREAM("Waiting for "<<get_ik_clnt_.getService());
     get_ik_clnt_.waitForExistence();
     ROS_YELLOW_STREAM("Connection ok");
@@ -39,20 +62,14 @@ SkillsExec::SkillsExec(const ros::NodeHandle & n) : n_(n)
 //        ROS_YELLOW_STREAM("No sensor server");
 //    }
 
-//    skill_arbit_clnt_ = n_.serviceClient<skills_arbitrator_msgs::SkillArbitration>("/skills_arbit/evaluate_skill");
-//    ROS_YELLOW_STREAM("Waiting for "<<skill_arbit_clnt_.getService());
-//    skill_arbit_clnt_.waitForExistence();
-//    ROS_YELLOW_STREAM("Connection ok");
-
-    touch_action_         = std::make_shared<actionlib::SimpleActionClient<simple_touch_controller_msgs::SimpleTouchAction>>("simple_touch", true);
-    relative_move_action_ = std::make_shared<actionlib::SimpleActionClient<relative_cartesian_controller_msgs::RelativeMoveAction>>("relative_move", true);
+    touch_action_         = std::make_shared<actionlib::SimpleActionClient<simple_touch_controller_msgs::SimpleTouchAction>>("/" + robot_name_ + "/simple_touch", true);
+    relative_move_action_ = std::make_shared<actionlib::SimpleActionClient<relative_cartesian_controller_msgs::RelativeMoveAction>>("/" + robot_name_ + "/relative_move", true);
     move_group_           = std::make_shared<moveit::planning_interface::MoveGroupInterface>(robot_name_);
-    screw_accuracy_ = 0.1;
 
     tf::StampedTransform gripper_link_transform;
     try
     {
-        tf_listener_.lookupTransform( gripper_frame_, end_link_frame_, ros::Time(0), gripper_link_transform);
+        tf_listener_.lookupTransform( reference_end_effector_frame_, end_link_frame_, ros::Time(0), gripper_link_transform);
     }
     catch (tf::TransformException ex){
         ROS_ERROR("%s",ex.what());
@@ -143,7 +160,6 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
         ROS_WHITE_STREAM(req.action_name<<" object_name: "<<object_name);
     }
 
-
     max_force_ = 0.0;
     contact_ = false;
     end_force_thread_ = false;
@@ -187,17 +203,14 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     else if ( !skill_type.compare(move_to_type_) )
     {
         res.result = move_to(req.action_name, req.skill_name, 0);
-//        res.result = follow_joint_trj(req.action_name, req.skill_name, false);
     }
     else if ( !skill_type.compare(linear_move_to_type_) )
     {
         res.result = move_to(req.action_name, req.skill_name, 1);
-//        res.result = follow_joint_trj(req.action_name, req.skill_name, true);
     }
     else if ( !skill_type.compare(linear_move_type_) )
     {
         res.result = move_to(req.action_name, req.skill_name, 2);
-//        res.result = follow_joint_trj(req.action_name, req.skill_name, true);
     }
     else if ( !skill_type.compare(joint_move_to_type_) )
     {
@@ -549,7 +562,7 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
 
         if ( index !=  actual_js.name.end() )
         {
-            if ( actual_js.position.at(index - actual_js.name.begin()) < closed_gripper_position_ + gripper_tollerance_ && actual_js.position.at(index - actual_js.name.begin()) > closed_gripper_position_ - gripper_tollerance_ )
+            if ( actual_js.position.at(index - actual_js.name.begin()) < parallel_2f_gripper_closed_position_ + gripper_tollerance_ && actual_js.position.at(index - actual_js.name.begin()) > parallel_2f_gripper_closed_position_ - gripper_tollerance_ )
             {
                 setParam(action_name,skill_name,"fail",1);
                 setParam(action_name,"fail",1);
@@ -571,7 +584,7 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
             std::string links_param_name = "/" + current_grasped_object_ + "/touch_links";
             n_.setParam(param_name,true);
             n_.setParam(link_param_name,attached_link_name_);
-            n_.setParam(links_param_name,gripper_touch_links_);
+            n_.setParam(links_param_name,end_effector_touch_links_);
         }
         else
         {
@@ -760,11 +773,11 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         {
             ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/angular_velocity_rad_s or angular_velocity_deg_s is not set" );
             ROS_YELLOW_STREAM("The default value is angular_velocity_deg_s = 30 deg/sec");
-            target_angular_velocity = 30*pi_/180;
+            target_angular_velocity = 30*M_PI/180;
         }
         else
         {
-            target_angular_velocity = vel*pi_/180;
+            target_angular_velocity = vel*M_PI/180;
             ROS_WHITE_STREAM("Read angular_velocity_deg_s: "<<vel);
             ROS_WHITE_STREAM("Angular_velocity_rad_s: "<<target_angular_velocity);
         }
@@ -784,7 +797,7 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         }
         if ( getParam(action_name, skill_name, "rotZdeg", rotZdeg) )
         {
-            double angle = rotZdeg*pi_/180;
+            double angle = rotZdeg*M_PI/180;
             quat.setRPY(0,0,angle);
             //        relative_pose.pose.orientation=tf::createQuaternionFromRPY(0.0,0.0,angle);
             relative_pose.pose.orientation.x = quat.getX();
@@ -800,7 +813,7 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         }
         else if( getParam(action_name, skill_name, "rotYdeg", rotYdeg) )
         {
-            double angle = rotYdeg*pi_/180;
+            double angle = rotYdeg*M_PI/180;
             quat.setRPY(0,angle,0);
             //        relative_pose.pose.orientation=tf::createQuaternionFromRPY(0.0,angle,0.0);
             relative_pose.pose.orientation.x = quat.getX();
@@ -816,7 +829,7 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         }
         else if( getParam(action_name, skill_name, "rotXdeg", rotXdeg) )
         {
-            double angle = rotXdeg*pi_/180;
+            double angle = rotXdeg*M_PI/180;
             quat.setRPY(angle,0,0);
             //        relative_pose.pose.orientation=tf::createQuaternionFromRPY(angle,0.0,0.0);
             relative_pose.pose.orientation.x = quat.getX();
@@ -936,7 +949,7 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         tf::StampedTransform gripper_to_goal_frame_transform;
         try
         {
-            tf_listener_.lookupTransform( gripper_frame_, target_TF, ros::Time(0), gripper_to_goal_frame_transform);
+            tf_listener_.lookupTransform( reference_end_effector_frame_, target_TF, ros::Time(0), gripper_to_goal_frame_transform);
         }
         catch (tf::TransformException ex){
             ROS_ERROR("%s",ex.what());
@@ -1026,7 +1039,7 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         relative_pose.pose.orientation.y = gripper_to_real_goal_transform.getRotation().getY();
         relative_pose.pose.orientation.z = gripper_to_real_goal_transform.getRotation().getZ();
         relative_pose.pose.orientation.w = gripper_to_real_goal_transform.getRotation().getW();
-        relative_pose.header.frame_id    = gripper_frame_;
+        relative_pose.header.frame_id    = reference_end_effector_frame_;
 
         rel_move_goal.target_angular_velocity = target_angular_velocity;
         rel_move_goal.target_linear_velocity = target_linear_velocity;
@@ -1582,21 +1595,21 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
-bool SkillsExec::changeConfig(std::string config_name)
+bool SkillsExec::changeConfig(const std::string config_name)
 {
-    configuration_msgs::StartConfiguration start_config_srv;
-    start_config_srv.request.start_configuration = config_name;
-    start_config_srv.request.strictness = 1;
+    skills_util_msgs::ChangeConfig change_config_srv;
+    change_config_srv.request.config_name = config_name;
+    change_config_srv.request.robot_name = robot_name_;
 
-    if (!start_config_clnt_.call(start_config_srv))
+    if (!change_config_clnt_.call(change_config_srv))
     {
-      ROS_ERROR("Unable to call %s service to set controller %s",start_config_clnt_.getService().c_str(),config_name.c_str());
+      ROS_ERROR("Unable to call %s service to set controller %s",change_config_clnt_.getService().c_str(),config_name.c_str());
       return false;
     }
 
-    if (!start_config_srv.response.ok)
+    if (!change_config_srv.response.ok)
     {
-      ROS_ERROR("Error on service %s response", start_config_clnt_.getService().c_str());
+      ROS_ERROR("Error on service %s response", change_config_clnt_.getService().c_str());
       return false;
     }
 
@@ -1712,7 +1725,7 @@ void SkillsExec::gripper_feedback()
                 ROS_YELLOW_STREAM("No object in the gripper. Current position: "<<actual_js.position.at(index - actual_js.name.begin()));
                 break;
             }
-//            if ( actual_js.position.at(index - actual_js.name.begin()) < closed_gripper_position_ + gripper_tollerance_ && actual_js.position.at(index - actual_js.name.begin()) > closed_gripper_position_ - gripper_tollerance_ )
+//            if ( actual_js.position.at(index - actual_js.name.begin()) < parallel_2f_gripper_closed_position_ + gripper_tollerance_ && actual_js.position.at(index - actual_js.name.begin()) > parallel_2f_gripper_closed_position_ - gripper_tollerance_ )
 //            {
 //                setParam(current_action_name_,current_skill_name_,"fail",1);
 //                setParam(current_action_name_,"fail",1);
@@ -1748,6 +1761,10 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
     int r_att;
     std::vector<double> relative_position, relative_quaternion;
     geometry_msgs::TransformStamped transform_stamped;
+    tf::Vector3 rel_pos;
+    tf::Quaternion rel_quat;
+    tf::StampedTransform relative_transform;
+    Eigen::Affine3d T_relative;
 
     if (!getParam(action_name, skill_name, "acceleration_scaling", acc))
     {
@@ -1804,6 +1821,9 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
         relative_position.push_back(0);
         relative_position.push_back(0);
         setParam(action_name, skill_name, "relative_position", relative_position);
+        rel_pos.setX(0);
+        rel_pos.setY(0);
+        rel_pos.setZ(0);
     }
     else
     {
@@ -1815,9 +1835,16 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
             relative_position.push_back(0);
             relative_position.push_back(0);
             relative_position.push_back(0);
+            setParam(action_name, skill_name, "relative_position", relative_position);
+            rel_pos.setX(0);
+            rel_pos.setY(0);
+            rel_pos.setZ(0);
         }
         else
         {
+            rel_pos.setX(relative_position.at(0));
+            rel_pos.setY(relative_position.at(1));
+            rel_pos.setZ(relative_position.at(2));
             ROS_WHITE_STREAM("  relative_position: ["<<relative_position.at(0)<<","<<relative_position.at(1)<<","<<relative_position.at(2)<<"]");
         }
     }
@@ -1830,6 +1857,10 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
         relative_quaternion.push_back(0);
         relative_quaternion.push_back(1);
         setParam(action_name, skill_name, "relative_orientation", relative_quaternion);
+        rel_quat.setX(0);
+        rel_quat.setY(0);
+        rel_quat.setZ(0);
+        rel_quat.setW(1);
     }
     else
     {
@@ -1843,22 +1874,47 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
             relative_quaternion.push_back(0);
             relative_quaternion.push_back(1);
             setParam(action_name, skill_name, "relative_orientation", relative_quaternion);
+            rel_quat.setX(0);
+            rel_quat.setY(0);
+            rel_quat.setZ(0);
+            rel_quat.setW(1);
         }
         else
         {
+            rel_quat.setX(relative_quaternion.at(0));
+            rel_quat.setY(relative_quaternion.at(1));
+            rel_quat.setZ(relative_quaternion.at(2));
+            rel_quat.setW(relative_quaternion.at(3));
             ROS_WHITE_STREAM("  relative_orientation: ["<<relative_quaternion.at(0)<<","<<relative_quaternion.at(1)<<","<<relative_quaternion.at(2)<<","<<relative_quaternion.at(3)<<"]");
         }
     }
+    relative_transform.setOrigin(rel_pos);
+    relative_transform.setRotation(rel_quat);
+    tf::transformTFToEigen(relative_transform, T_relative);
+
+    tf::StampedTransform relative_end_link_transform;
+    Eigen::Affine3d T_relative_end_link;
+
+    T_relative_end_link = T_relative * T_gripper_link_;
+    tf::transformEigenToTF(T_relative_end_link, relative_end_link_transform);
+
 
     std::string TF_name = target_TF;
     TF_name.append("_goal");
-    transform_stamped.transform.translation.x = relative_position.at(0);
-    transform_stamped.transform.translation.y = relative_position.at(1);
-    transform_stamped.transform.translation.z = relative_position.at(2);
-    transform_stamped.transform.rotation.x = relative_quaternion.at(0);
-    transform_stamped.transform.rotation.y = relative_quaternion.at(1);
-    transform_stamped.transform.rotation.z = relative_quaternion.at(2);
-    transform_stamped.transform.rotation.w = relative_quaternion.at(3);
+//    transform_stamped.transform.translation.x = relative_position.at(0);
+//    transform_stamped.transform.translation.y = relative_position.at(1);
+//    transform_stamped.transform.translation.z = relative_position.at(2);
+//    transform_stamped.transform.rotation.x = relative_quaternion.at(0);
+//    transform_stamped.transform.rotation.y = relative_quaternion.at(1);
+//    transform_stamped.transform.rotation.z = relative_quaternion.at(2);
+//    transform_stamped.transform.rotation.w = relative_quaternion.at(3);
+    transform_stamped.transform.translation.x = relative_end_link_transform.getOrigin().getX();
+    transform_stamped.transform.translation.y = relative_end_link_transform.getOrigin().getY();
+    transform_stamped.transform.translation.z = relative_end_link_transform.getOrigin().getZ();
+    transform_stamped.transform.rotation.x = relative_end_link_transform.getRotation().getX();
+    transform_stamped.transform.rotation.y = relative_end_link_transform.getRotation().getY();
+    transform_stamped.transform.rotation.z = relative_end_link_transform.getRotation().getZ();
+    transform_stamped.transform.rotation.w = relative_end_link_transform.getRotation().getW();
     transform_stamped.header.stamp = ros::Time::now();
     transform_stamped.header.frame_id = target_TF;
     transform_stamped.child_frame_id = TF_name;
@@ -1935,6 +1991,59 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
 
     ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
     return skills_executer_msgs::SkillExecutionResponse::Success;
+}
+
+int SkillsExec::releaseEndEffector(const std::string &action_name, const std::string &skill_name)
+{
+    reference_end_effector_frame_ = end_link_frame_;
+    attached_link_name_.clear();
+    end_effector_touch_links_.clear();
+
+    tf::StampedTransform gripper_link_transform;
+    try
+    {
+        tf_listener_.lookupTransform( reference_end_effector_frame_, end_link_frame_, ros::Time(0), gripper_link_transform);
+    }
+    catch (tf::TransformException ex){
+        ROS_ERROR("%s",ex.what());
+        ros::Duration(1.0).sleep();
+    }
+    tf::transformTFToEigen( gripper_link_transform, T_gripper_link_);
+
+    //    Command to release the end effector
+
+}
+
+int SkillsExec::attachEndEffector(const std::string &action_name, const std::string &skill_name)
+{
+    if (!getParam(action_name, skill_name, "reference_end_effector_frame", reference_end_effector_frame_))
+    {
+        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/reference_end_effector_frame is not set" );
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+    if (!getParam(action_name, skill_name, "fraattached_link_name",   attached_link_name_))
+    {
+        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/attached_link_name is not set" );
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+    if (!getParam(action_name, skill_name, "end_effector_touch_links", end_effector_touch_links_))
+    {
+        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/end_effector_touch_links is not set" );
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+
+    tf::StampedTransform gripper_link_transform;
+    try
+    {
+        tf_listener_.lookupTransform( reference_end_effector_frame_, end_link_frame_, ros::Time(0), gripper_link_transform);
+    }
+    catch (tf::TransformException ex){
+        ROS_ERROR("%s",ex.what());
+        ros::Duration(1.0).sleep();
+    }
+    tf::transformTFToEigen( gripper_link_transform, T_gripper_link_);
+
+//    Command to attach the end effector
 }
 
 } // end namespace skills_executer

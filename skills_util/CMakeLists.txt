@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   skills_arbitrator_msgs
   skills_learning_msgs
   skills_util_msgs
+  configuration_msgs
   behaviortree_cpp
 )
 
@@ -34,6 +35,7 @@ add_library(${PROJECT_NAME}
   src/${PROJECT_NAME}/log.cpp
   src/${PROJECT_NAME}/bt_skills_classes.cpp
   src/${PROJECT_NAME}/bt_exec.cpp
+  src/${PROJECT_NAME}/configurations_bridge.cpp
 )
 
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -52,9 +54,9 @@ install(DIRECTORY include/${PROJECT_NAME}/
         PATTERN ".svn" EXCLUDE
 )
 
-add_executable(        TF_publisher_node src/TF_publisher_node.cpp)
-add_dependencies(      TF_publisher_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries( TF_publisher_node
+add_executable(        configurations_bridge_node src/configurations_bridge_node.cpp)
+add_dependencies(      configurations_bridge_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries( configurations_bridge_node
         ${catkin_LIBRARIES}
         ${PROJECT_NAME}
 )

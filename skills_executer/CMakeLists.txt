@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   skills_executer_msgs
+  skills_util_msgs
   configuration_msgs
   sensor_msgs
   simple_touch_controller_msgs

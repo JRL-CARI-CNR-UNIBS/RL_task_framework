@@ -19,6 +19,7 @@
   <depend>actionlib</depend>
   <depend>behaviortree_cpp</depend>
   <depend>skills_executer_msgs</depend>
+  <depend>skills_util_msgs</depend>
   <depend>skills_util</depend>
   <depend>sensor_msgs</depend>
   <depend>relative_cartesian_controller_msgs</depend>

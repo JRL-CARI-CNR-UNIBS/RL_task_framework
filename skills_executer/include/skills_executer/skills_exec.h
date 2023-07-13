@@ -3,8 +3,6 @@
 
 #include <ros/ros.h>
 #include <skills_executer_msgs/SkillExecution.h>
-//#include <skills_arbitrator_msgs/SkillArbitration.h>
-//#include <skills_learning_msgs/SkillLearning.h>
 #include <actionlib/client/simple_action_client.h>
 #include <configuration_msgs/StartConfiguration.h>
 #include <simple_touch_controller_msgs/SimpleTouchAction.h>
@@ -33,6 +31,7 @@
 #include <parallel_2f_gripper/MoveGripper.h>
 #include <pybullet_utils/SensorReset.h>
 #include <tf2_ros/static_transform_broadcaster.h>
+#include <skills_util_msgs/ChangeConfig.h>
 
 //fjt part
 #include <control_msgs/FollowJointTrajectoryAction.h>
@@ -50,11 +49,11 @@ namespace skills_executer
 class SkillsExec
 {
 public:
-    SkillsExec(const ros::NodeHandle & n);
+    SkillsExec(const ros::NodeHandle & n, const std::string & name);
     bool skillsExecution(skills_executer_msgs::SkillExecution::Request  &req,
                          skills_executer_msgs::SkillExecution::Response &res);
 
-    bool changeConfig(std::string config_name);
+    bool changeConfig         (const std::string config_name);
     int urLoadProgram         (const std::string &action_name, const std::string &skill_name);
     int robotiqGripperMove    (const std::string &action_name, const std::string &skill_name);
     int cartVel               (const std::string &action_name, const std::string &skill_name);
@@ -62,10 +61,10 @@ public:
     int cartPos               (const std::string &action_name, const std::string &skill_name, const int &move_type);
     int move_to               (const std::string &action_name, const std::string &skill_name, const int &move_type);
     int parallel2fGripperMove (const std::string &action_name, const std::string &skill_name);
-
+    int releaseEndEffector    (const std::string &action_name, const std::string &skill_name);
+    int attachEndEffector     (const std::string &action_name, const std::string &skill_name);
     int joint_move_to         (const std::string &action_name, const std::string &skill_name);
-
-    double tf_distance (const std::string &reference_tf, const std::string &target_frame);
+    double tf_distance        (const std::string &reference_tf, const std::string &target_frame);
 
     void gripper_feedback     ();
 
@@ -74,6 +73,12 @@ public:
     double forceTopicCallback();
     double maxForce();
     void maxWrenchCalculation();
+
+    bool setReferenceEndEffectorFrame();
+    bool setSensoredJoint();
+    bool setAttachedLinkName();
+    bool setEndEffectorTouchLinks();
+
 
     template<typename T> void setParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, const T &param_value);
     template<typename T> void setParam(const std::string &action_name, const std::string &param_name, const T &param_value);
@@ -85,36 +90,26 @@ private:
     bool end_gripper_feedback_ = false;
     bool end_force_thread_ = false;
     bool contact_ = false;
-    bool default_execution_duration_monitoring_ = 1;
-    double screw_accuracy_;
-    double max_screw_accuracy_ = 10.0;
-    double pi_ = 3.14159265358979323846;
     double max_force_ = 0.0;
     double gripper_tollerance_ = 0.01;
     double max_force_variation_ = 500;
     double minimum_gripper_force_ = 5;
-    double default_trajectory_goal_joint_tolerance_ = 0.01;
-    double default_trajectory_goal_tolerance_ = 0.1;
-    double default_trajectory_start_tolerance_ = 0.01;
-    double default_goal_duration_margin_ = 1;
-    double closed_gripper_position_ = -0.79;
+    double parallel_2f_gripper_closed_position_ = -0.79;
 
     tf::TransformListener tf_listener_;
     tf2_ros::StaticTransformBroadcaster tf_br_;
+    std::string robot_name_;
     std::string param_ns_ = "RL_params";
     std::string end_link_frame_ = "flange";
-    std::string gripper_frame_ = "closed_tip";
-    std::string robot_name_ = "kr_50_r2500";
+    std::string reference_end_effector_frame_ = "closed_tip";
     std::string sensored_joint_ = "link6_to_flange";
     std::string attached_link_name_ = "gripper_base";
-    std::vector<std::string> gripper_touch_links_{"right_crank", "left_crank", "right_phalanx", "left_phalanx"};
+    std::vector<std::string> end_effector_touch_links_{"right_crank", "left_crank", "right_phalanx", "left_phalanx"};
     ros::NodeHandle n_;
     ros::ServiceServer skill_exec_srv_;
     ros::ServiceClient parallel_gripper_move_clnt_;
     ros::ServiceClient sensor_reset_clnt_;
-    ros::ServiceClient start_config_clnt_;
-    ros::ServiceClient skill_arbit_clnt_;
-    ros::ServiceClient skill_explore_clnt_;
+    ros::ServiceClient change_config_clnt_;
     ros::ServiceClient get_ik_clnt_;
 
     std::shared_ptr<actionlib::SimpleActionClient<simple_touch_controller_msgs::SimpleTouchAction>>        touch_action_;
@@ -142,7 +137,9 @@ private:
     std::string move_to_type_                  = "move_to";
     std::string linear_move_type_              = "linear_move";
     std::string linear_move_to_type_           = "linear_move_to";
-    std::string joint_move_to_type_           = "joint_move_to";
+    std::string joint_move_to_type_            = "joint_move_to";
+    std::string release_end_effector_type_      = "release_end_effector";
+    std::string attach_end_effector_type_      = "attach_end_effector";
 
     std::string watch_config_ = "watch";
 

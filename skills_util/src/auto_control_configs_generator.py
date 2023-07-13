@@ -67,8 +67,8 @@ def control_configs_generation(srv):
         configuration = {}
         configuration['name'] = ''
         for config_name in combination:
-            configuration['name'] = configuration['name'] + config_name + '_'
-        configuration['name'] = configuration['name'][:-1]
+            configuration['name'] = configuration['name'] + config_name + '__'
+        configuration['name'] = configuration['name'][:-2]
         configuration['depends'] = list(combination)
         configuration['components'] = []
         new_configurations.append(configuration)

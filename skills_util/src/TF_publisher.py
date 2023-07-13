@@ -21,5 +21,3 @@ if __name__ == '__main__':
                 elif tf_param['frame'] == 'world':
                     br.sendTransform(tf_param['position'], tf_param['quaternion'], rospy.Time.now(), tf_param['name'], tf_param['frame'])
         r.sleep()
-
-
