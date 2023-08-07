@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   SkillExecution.srv
+  RobotSkillExecution.srv
   )
 
 generate_messages(

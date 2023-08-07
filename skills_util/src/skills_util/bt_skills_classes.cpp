@@ -23,57 +23,16 @@ std::vector<std::string> bt_skills_classes::skillNames(const std::string& action
     return names;
 }
 
-SkillActionNode::SkillActionNode(const std::string &name) : BT::SyncActionNode(name, {})
-{
-    ROS_INFO("Init of SkillActionNode, action name: %s", name.c_str());
-
-    skill_exec_clnt_ = n_.serviceClient<skills_executer_msgs::SkillExecution>("/skills_exec/execute_skill");
-    ROS_WARN("Waiting for %s", skill_exec_clnt_.getService().c_str() );
-    skill_exec_clnt_.waitForExistence();
-    ROS_WARN("Connection ok");
-}
-
-BT::NodeStatus SkillActionNode::tick()
-{
-    std::vector<std::string> names = bt_skills_classes::skillNames(name());
-    ROS_INFO("action_name: %s",names.at(0).c_str());
-    ROS_INFO("skill_name: %s",names.at(1).c_str());
-    if (names.empty())
-    {
-        ROS_WARN("The name of action don't respect the standard");
-        return BT::NodeStatus::FAILURE;
-    }
-    skills_executer_msgs::SkillExecution skill_exec_srv;
-    skill_exec_srv.request.action_name = names.at(0);
-    skill_exec_srv.request.skill_name = names.at(1);
-//        mettere qua tutto il necessario
-
-    if (!skill_exec_clnt_.call(skill_exec_srv))
-    {
-        ROS_ERROR("Fail to call service: %s", skill_exec_clnt_.getService().c_str());
-        ROS_ERROR("action_name: %s, skill_name: %s", skill_exec_srv.request.action_name.c_str(), skill_exec_srv.request.skill_name.c_str());
-        return BT::NodeStatus::FAILURE;
-    }
-
-    return BT::NodeStatus::SUCCESS;
-}
-
 SkillExecutionNode::SkillExecutionNode(const std::string &name) : BT::SyncActionNode(name,  {})
 {
     ROS_INFO("Init of SkillExecutionNode, action name: %s", name.c_str());
 
-    if ( !ros::service::exists("/move_parallel_gripper", false) ||
-         !ros::service::exists("/pybullet_sensor_reset", false) ||
-         !ros::service::exists("/configuration_manager/start_configuration", false) ||
-         !ros::service::exists("/skills_arbit/evaluate_skill", false) ||
-         !ros::service::exists("/skills_learn/explore_skill", false) ||
-         !ros::service::exists("/kuka_coke/get_ik", false) ||
-         !ros::service::exists("/skills_exec/execute_skill", false) )
+    if ( !ros::service::exists("/skills_exec/execute_skill", false) )
     {
         throw std::runtime_error("failed to construct");;
     }
 
-    skill_exec_clnt_ = n_.serviceClient<skills_executer_msgs::SkillExecution>("/skills_exec/execute_skill");
+    skill_exec_clnt_ = n_.serviceClient<skills_executer_msgs::RobotSkillExecution>("/skills_exec/execute_skill");
     ROS_WARN("Waiting for %s", skill_exec_clnt_.getService().c_str() );
     skill_exec_clnt_.waitForExistence();
     ROS_WARN("Connection ok");
@@ -86,13 +45,21 @@ BT::NodeStatus SkillExecutionNode::tick()
     ROS_INFO("skill_name: %s",names.at(1).c_str());
     if (names.empty())
     {
-        ROS_WARN("The name of action don't respect the standard");
+        ROS_ERROR("The name of action don't respect the standard");
         return BT::NodeStatus::FAILURE;
     }
-    skills_executer_msgs::SkillExecution skill_exec_srv;
+
+    std::string robot_name;
+    if (!SkillExecutionNode::getInput<std::string>("robot",robot_name))
+    {
+        ROS_ERROR("Missing required input [robot]");
+        return BT::NodeStatus::FAILURE;
+    }
+
+    skills_executer_msgs::RobotSkillExecution skill_exec_srv;
     skill_exec_srv.request.action_name = names.at(0);
     skill_exec_srv.request.skill_name = names.at(1);
-//        mettere qua tutto il necessario
+    skill_exec_srv.request.robot_name = robot_name;
 
     if (!skill_exec_clnt_.call(skill_exec_srv))
     {

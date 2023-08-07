@@ -7,25 +7,40 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
 {
     if (!n_.getParam("/skills_executer/" + robot_name_ + "/end_link_frame", end_link_frame_))
     {
-        ROS_ERRORE_RED_STREAM("No end_link_frame param for " << robot_name_ << " robot");
+        ROS_ERRORE_RED_STREAM("No /skills_executer/" + robot_name_ + "/end_link_frame param ");
         return;
     }
     if (!n_.getParam("/skills_executer/" + robot_name_ + "/initial_reference_end_effector_frame", reference_end_effector_frame_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No reference_end_effector_frame param for " << robot_name_ << " robot");
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/initial_reference_end_effector_frame param");
         reference_end_effector_frame_ = end_link_frame_;
     }
     if (!n_.getParam("/skills_executer/" + robot_name_ + "/sensored_joint",                       sensored_joint_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No sensored_joint param for " << robot_name_ << " robot");
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/sensored_joint param");
     }
     if (!n_.getParam("/skills_executer/" + robot_name_ + "/initial_attached_link_name",           attached_link_name_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No attached_link_name param for " << robot_name_ << " robot");
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/initial_attached_link_name param");
     }
     if (!n_.getParam("/skills_executer/" + robot_name_ + "/initial_end_effector_touch_links",     end_effector_touch_links_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No end_effector_touch_links param for " << robot_name_ << " robot");
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/initial_end_effector_touch_links param");
+    }
+    if (!n_.getParam("/skills_executer/use_ur", use_ur_))
+    {
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/use_ur param, defaul false");
+        use_ur_ = false;
+    }
+    if (!n_.getParam("/skills_executer/use_pybullet", use_pybullet_))
+    {
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/use_pybullet param, defaul false");
+        use_pybullet_ = false;
+    }
+    if (!n_.getParam("/skills_executer/use_change_config_bridge", use_change_config_bridge_))
+    {
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/use_change_config_bridge param, defaul false");
+        use_change_config_bridge_ = false;
     }
 
     twist_pub_ = n_.advertise<geometry_msgs::TwistStamped>("/" + robot_name_ + "/target_cart_twist",1);
@@ -35,13 +50,20 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
     wrench_sub_ = std::make_shared<ros_helper::SubscriptionNotifier<geometry_msgs::WrenchStamped>>(n_, wrench_topic, 10);
     js_sub_ = std::make_shared<ros_helper::SubscriptionNotifier<sensor_msgs::JointState>>(n_, "/joint_states", 10);
 
-    skill_exec_srv_ = n_.advertiseService("/" + robot_name_ + "/skills_exec/execute_skill", &SkillsExec::skillsExecution, this);
-
-    change_config_clnt_ = n_.serviceClient<skills_util_msgs::ChangeConfig>("/skills_util/change_config");
-    ROS_YELLOW_STREAM("Waiting for "<<change_config_clnt_.getService());
-    change_config_clnt_.waitForExistence();
-    ROS_YELLOW_STREAM("Connection ok");
-
+    if (use_change_config_bridge_)
+    {
+        change_config_clnt_ = n_.serviceClient<skills_util_msgs::ChangeConfig>("/skills_util/change_config");
+        ROS_YELLOW_STREAM("Waiting for "<<change_config_clnt_.getService());
+        change_config_clnt_.waitForExistence();
+        ROS_YELLOW_STREAM("Connection ok");
+    }
+    else
+    {
+        change_config_clnt_ = n_.serviceClient<configuration_msgs::StartConfiguration>("/configuration_manager/start_configuration");
+        ROS_YELLOW_STREAM("Waiting for "<<change_config_clnt_.getService());
+        change_config_clnt_.waitForExistence();
+        ROS_YELLOW_STREAM("Connection ok");
+    }
     get_ik_clnt_ = n_.serviceClient<ik_solver_msgs::GetIk>("/" + robot_name_ + "/get_ik");
     ROS_YELLOW_STREAM("Waiting for "<<get_ik_clnt_.getService());
     get_ik_clnt_.waitForExistence();
@@ -85,6 +107,7 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
     }
     //    end
 
+    skill_exec_srv_ = n_.advertiseService("/" + robot_name_ + "/skills_exec/execute_skill", &SkillsExec::skillsExecution, this);
 }
 
 bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  &req,
@@ -1597,21 +1620,43 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
 
 bool SkillsExec::changeConfig(const std::string config_name)
 {
-    skills_util_msgs::ChangeConfig change_config_srv;
-    change_config_srv.request.config_name = config_name;
-    change_config_srv.request.robot_name = robot_name_;
-
-    if (!change_config_clnt_.call(change_config_srv))
+    if (use_change_config_bridge_)
     {
-      ROS_ERROR("Unable to call %s service to set controller %s",change_config_clnt_.getService().c_str(),config_name.c_str());
-      return false;
+        skills_util_msgs::ChangeConfig change_config_srv;
+        change_config_srv.request.config_name = config_name;
+        change_config_srv.request.robot_name = robot_name_;
+
+        if (!change_config_clnt_.call(change_config_srv))
+        {
+          ROS_ERROR("Unable to call %s service to set controller %s",change_config_clnt_.getService().c_str(),config_name.c_str());
+          return false;
+        }
+
+        if (!change_config_srv.response.ok)
+        {
+          ROS_ERROR("Error on service %s response", change_config_clnt_.getService().c_str());
+          return false;
+        }
+    }
+    else
+    {
+        configuration_msgs::StartConfiguration start_config_srv;
+        start_config_srv.request.start_configuration = config_name;
+        start_config_srv.request.strictness = 1;
+
+        if (!change_config_clnt_.call(start_config_srv))
+        {
+          ROS_ERROR("Unable to call %s service to set controller %s",change_config_clnt_.getService().c_str(),config_name.c_str());
+          return false;
+        }
+
+        if (!start_config_srv.response.ok)
+        {
+          ROS_ERROR("Error on service %s response", change_config_clnt_.getService().c_str());
+          return false;
+        }
     }
 
-    if (!change_config_srv.response.ok)
-    {
-      ROS_ERROR("Error on service %s response", change_config_clnt_.getService().c_str());
-      return false;
-    }
 
     ROS_WHITE_STREAM("Controller "<<config_name<<" started.");
 
@@ -1641,6 +1686,10 @@ int SkillsExec::reset_pybullet_ft_sensor()
 {
     ROS_WHITE_STREAM("In reset_pybullet_ft_sensor");
     ros::ServiceClient reset_force_sensor_clnt = n_.serviceClient<pybullet_utils::SensorReset>("/pybullet_sensor_reset");
+    ROS_WARN("Waiting for %s", reset_force_sensor_clnt.getService().c_str() );
+    reset_force_sensor_clnt.waitForExistence();
+    ROS_WARN("Connection ok");
+
     reset_force_sensor_clnt.waitForExistence();
     pybullet_utils::SensorReset zero_srv;
     zero_srv.request.robot_name = robot_name_;
@@ -1656,10 +1705,23 @@ int SkillsExec::reset_pybullet_ft_sensor()
     else
         return skills_executer_msgs::SkillExecutionResponse::Fail;
 }
+int SkillsExec::reset_ft_sensor()
+{
+    if (use_pybullet_)
+        return reset_pybullet_ft_sensor();
+    else if (use_ur_)
+        return reset_ur10e_ft_sensor();
+    else
+        return skills_executer_msgs::SkillExecutionResponse::Success;
+}
 
 void SkillsExec::maxWrenchCalculation()
 {
-    reset_pybullet_ft_sensor();
+    if (sensored_joint_.empty())
+        return;
+
+    reset_ft_sensor();
+
     geometry_msgs::WrenchStamped actual_wrench;
     double force_old;
     while ( !end_force_thread_ )

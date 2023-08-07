@@ -3,22 +3,10 @@
 
 #include <ros/ros.h>
 #include <behaviortree_cpp/behavior_tree.h>
-#include <skills_executer_msgs/SkillExecution.h>
+#include <skills_executer_msgs/RobotSkillExecution.h>
 #include <skills_learning_msgs/SkillLearning.h>
 #include <skills_learning_msgs/SkillExplore.h>
 #include <skills_arbitrator_msgs/SkillArbitration.h>
-
-class SkillActionNode : public BT::SyncActionNode
-{
-public:
-    SkillActionNode(const std::string& name);
-
-    BT::NodeStatus tick() override;
-
-private:
-    ros::NodeHandle n_;
-    ros::ServiceClient skill_exec_clnt_;
-};
 
 class SkillExecutionNode : public BT::SyncActionNode
 {
@@ -30,6 +18,11 @@ public:
 private:
     ros::NodeHandle n_;
     ros::ServiceClient skill_exec_clnt_;
+
+    static BT::PortsList providedPorts()
+      {
+        return{BT::InputPort<std::string>("robot")};
+      }
 };
 
 class ActionLearningNode : public BT::SyncActionNode

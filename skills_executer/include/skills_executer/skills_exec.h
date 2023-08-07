@@ -68,6 +68,7 @@ public:
 
     void gripper_feedback     ();
 
+    int reset_ft_sensor();
     int reset_pybullet_ft_sensor();
     int reset_ur10e_ft_sensor ();
     double forceTopicCallback();
@@ -90,6 +91,9 @@ private:
     bool end_gripper_feedback_ = false;
     bool end_force_thread_ = false;
     bool contact_ = false;
+    bool use_pybullet_ = false;
+    bool use_ur_ = false;
+    bool use_change_config_bridge_ = false;
     double max_force_ = 0.0;
     double gripper_tollerance_ = 0.01;
     double max_force_variation_ = 500;
@@ -100,11 +104,11 @@ private:
     tf2_ros::StaticTransformBroadcaster tf_br_;
     std::string robot_name_;
     std::string param_ns_ = "RL_params";
-    std::string end_link_frame_ = "flange";
-    std::string reference_end_effector_frame_ = "closed_tip";
-    std::string sensored_joint_ = "link6_to_flange";
-    std::string attached_link_name_ = "gripper_base";
-    std::vector<std::string> end_effector_touch_links_{"right_crank", "left_crank", "right_phalanx", "left_phalanx"};
+    std::string end_link_frame_;
+    std::string reference_end_effector_frame_;
+    std::string sensored_joint_;
+    std::string attached_link_name_;
+    std::vector<std::string> end_effector_touch_links_;
     ros::NodeHandle n_;
     ros::ServiceServer skill_exec_srv_;
     ros::ServiceClient parallel_gripper_move_clnt_;

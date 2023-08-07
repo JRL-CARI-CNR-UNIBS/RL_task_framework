@@ -1,0 +1,11 @@
+string skill_name
+string action_name
+string robot_name
+---
+int8 result
+int8 Success=0
+int8 Fail=-1
+int8 NoParam=-2
+int8 ProblemConfManager=-3
+int8 NoSkillType=-4
+int8 Error=-5

@@ -23,14 +23,18 @@ BTExec::BTExec(const ros::NodeHandle & n) : n_(n)
 bool BTExec::runTree(skills_util_msgs::RunTree::Request  &req,
                      skills_util_msgs::RunTree::Response &res)
 {
-    std::string repo = req.folder_path;
-    repo.append("/");
-    for ( auto const& entry : std::filesystem::directory_iterator(repo))
+    std::vector<std::string> repos = req.folders_paths;
+
+    for (std::string repo: repos)
     {
-        if( entry.path().extension() == ".xml")
+        repo.append("/");
+        for ( auto const& entry : std::filesystem::directory_iterator(repo))
         {
-            ROS_INFO_STREAM("Repo: "<<entry.path().string());
-            factory_.registerBehaviorTreeFromFile(entry.path().string());
+            if( entry.path().extension() == ".xml")
+            {
+                ROS_INFO_STREAM("Repo: "<<entry.path().string());
+                factory_.registerBehaviorTreeFromFile(entry.path().string());
+            }
         }
     }
 

@@ -3,6 +3,7 @@
 *****************************************************************************/
 
 #include <skills_executer/skills_exec.h>
+#include <skills_executer/bt_to_skills_exec_bridge.h>
 
 /*****************************************************************************
 ** Main
@@ -34,6 +35,8 @@ int main(int argc, char **argv)
         std::shared_ptr<skills_executer::SkillsExec> skills_exec = std::make_shared<skills_executer::SkillsExec> (n,robot);
         skills_executers.push_back(skills_exec);
     }
+
+    skills_executer::BTToSkillsExecBridge bt_to_skills_exec_bridge(n,robots);
 
     while (ros::ok())
     {

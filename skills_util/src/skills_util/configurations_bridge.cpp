@@ -85,7 +85,7 @@ bool ConfigurationBridge::changeConfig(skills_util_msgs::ChangeConfig::Request  
 
     configuration_msgs::StartConfiguration start_config_srv;
     start_config_srv.request.start_configuration = new_config;
-    start_config_srv.request.strictness = 2;
+    start_config_srv.request.strictness = 1;
 
     if (!start_config_clnt_.call(start_config_srv))
     {
