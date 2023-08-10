@@ -7,7 +7,7 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
 {
     if (!n_.getParam("/skills_executer/" + robot_name_ + "/end_link_frame", end_link_frame_))
     {
-        ROS_ERRORE_RED_STREAM("No /skills_executer/" + robot_name_ + "/end_link_frame param ");
+        ROS_ERROR_RED_STREAM("No /skills_executer/" + robot_name_ + "/end_link_frame param ");
         return;
     }
     if (!n_.getParam("/skills_executer/" + robot_name_ + "/initial_reference_end_effector_frame", reference_end_effector_frame_))
@@ -86,7 +86,7 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
 
     touch_action_         = std::make_shared<actionlib::SimpleActionClient<simple_touch_controller_msgs::SimpleTouchAction>>("/" + robot_name_ + "/simple_touch", true);
     relative_move_action_ = std::make_shared<actionlib::SimpleActionClient<relative_cartesian_controller_msgs::RelativeMoveAction>>("/" + robot_name_ + "/relative_move", true);
-    move_group_           = std::make_shared<moveit::planning_interface::MoveGroupInterface>(robot_name_);
+    move_group_           = std::make_shared<moveit::planning_interface::MoveGroupInterface>(robot_name_); 
 
     tf::StampedTransform gripper_link_transform;
     try
@@ -101,9 +101,26 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
 
     //    fjt part
     fjt_ac_.reset(new actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction>("/"+robot_name_+"/follow_joint_trajectory",true));
-    for ( std::size_t i = 0; i < move_group_->getJointNames().size(); i++)
+    if (!n_.getParam("/skills_executer/trajectory_joint_tollerance", trajectory_joint_tollerance_))
     {
-        trajectory_joint_tollerance_.push_back(0.001);
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/use_change_config_bridge param, defaul 0.001 for all joints");
+        for ( std::size_t i = 0; i < move_group_->getJointNames().size(); i++)
+        {
+            trajectory_joint_tollerance_.push_back(0.001);
+        }
+    }
+    else
+    {
+        if (trajectory_joint_tollerance_.size() != move_group_->getJointNames().size())
+        {
+            ROS_ERROR_RED_STREAM("Trajectory_joint_tollerance has wrong size, tjt: "<<trajectory_joint_tollerance_.size()<<", n_joint: "<<move_group_->getJointNames().size());
+            return;
+        }
+    }
+    if (!n_.getParam("/skills_executer/trajectory_time_tollerance", trajectory_time_tollerance_))
+    {
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/trajectory_time_tollerance param, defaul 2 second");
+        trajectory_time_tollerance_ = 2;
     }
     //    end
 
@@ -2048,6 +2065,7 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
 
     std::vector<double> target_conf = get_ik_msg.response.solution.configurations.at(0).configuration;
     std::vector<double> current_conf = move_group_->getCurrentJointValues();
+
     ROS_RED_STREAM("Target configurtion: ["<<target_conf.at(0)<<","<<target_conf.at(1)<<","<<target_conf.at(2)<<","
                    <<target_conf.at(3)<<","<<target_conf.at(4)<<","<<target_conf.at(5)<<"]");
     ROS_RED_STREAM("Current configurtion: ["<<current_conf.at(0)<<","<<current_conf.at(1)<<","<<current_conf.at(2)<<","

@@ -25,7 +25,7 @@ int main(int argc, char **argv)
     std::vector<std::string> robots;
     if (!n.getParam("/skills_executer/robots", robots))
     {
-        ROS_ERRORE_RED_STREAM("No /skill_executer/robots param");
+        ROS_ERROR_RED_STREAM("No /skill_executer/robots param");
         exit(0);
     }
 

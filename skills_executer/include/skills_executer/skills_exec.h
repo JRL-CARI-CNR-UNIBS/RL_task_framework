@@ -152,7 +152,7 @@ private:
 
 
 //    fjt part
-    double trajectory_time_tollerance_ = 2;
+    double trajectory_time_tollerance_;
     std::vector<double> trajectory_joint_tollerance_;
     std::shared_ptr<actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction>> fjt_ac_;
 //    end
