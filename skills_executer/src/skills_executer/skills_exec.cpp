@@ -101,9 +101,9 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
 
     //    fjt part
     fjt_ac_.reset(new actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction>("/"+robot_name_+"/follow_joint_trajectory",true));
-    if (!n_.getParam("/skills_executer/trajectory_joint_tollerance", trajectory_joint_tollerance_))
+    if (!n_.getParam("/skills_executer/" + robot_name_ + "/trajectory_joint_tollerance", trajectory_joint_tollerance_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/use_change_config_bridge param, defaul 0.001 for all joints");
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/trajectory_joint_tollerance param, defaul 0.001 for all joints");
         for ( std::size_t i = 0; i < move_group_->getJointNames().size(); i++)
         {
             trajectory_joint_tollerance_.push_back(0.001);
@@ -117,9 +117,9 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
             return;
         }
     }
-    if (!n_.getParam("/skills_executer/trajectory_time_tollerance", trajectory_time_tollerance_))
+    if (!n_.getParam("/skills_executer/" + robot_name_ + "/trajectory_time_tollerance", trajectory_time_tollerance_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/trajectory_time_tollerance param, defaul 2 second");
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/trajectory_time_tollerance param, defaul 2 second");
         trajectory_time_tollerance_ = 2;
     }
     //    end
