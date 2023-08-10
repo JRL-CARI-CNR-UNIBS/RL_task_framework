@@ -97,7 +97,7 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
         ROS_ERROR("%s",ex.what());
         ros::Duration(1.0).sleep();
     }
-    tf::transformTFToEigen( gripper_link_transform, T_gripper_link_);
+    tf::transformTFToEigen( gripper_link_transform, T_gripper_to_end_link_);
 
     //    fjt part
     fjt_ac_.reset(new actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction>("/"+robot_name_+"/follow_joint_trajectory",true));
@@ -1407,7 +1407,7 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
 
         Eigen::Affine3d T_origin_goal_gripper;
         tf::transformTFToEigen( origin_goal_transform, T_origin_goal_gripper);
-        Eigen::Affine3d T_origin_link_goal = T_origin_goal_gripper* T_relative * T_gripper_link_;
+        Eigen::Affine3d T_origin_link_goal = T_origin_goal_gripper* T_relative * T_gripper_to_end_link_;
         tf::transformEigenToTF(T_origin_link_goal,origin_link_goal_transform);
 
         geometry_msgs::Pose target_pose;
@@ -1957,19 +1957,12 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
     tf::StampedTransform relative_end_link_transform;
     Eigen::Affine3d T_relative_end_link;
 
-    T_relative_end_link = T_relative * T_gripper_link_;
+    T_relative_end_link = T_relative * T_gripper_to_end_link_;
     tf::transformEigenToTF(T_relative_end_link, relative_end_link_transform);
 
 
     std::string TF_name = target_TF;
     TF_name.append("_goal");
-//    transform_stamped.transform.translation.x = relative_position.at(0);
-//    transform_stamped.transform.translation.y = relative_position.at(1);
-//    transform_stamped.transform.translation.z = relative_position.at(2);
-//    transform_stamped.transform.rotation.x = relative_quaternion.at(0);
-//    transform_stamped.transform.rotation.y = relative_quaternion.at(1);
-//    transform_stamped.transform.rotation.z = relative_quaternion.at(2);
-//    transform_stamped.transform.rotation.w = relative_quaternion.at(3);
     transform_stamped.transform.translation.x = relative_end_link_transform.getOrigin().getX();
     transform_stamped.transform.translation.y = relative_end_link_transform.getOrigin().getY();
     transform_stamped.transform.translation.z = relative_end_link_transform.getOrigin().getZ();
@@ -1980,6 +1973,8 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
     transform_stamped.header.stamp = ros::Time::now();
     transform_stamped.header.frame_id = target_TF;
     transform_stamped.child_frame_id = TF_name;
+
+    ROS_INFO_STREAM("Target tf: "<<target_TF);
 
     tf_br_.sendTransform(transform_stamped);
 
@@ -2051,6 +2046,13 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
         return skills_executer_msgs::SkillExecutionResponse::Fail;
     }
 
+    std::vector<double> target_conf = get_ik_msg.response.solution.configurations.at(0).configuration;
+    std::vector<double> current_conf = move_group_->getCurrentJointValues();
+    ROS_RED_STREAM("Target configurtion: ["<<target_conf.at(0)<<","<<target_conf.at(1)<<","<<target_conf.at(2)<<","
+                   <<target_conf.at(3)<<","<<target_conf.at(4)<<","<<target_conf.at(5)<<"]");
+    ROS_RED_STREAM("Current configurtion: ["<<current_conf.at(0)<<","<<current_conf.at(1)<<","<<current_conf.at(2)<<","
+                   <<current_conf.at(3)<<","<<current_conf.at(4)<<","<<current_conf.at(5)<<"]");
+
     ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
@@ -2070,7 +2072,7 @@ int SkillsExec::releaseEndEffector(const std::string &action_name, const std::st
         ROS_ERROR("%s",ex.what());
         ros::Duration(1.0).sleep();
     }
-    tf::transformTFToEigen( gripper_link_transform, T_gripper_link_);
+    tf::transformTFToEigen( gripper_link_transform, T_gripper_to_end_link_);
 
     //    Command to release the end effector
 
@@ -2103,7 +2105,7 @@ int SkillsExec::attachEndEffector(const std::string &action_name, const std::str
         ROS_ERROR("%s",ex.what());
         ros::Duration(1.0).sleep();
     }
-    tf::transformTFToEigen( gripper_link_transform, T_gripper_link_);
+    tf::transformTFToEigen( gripper_link_transform, T_gripper_to_end_link_);
 
 //    Command to attach the end effector
 }

@@ -147,7 +147,7 @@ private:
 
     std::string watch_config_ = "watch";
 
-    Eigen::Affine3d T_gripper_link_;
+    Eigen::Affine3d T_gripper_to_end_link_;
     moveit::planning_interface::MoveGroupInterface::Plan moveit_plan_;
 
 
