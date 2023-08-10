@@ -124,6 +124,19 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
     }
     //    end
 
+    double goal_joint_tollerance;
+    if (!n_.getParam("/skills_executer/" + robot_name_ + "/goal_joint_tollerance", goal_joint_tollerance))
+    {
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/goal_joint_tollerance param, defaul 0.0001");
+        move_group_->setGoalJointTolerance(0.0001);
+    }
+    else
+    {
+        move_group_->setGoalJointTolerance(goal_joint_tollerance);
+    }
+
+
+
     skill_exec_srv_ = n_.advertiseService("/" + robot_name_ + "/skills_exec/execute_skill", &SkillsExec::skillsExecution, this);
 }
 
