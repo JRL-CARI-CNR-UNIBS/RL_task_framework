@@ -9,6 +9,7 @@
 ** Main
 *****************************************************************************/
 
+
 int main(int argc, char **argv)
 {  
     ros::init(argc,argv,"skills_exec_node");
@@ -22,21 +23,29 @@ int main(int argc, char **argv)
     spinner.start();
 
     ros::NodeHandle n;
-    std::vector<std::string> robots;
-    if (!n.getParam("/skills_executer/robots", robots))
+    XmlRpc::XmlRpcValue robots_param;
+    if (!n.getParam("/skills_executer/robots", robots_param))
     {
-        ROS_ERROR_RED_STREAM("No /skill_executer/robots param");
+        ROS_ERROR_RED_STREAM("No /skills_executer/robots param");
         exit(0);
     }
 
-    std::vector<std::shared_ptr<skills_executer::SkillsExec>> skills_executers;
-    for (const std::string robot: robots)
+    if (robots_param.getType() != XmlRpc::XmlRpcValue::TypeStruct)
     {
-        std::shared_ptr<skills_executer::SkillsExec> skills_exec = std::make_shared<skills_executer::SkillsExec> (n,robot);
+        ROS_ERROR("/skills_executer/robots is not a struct");
+        exit(0);
+    }
+
+    std::vector<std::string> robots_names = skills_util::getMemberByXml(robots_param);
+
+    std::vector<std::shared_ptr<skills_executer::SkillsExec>> skills_executers;
+    for (const std::string robot_name: robots_names)
+    {
+        std::shared_ptr<skills_executer::SkillsExec> skills_exec = std::make_shared<skills_executer::SkillsExec> (n,robot_name);
         skills_executers.push_back(skills_exec);
     }
 
-    skills_executer::BTToSkillsExecBridge bt_to_skills_exec_bridge(n,robots);
+    skills_executer::BTToSkillsExecBridge bt_to_skills_exec_bridge(n,robots_names);
 
     while (ros::ok())
     {

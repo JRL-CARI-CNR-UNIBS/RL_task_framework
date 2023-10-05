@@ -5,6 +5,41 @@ namespace skills_learning
 
 SkillsLearn::SkillsLearn(const ros::NodeHandle & n) : n_(n)
 {
+    if (!n_.getParam("/skills_learning/skills_parameters_name_space", param_ns_))
+    {
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_learning/skills_parameters_name_space param, defaul 'RL_params'");
+        param_ns_ = "RL_params";
+    }
+
+    XmlRpc::XmlRpcValue skills_parmaters_to_opt;
+    if (!n_.getParam("/skills_learning/skills_parameters_to_optimize", skills_parmaters_to_opt))
+    {
+        ROS_ERROR_STREAM("No /skills_learning/skills_parameters_to_optimize param");
+        return;
+    }
+
+    std::vector<std::string> skills_types = skills_util::getMemberByXml(skills_parmaters_to_opt);
+
+    for (const std::string skill_type: skills_types)
+    {
+        std::vector<std::string> parameters_names;
+        if (!n_.getParam("/skills_learning/skills_parameters_to_optimize/" + skill_type, parameters_names))
+        {
+            ROS_ERROR_STREAM("No /skills_executer/skills_parameters_to_optimize/" + skill_type + " param or it is not a vector of string");
+            return;
+        }
+        skill_execution_parameters_.insert(std::make_pair(skill_type,parameters_names));
+    }
+
+    for (const std::pair<std::string,std::vector<std::string>> pair: skill_execution_parameters_)
+    {
+        ROS_WARN_STREAM(pair.first + ":");
+        for (const std::string param: pair.second)
+        {
+            ROS_WARN_STREAM("  - " + param);
+        }
+    }
+
     skill_learn_srv_ = n_.advertiseService("/skills_learn/learn_skill", &SkillsLearn::skillsLearning, this);
     skill_explore_srv_ = n_.advertiseService("/skills_learn/explore_skill", &SkillsLearn::skillsExplore, this);
 }

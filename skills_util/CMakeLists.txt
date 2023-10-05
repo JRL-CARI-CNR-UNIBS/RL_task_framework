@@ -32,6 +32,7 @@ include
 )
 
 add_library(${PROJECT_NAME}
+  src/${PROJECT_NAME}/util_functions.cpp
   src/${PROJECT_NAME}/log.cpp
   src/${PROJECT_NAME}/bt_skills_classes.cpp
   src/${PROJECT_NAME}/bt_exec.cpp

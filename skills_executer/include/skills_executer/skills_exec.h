@@ -32,6 +32,7 @@
 #include <pybullet_utils/SensorReset.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <skills_util_msgs/ChangeConfig.h>
+#include <skills_util/util_functions.h>
 
 //fjt part
 #include <control_msgs/FollowJointTrajectoryAction.h>
@@ -88,33 +89,36 @@ public:
 
 
 private:
-    bool end_gripper_feedback_ = false;
-    bool end_force_thread_ = false;
-    bool contact_ = false;
-    bool use_pybullet_ = false;
-    bool use_ur_ = false;
-    bool use_change_config_bridge_ = false;
-    double max_force_ = 0.0;
-    double gripper_tollerance_ = 0.01;
-    double max_force_variation_ = 500;
-    double minimum_gripper_force_ = 5;
-    double parallel_2f_gripper_closed_position_ = -0.79;
+    bool end_gripper_feedback_     = false,
+         end_force_thread_         = false,
+         contact_                  = false,
+         use_pybullet_             = false,
+         use_ur_                   = false,
+         use_change_config_bridge_ = false;
+
+    double max_force_                           = 0.0  ,
+           gripper_tollerance_                  = 0.01 ,
+           max_force_variation_                 = 500  ,
+           minimum_gripper_force_               = 5    ,
+           parallel_2f_gripper_closed_position_ = -0.79;
 
     tf::TransformListener tf_listener_;
     tf2_ros::StaticTransformBroadcaster tf_br_;
-    std::string robot_name_;
-    std::string param_ns_ = "RL_params";
-    std::string end_link_frame_;
-    std::string reference_end_effector_frame_;
-    std::string sensored_joint_;
-    std::string attached_link_name_;
+
+    std::string robot_name_                  ,
+                skills_param_ns_             ,
+                end_link_frame_              ,
+                reference_end_effector_frame_,
+                sensored_joint_              ,
+                attached_link_name_          ;
+
     std::vector<std::string> end_effector_touch_links_;
     ros::NodeHandle n_;
     ros::ServiceServer skill_exec_srv_;
-    ros::ServiceClient parallel_gripper_move_clnt_;
-    ros::ServiceClient sensor_reset_clnt_;
-    ros::ServiceClient change_config_clnt_;
-    ros::ServiceClient get_ik_clnt_;
+    ros::ServiceClient parallel_gripper_move_clnt_,
+                       sensor_reset_clnt_,
+                       change_config_clnt_,
+                       get_ik_clnt_;
 
     std::shared_ptr<actionlib::SimpleActionClient<simple_touch_controller_msgs::SimpleTouchAction>>        touch_action_;
     std::shared_ptr<actionlib::SimpleActionClient<relative_cartesian_controller_msgs::RelativeMoveAction>> relative_move_action_;
@@ -130,26 +134,23 @@ private:
 
     std::string current_action_name_, current_skill_name_, last_pick_action_, current_grasped_object_;
 
-    std::string cart_vel_type_                 = "cartesian_velocity";
-    std::string cart_pos_type_                 = "cartesian_position";
-    std::string cart_pos_to_type_              = "cart_pos_to";
-    std::string simple_touch_type_             = "simple_touch";
-    std::string parallel_2f_gripper_move_type_ = "parallel_gripper_move";
-//    std::string parallel_2f_gripper_move_type_ = "parallel_2f_gripper_move";
-    std::string robotiq_gripper_move_type_     = "robotiq_gripper_move";
-    std::string ur_load_program_               = "ur_load_program_";
-    std::string move_to_type_                  = "move_to";
-    std::string linear_move_type_              = "linear_move";
-    std::string linear_move_to_type_           = "linear_move_to";
-    std::string joint_move_to_type_            = "joint_move_to";
-    std::string release_end_effector_type_      = "release_end_effector";
-    std::string attach_end_effector_type_      = "attach_end_effector";
-
-    std::string watch_config_ = "watch";
+    std::string cart_vel_type_                ,
+                cart_pos_type_                ,
+                cart_pos_to_type_             ,
+                simple_touch_type_            ,
+                parallel_2f_gripper_move_type_,
+                robotiq_gripper_move_type_    ,
+                ur_load_program_type_         ,
+                move_to_type_                 ,
+                linear_move_type_             ,
+                linear_move_to_type_          ,
+                joint_move_to_type_           ,
+                release_end_effector_type_    ,
+                attach_end_effector_type_     ,
+                watch_type_                   ;
 
     Eigen::Affine3d T_gripper_to_end_link_;
     moveit::planning_interface::MoveGroupInterface::Plan moveit_plan_;
-
 
 //    fjt part
     double trajectory_time_tollerance_;
@@ -161,7 +162,7 @@ private:
 template<typename T>
 inline void SkillsExec::setParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, const T &param_value)
 {
-    std::string param_str = "/"+param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
+    std::string param_str = "/"+skills_param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
 
     n_.setParam(param_str, param_value);
     return;
@@ -170,7 +171,7 @@ inline void SkillsExec::setParam(const std::string &action_name, const std::stri
 template<typename T>
 inline void SkillsExec::setParam(const std::string &action_name, const std::string &param_name, const T &param_value)
 {
-    std::string param_str = "/"+param_ns_+"/"+action_name+"/"+param_name;
+    std::string param_str = "/"+skills_param_ns_+"/"+action_name+"/"+param_name;
 
     n_.setParam(param_str, param_value);
     return;
@@ -179,7 +180,7 @@ inline void SkillsExec::setParam(const std::string &action_name, const std::stri
 template<typename T>
 inline bool SkillsExec::getParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, T &param_value)
 {
-    std::string param_str = "/"+param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
+    std::string param_str = "/"+skills_param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
     if ( !n_.getParam(param_str, param_value) )
     {
         return false;
@@ -190,7 +191,7 @@ inline bool SkillsExec::getParam(const std::string &action_name, const std::stri
 template<typename T>
 inline bool SkillsExec::getParam(const std::string &action_name, const std::string &param_name, T &param_value)
 {
-    std::string param_str = "/"+param_ns_+"/"+action_name+"/"+param_name;
+    std::string param_str = "/"+skills_param_ns_+"/"+action_name+"/"+param_name;
     if ( !n_.getParam(param_str, param_value) )
     {
         return false;

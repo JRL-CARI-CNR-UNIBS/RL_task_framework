@@ -6,6 +6,7 @@
 #include <skills_learning_msgs/SkillLearning.h>
 #include <skills_learning_msgs/SkillExplore.h>
 #include <skills_util/log.h>
+#include <skills_util/util_functions.h>
 
 namespace skills_learning
 {
@@ -37,30 +38,12 @@ public:
     template<typename T> bool getParam(const std::string &action_name, const std::string &param_name, T &param_value);
 
 private:
-    std::string param_ns_ = "RL_params";
+    std::string param_ns_;
     ros::NodeHandle n_;
 
     double total_reward_, total_reward_old_;
 
-    std::map<std::string,std::vector<std::string>> skill_execution_parameters_ = {
-        {"cartesian_velocity",    { "position", "quaternion", "linear_velocity_m_s", "angular_velocity_rad_s"} },
-        {"cartesian_position",    { "position", "quaternion", "linear_velocity_m_s", "angular_velocity_rad_s"} },
-        {"simple_touch",          { "goal_twist", "target_force", "release"} },
-        {"parallel_gripper_move", { "torque"} },
-        {"robotiq_gripper_move",  { "torque"} },
-        {"move_to",               {"acceleration_scaling", "velocity_scaling", "relative_position", "relative_orientation"} },
-        {"joint_move_to",         {"acceleration_scaling", "velocity_scaling", "relative_position", "relative_orientation"} },
-        {"linear_move_to",        {"acceleration_scaling", "velocity_scaling", "relative_position", "relative_orientation"} },
-        {"linear_move",           {"acceleration_scaling", "velocity_scaling", "position", "quaternion"} },
-    };
-
-    std::string cart_vel_type_                 = "cartesian_velocity";
-    std::string cart_pos_type_                 = "cartesian_position";
-    std::string simple_touch_type_             = "simple_touch";
-    std::string parallel_2f_gripper_move_type_ = "parallel_gripper_move";
-//    std::string parallel_2f_gripper_move_type_ = "parallel_2f_gripper_move";
-    std::string robotiq_gripper_move_type_     = "robotiq_gripper_move";
-    std::string ur_load_program_               = "ur_load_program_";
+    std::map<std::string,std::vector<std::string>> skill_execution_parameters_;
 
     ros::ServiceServer skill_learn_srv_;
     ros::ServiceServer skill_explore_srv_;
