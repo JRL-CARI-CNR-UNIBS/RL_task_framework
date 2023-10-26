@@ -15,14 +15,22 @@ ConfigurationBridge::ConfigurationBridge(const ros::NodeHandle &n): n_(n)
     list_config_clnt_.waitForExistence();
     ROS_WARN_STREAM("Connection ok");
 
-    std::vector<std::string> robots;
-    if (!n_.getParam("/skills_executer/robots", robots))
+    XmlRpc::XmlRpcValue robots_param;
+    if (!n.getParam("/skills_executer/robots", robots_param))
     {
-        ROS_ERROR_STREAM("No /skill_executer/robots param");
+        ROS_ERROR_STREAM("No /skills_executer/robots param");
         exit(0);
     }
 
-    for(const std::string robot: robots)
+    if (robots_param.getType() != XmlRpc::XmlRpcValue::TypeStruct)
+    {
+        ROS_ERROR("/skills_executer/robots is not a struct");
+        exit(0);
+    }
+
+    std::vector<std::string> robots_names = getMemberByXml(robots_param);
+
+    for(const std::string robot: robots_names)
     {
         robots_configs.insert(std::make_pair(robot,""));
     }

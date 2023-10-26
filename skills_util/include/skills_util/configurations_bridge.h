@@ -6,6 +6,7 @@
 #include <configuration_msgs/StartConfiguration.h>
 #include <configuration_msgs/ListConfigurations.h>
 #include <configuration_msgs/ConfigurationComponent.h>
+#include <skills_util/util_functions.h>
 
 namespace skills_util
 {

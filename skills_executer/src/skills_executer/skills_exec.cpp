@@ -20,10 +20,10 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/use_change_config_bridge param, defaul false");
         use_change_config_bridge_ = false;
     }
-    if (!n_.getParam("/skills_executer/skills_parameters_name_space", skills_param_ns_))
+    if (!n_.getParam("/skills_executer/skills_parameters_name_space", param_ns_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skills_parameters_name_space param, defaul 'RL_params'");
-        skills_param_ns_ = "RL_params";
+        param_ns_ = "RL_params";
     }
 
     if (!n_.getParam("/skills_executer/robots/" + robot_name_ + "/end_link_frame",                       end_link_frame_))

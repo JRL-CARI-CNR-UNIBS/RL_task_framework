@@ -106,7 +106,7 @@ private:
     tf2_ros::StaticTransformBroadcaster tf_br_;
 
     std::string robot_name_                  ,
-                skills_param_ns_             ,
+                param_ns_                    ,
                 end_link_frame_              ,
                 reference_end_effector_frame_,
                 sensored_joint_              ,
@@ -162,7 +162,7 @@ private:
 template<typename T>
 inline void SkillsExec::setParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, const T &param_value)
 {
-    std::string param_str = "/"+skills_param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
+    std::string param_str = "/"+param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
 
     n_.setParam(param_str, param_value);
     return;
@@ -171,7 +171,7 @@ inline void SkillsExec::setParam(const std::string &action_name, const std::stri
 template<typename T>
 inline void SkillsExec::setParam(const std::string &action_name, const std::string &param_name, const T &param_value)
 {
-    std::string param_str = "/"+skills_param_ns_+"/"+action_name+"/"+param_name;
+    std::string param_str = "/"+param_ns_+"/"+action_name+"/"+param_name;
 
     n_.setParam(param_str, param_value);
     return;
@@ -180,7 +180,7 @@ inline void SkillsExec::setParam(const std::string &action_name, const std::stri
 template<typename T>
 inline bool SkillsExec::getParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, T &param_value)
 {
-    std::string param_str = "/"+skills_param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
+    std::string param_str = "/"+param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
     if ( !n_.getParam(param_str, param_value) )
     {
         return false;
@@ -191,7 +191,7 @@ inline bool SkillsExec::getParam(const std::string &action_name, const std::stri
 template<typename T>
 inline bool SkillsExec::getParam(const std::string &action_name, const std::string &param_name, T &param_value)
 {
-    std::string param_str = "/"+skills_param_ns_+"/"+action_name+"/"+param_name;
+    std::string param_str = "/"+param_ns_+"/"+action_name+"/"+param_name;
     if ( !n_.getParam(param_str, param_value) )
     {
         return false;
