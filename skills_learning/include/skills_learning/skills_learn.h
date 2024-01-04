@@ -20,6 +20,9 @@ public:
     bool skillsLearning(skills_learning_msgs::SkillLearning::Request  &req,
                         skills_learning_msgs::SkillLearning::Response &res);
 
+    int explore (const std::string &action_name, const std::string &skill_name, const std::string &skill_type, const std::string &exploration_type);
+    int learning(const std::string &action_name, const std::string &skill_name, const std::string &skill_type, const std::string &learning_type);
+
     int explore (const std::string &action_name, const std::string &skill_name, const std::vector<std::string> &params_name);
     int learning(const std::string &action_name, const std::string &skill_name, const std::vector<std::string> &params_name);
 
@@ -43,7 +46,9 @@ private:
 
     double total_reward_, total_reward_old_;
 
-    std::map<std::string,std::vector<std::string>> skill_execution_parameters_;
+    std::map<std::string,std::map<std::string,std::vector<double>>> skill_execution_parameters_info_;
+    std::map<std::string,std::vector<std::string>> skill_execution_parameter_names_;
+    std::map<std::string,std::vector<double>> skill_execution_parameter_max_variations_;
 
     ros::ServiceServer skill_learn_srv_;
     ros::ServiceServer skill_explore_srv_;
@@ -52,7 +57,7 @@ private:
 template<typename T>
 inline void SkillsLearn::setParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, const T &param_value)
 {
-    std::string param_str = "/"+param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
+    std::string param_str = "/"+param_ns_+"/actions/"+action_name+"/skills/"+skill_name+"/"+param_name;
     n_.setParam(param_str, param_value);
     return;
 }
@@ -60,7 +65,7 @@ inline void SkillsLearn::setParam(const std::string &action_name, const std::str
 template<typename T>
 inline void SkillsLearn::setParam(const std::string &action_name, const std::string &param_name, const T &param_value)
 {
-    std::string param_str = "/"+param_ns_+"/"+action_name+"/"+param_name;
+    std::string param_str = "/"+param_ns_+"/actions/"+action_name+"/"+param_name;
     n_.setParam(param_str, param_value);
     return;
 }
@@ -68,7 +73,7 @@ inline void SkillsLearn::setParam(const std::string &action_name, const std::str
 template<typename T>
 inline bool SkillsLearn::getParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, T &param_value)
 {
-    std::string param_str = "/"+param_ns_+"/"+action_name+"/"+skill_name+"/"+param_name;
+    std::string param_str = "/"+param_ns_+"/actions/"+action_name+"/skills/"+skill_name+"/"+param_name;
     if ( !n_.getParam(param_str, param_value) )
     {
         return false;
@@ -79,7 +84,7 @@ inline bool SkillsLearn::getParam(const std::string &action_name, const std::str
 template<typename T>
 inline bool SkillsLearn::getParam(const std::string &action_name, const std::string &param_name, T &param_value)
 {
-    std::string param_str = "/"+param_ns_+"/"+action_name+"/"+param_name;
+    std::string param_str = "/"+param_ns_+"/actions/"+action_name+"/"+param_name;
     if ( !n_.getParam(param_str, param_value) )
     {
         return false;

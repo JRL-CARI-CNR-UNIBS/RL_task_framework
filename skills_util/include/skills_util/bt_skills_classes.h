@@ -11,18 +11,19 @@
 class SkillExecutionNode : public BT::SyncActionNode
 {
 public:
-    SkillExecutionNode(const std::string& name);
+    SkillExecutionNode(const std::string& name, const BT::NodeConfig& config);
 
     BT::NodeStatus tick() override;
+    static BT::PortsList providedPorts()
+      {
+        return{BT::InputPort<std::string>("robot"),
+               BT::InputPort<std::string>("action_name"),
+               BT::InputPort<std::string>("skill_name")};
+      }
 
 private:
     ros::NodeHandle n_;
     ros::ServiceClient skill_exec_clnt_;
-
-    static BT::PortsList providedPorts()
-      {
-        return{BT::InputPort<std::string>("robot")};
-      }
 };
 
 class ActionLearningNode : public BT::SyncActionNode
@@ -31,10 +32,10 @@ public:
     ActionLearningNode(const std::string& name, const BT::NodeConfig& config);
 
     BT::NodeStatus tick() override;
-
     static BT::PortsList providedPorts()
       {
-        return{BT::InputPort<std::string>("type")};
+        return{BT::InputPort<std::string>("action_name"),
+               BT::InputPort<std::string>("type")};
       }
 
 private:
@@ -51,7 +52,8 @@ public:
 
     static BT::PortsList providedPorts()
       {
-        return{BT::InputPort<std::string>("type")};
+        return{BT::InputPort<std::string>("type"),
+               BT::InputPort<std::string>("action_name")};
       }
 
 private:
@@ -62,17 +64,18 @@ private:
 class ActionArbitrationNode : public BT::SyncActionNode
 {
 public:
-    ActionArbitrationNode(const std::string& name);
+    ActionArbitrationNode(const std::string& name, const BT::NodeConfig& config);
 
     BT::NodeStatus tick() override;
+
+    static BT::PortsList providedPorts()
+      {
+        return{BT::InputPort<std::string>("action_name")};
+      }
 
 private:
     ros::NodeHandle n_;
     ros::ServiceClient skill_arbit_clnt_;
 };
-
-namespace bt_skills_classes {
-std::vector<std::string> skillNames(const std::string& action_skill_name);
-}
 
 #endif // SKILLS_CLASSES_H

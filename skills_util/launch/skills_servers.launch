@@ -5,5 +5,5 @@
   <node name="skills_learn_node"          pkg="skills_learning"   type="skills_learn_node"          output="screen"/>
   <node name="skills_arbit_node"          pkg="skills_arbitrator" type="skills_arbit_node"          output="screen"/>
   <node name="TF_publisher"               pkg="skills_util"       type="TF_publisher.py"            output="screen"/>
-  <node name="configurations_bridge_node" pkg="skills_util"       type="configurations_bridge_node" output="screen"/>
+  <!-- <node name="configurations_bridge_node" pkg="skills_util"       type="configurations_bridge_node" output="screen"/> -->
 </launch>

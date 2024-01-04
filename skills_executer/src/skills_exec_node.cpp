@@ -49,6 +49,6 @@ int main(int argc, char **argv)
 
     while (ros::ok())
     {
-        ros::Duration(1).sleep();
+        ros::Duration(0.1).sleep();
     }
 }

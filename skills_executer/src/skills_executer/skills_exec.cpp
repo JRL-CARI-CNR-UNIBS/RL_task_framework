@@ -5,16 +5,16 @@ namespace skills_executer
 
 SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n), robot_name_(name)
 {
-    if (!n_.getParam("/skills_executer/use_ur", use_ur_))
-    {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/use_ur param, defaul false");
-        use_ur_ = false;
-    }
-    if (!n_.getParam("/skills_executer/use_pybullet", use_pybullet_))
-    {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/use_pybullet param, defaul false");
-        use_pybullet_ = false;
-    }
+//    if (!n_.getParam("/skills_executer/use_ur", use_ur_))
+//    {
+//        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/use_ur param, defaul false");
+//        use_ur_ = false;
+//    }
+//    if (!n_.getParam("/skills_executer/use_pybullet", use_pybullet_))
+//    {
+//        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/use_pybullet param, defaul false");
+//        use_pybullet_ = false;
+//    }
     if (!n_.getParam("/skills_executer/use_change_config_bridge", use_change_config_bridge_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/use_change_config_bridge param, defaul false");
@@ -36,9 +36,17 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/initial_reference_end_effector_frame param");
         reference_end_effector_frame_ = end_link_frame_;
     }
-    if (!n_.getParam("/skills_executer/robots/" + robot_name_ + "/sensored_joint",                       sensored_joint_))
+    if (!n_.getParam("/skills_executer/robots/" + robot_name_ + "/sensor_type",                          sensor_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/sensored_joint param");
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/sensor_type param");
+    }
+    else
+    {
+        if (!n_.getParam("/skills_executer/robots/" + robot_name_ + "/sensored_joint", sensored_joint_))
+        {
+            ROS_ERROR_STREAM("No /skills_executer/" + robot_name_ + "/sensored_joint param");
+            exit(1);
+        }
     }
     if (!n_.getParam("/skills_executer/robots/" + robot_name_ + "/initial_attached_link_name",           attached_link_name_))
     {
@@ -49,75 +57,80 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/initial_end_effector_touch_links param");
     }
 
-    if (!n_.getParam("/skills_executer/skill_types_names/watch_type",                    watch_type_))
+    if (!n_.getParam("/skills_executer/skill_types_names/watch_type",                         watch_type_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/watch_type param, defaul 'watch'");
         watch_type_ = "watch";
     }
-    if (!n_.getParam("/skills_executer/skill_types_names/cart_vel_type",                 cart_vel_type_))
+    if (!n_.getParam("/skills_executer/skill_types_names/cart_vel_type",                      cart_vel_type_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/cart_vel_type param, defaul 'cartesian_velocity'");
         cart_vel_type_ = "cartesian_velocity";
     }
-    if (!n_.getParam("/skills_executer/skill_types_names/cart_pos_type",                 cart_pos_type_))
+    if (!n_.getParam("/skills_executer/skill_types_names/cart_pos_type",                      cart_pos_type_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/cart_pos_type param, defaul 'cartesian_position'");
         cart_pos_type_ = "cartesian_position";
     }
-    if (!n_.getParam("/skills_executer/skill_types_names/cart_pos_to_type",              cart_pos_to_type_))
+    if (!n_.getParam("/skills_executer/skill_types_names/cart_pos_to_type",                   cart_pos_to_type_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/cart_pos_to_type param, defaul 'cart_pos_to'");
         cart_pos_to_type_ = "cart_pos_to";
     }
-    if (!n_.getParam("/skills_executer/skill_types_names/simple_touch_type",             simple_touch_type_))
+    if (!n_.getParam("/skills_executer/skill_types_names/simple_touch_type",                  simple_touch_type_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/simple_touch_type param, defaul 'simple_touch'");
         simple_touch_type_ = "simple_touch";
     }
-    if (!n_.getParam("/skills_executer/skill_types_names/parallel_2f_gripper_move_type", parallel_2f_gripper_move_type_))
+    if (!n_.getParam("/skills_executer/skill_types_names/parallel_2f_gripper_move_type",      parallel_2f_gripper_move_type_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/parallel_2f_gripper_move_type param, defaul 'parallel_gripper_move'");
         parallel_2f_gripper_move_type_ = "parallel_gripper_move";
     }
-    if (!n_.getParam("/skills_executer/skill_types_names/robotiq_gripper_move_type",     robotiq_gripper_move_type_))
+    if (!n_.getParam("/skills_executer/skill_types_names/robotiq_gripper_move_type",          robotiq_gripper_move_type_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/robotiq_gripper_move_type param, defaul 'robotiq_gripper_move'");
         robotiq_gripper_move_type_ = "robotiq_gripper_move";
     }
-    if (!n_.getParam("/skills_executer/skill_types_names/ur_load_program_type",          ur_load_program_type_))
+    if (!n_.getParam("/skills_executer/skill_types_names/ur_load_program_type",               ur_load_program_type_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/ur_load_program_type param, defaul 'ur_load_program'");
         ur_load_program_type_ = "ur_load_program";
     }
-    if (!n_.getParam("/skills_executer/skill_types_names/move_to_type",                  move_to_type_))
+    if (!n_.getParam("/skills_executer/skill_types_names/move_to_type",                       move_to_type_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/move_to_type param, defaul 'move_to'");
         move_to_type_ = "move_to";
     }
-    if (!n_.getParam("/skills_executer/skill_types_names/linear_move_type",              linear_move_type_))
+    if (!n_.getParam("/skills_executer/skill_types_names/linear_move_type",                   linear_move_type_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/linear_move_type param, defaul 'linear_move'");
         linear_move_type_ = "linear_move";
     }
-    if (!n_.getParam("/skills_executer/skill_types_names/linear_move_to_type",           linear_move_to_type_))
+    if (!n_.getParam("/skills_executer/skill_types_names/linear_move_to_type",                linear_move_to_type_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/linear_move_to_type param, defaul 'linear_move_to'");
         linear_move_to_type_ = "linear_move_to";
     }
-    if (!n_.getParam("/skills_executer/skill_types_names/joint_move_to_type",            joint_move_to_type_))
+    if (!n_.getParam("/skills_executer/skill_types_names/joint_move_to_type",                 joint_move_to_type_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/joint_move_to_type param, defaul 'joint_move_to'");
         joint_move_to_type_ = "joint_move_to";
     }
-    if (!n_.getParam("/skills_executer/skill_types_names/release_end_effector_type",     release_end_effector_type_))
+    if (!n_.getParam("/skills_executer/skill_types_names/release_end_effector_type",          release_end_effector_type_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/release_end_effector_type param, defaul 'release_end_effector'");
         release_end_effector_type_ = "release_end_effector";
     }
-    if (!n_.getParam("/skills_executer/skill_types_names/attach_end_effector_type",      attach_end_effector_type_))
+    if (!n_.getParam("/skills_executer/skill_types_names/attach_end_effector_type",           attach_end_effector_type_))
     {
         ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/attach_end_effector_type param, defaul 'attach_end_effector'");
         attach_end_effector_type_ = "attach_end_effector";
+    }
+    if (!n_.getParam("/skills_executer/skill_types_names/pneumatic_schunk_gripper_move_type", pneumatic_schunk_gripper_move_type_))
+    {
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/pneumatic_schunk_gripper_move_type param, defaul 'pneumatic_schunk_gripper_move'");
+        pneumatic_schunk_gripper_move_type_ = "pneumatic_schunk_gripper_move";
     }
 
     twist_pub_ = n_.advertise<geometry_msgs::TwistStamped>("/" + robot_name_ + "/target_cart_twist",1);
@@ -344,6 +357,14 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     {
         res.result = joint_move_to(req.action_name, req.skill_name);
     }
+    else if ( !skill_type.compare(pneumatic_schunk_gripper_move_type_) )
+    {
+        if (!object_name.empty())
+        {
+            current_grasped_object_ = object_name;
+        }
+        res.result = pneumaticSchunkGripperMove(req.action_name, req.skill_name);
+    }
     else
     {
         ROS_RED_STREAM("/"<<req.action_name<<"/"<<req.skill_name<<" result: NoSkillType");
@@ -356,10 +377,9 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
 
     setParam(req.action_name,req.skill_name,"executed",1);
     ROS_WHITE_STREAM("Set /"<<req.action_name<<"/"<<req.skill_name<<"/executed: "<<1);
-
     if ( res.result != skills_executer_msgs::SkillExecutionResponse::Success )
     {
-        setParam(req.action_name, "fail", 1);
+        setParam(req.action_name, "failure", 1);
         ROS_YELLOW_STREAM("Set /"<<req.action_name<<"/fail: "<<1);
     }
 
@@ -419,7 +439,6 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
 
     ROS_CYAN_STREAM("/"<<req.action_name<<"/"<<req.skill_name<<" skill execution finish, return true");
     return true;
-
 }
 
 int SkillsExec::urLoadProgram(const std::string &action_name, const std::string &skill_name)
@@ -495,7 +514,11 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
     ROS_WHITE_STREAM("In parallel2fGripperMove");
     parallel_gripper_move_clnt_ = n_.serviceClient<parallel_2f_gripper::MoveGripper>("/move_parallel_gripper");
     ROS_WHITE_STREAM("Waiting for "<<parallel_gripper_move_clnt_.getService());
-    parallel_gripper_move_clnt_.waitForExistence();
+    if (!parallel_gripper_move_clnt_.waitForExistence(ros::Duration(2)))
+    {
+        ROS_ERROR_STREAM(parallel_gripper_move_clnt_.getService().c_str() << " don't connect.");
+        return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
     ROS_WHITE_STREAM("Connection ok");
 
     setParam(action_name,skill_name,"fail",0);
@@ -668,8 +691,6 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
         closure = false;
     }
 
-    std::string param_name = "/" + current_grasped_object_ + "/attached";
-
     if (!parallel_gripper_move_clnt_.call(move_gripper_srv))
     {
       ROS_RED_STREAM("Unable to call "<<parallel_gripper_move_clnt_.getService()<<" service ");
@@ -699,6 +720,7 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
             }
         }
 
+        std::string param_name = "/" + current_grasped_object_ + "/attached";
         if ( closure & !thread_esistence_ )
         {
             end_gripper_feedback_ = false;
@@ -743,12 +765,107 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
+int SkillsExec::pneumaticSchunkGripperMove(const std::string &action_name, const std::string &skill_name)
+{
+    ROS_WHITE_STREAM("In pneumaticSchunkGripperMove");
+    std::string gripper_type;
+    if (!getParam(action_name, skill_name, "gripper_type", gripper_type))
+    {
+        ROS_RED_STREAM("gripper_type param not set, default 'fake'");
+        gripper_type = "fake";
+    }
+
+    if (gripper_type == "pybullet")
+    {
+        pneumatic_schunk_gripper_move_clnt_ = n_.serviceClient<std_srvs::SetBool>("/move_schunk_jpg_p_160_gripper");
+        ROS_WHITE_STREAM("Waiting for "<<pneumatic_schunk_gripper_move_clnt_.getService());
+        if (!pneumatic_schunk_gripper_move_clnt_.waitForExistence(ros::Duration(2)))
+        {
+            ROS_ERROR_STREAM(pneumatic_schunk_gripper_move_clnt_.getService().c_str() << " don't connect.");
+            return skills_executer_msgs::SkillExecutionResponse::Fail;
+        }
+        ROS_WHITE_STREAM("Connection ok");
+    }
+    else if (gripper_type == "real")
+    {
+        pneumatic_schunk_gripper_move_clnt_ = n_.serviceClient<std_srvs::SetBool>("/battery_cell_utils/pneumatic_gripper");
+        ROS_WHITE_STREAM("Waiting for "<<pneumatic_schunk_gripper_move_clnt_.getService());
+        if (!pneumatic_schunk_gripper_move_clnt_.waitForExistence(ros::Duration(2)))
+        {
+            ROS_ERROR_STREAM(pneumatic_schunk_gripper_move_clnt_.getService().c_str() << " don't connect.");
+            return skills_executer_msgs::SkillExecutionResponse::Fail;
+        }
+        ROS_WHITE_STREAM("Connection ok");
+    }
+    else if (gripper_type == "fake")
+    {
+//        add fake service
+        return skills_executer_msgs::SkillExecutionResponse::Success;
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Wrong gripper type: "<< gripper_type);
+        ROS_ERROR_STREAM("The possible values are: pybullet, real and fake");
+    }
+
+    setParam(action_name,skill_name,"fail",0);
+    ROS_WHITE_STREAM("Set "<<action_name<<"/"<<skill_name<<"/fail: 0");
+
+    std::string move;
+
+    ROS_WHITE_STREAM("Read params");
+
+    if (!getParam(action_name, skill_name, "movement", move))
+    {
+        ROS_RED_STREAM("movement param not set");
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+
+    std_srvs::SetBool move_srv;
+    if (move == "open")
+        move_srv.request.data = false;
+    else if (move == "close")
+        move_srv.request.data = true;
+
+    std::string param_name = "/" + current_grasped_object_ + "/attached";
+
+    if (!pneumatic_schunk_gripper_move_clnt_.call(move_srv))
+    {
+      ROS_RED_STREAM("Unable to call "<<pneumatic_schunk_gripper_move_clnt_.getService()<<" service ");
+      return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
+
+    ROS_WHITE_STREAM("pneumatic_schunk_gripper_move_clnt_ return :"<<move_srv.response.message);
+
+    if (move_srv.request.data)
+    {
+        std::string link_param_name = "/" + current_grasped_object_ + "/attached_link";
+        std::string links_param_name = "/" + current_grasped_object_ + "/touch_links";
+        n_.setParam(param_name,true);
+        n_.setParam(link_param_name,attached_link_name_);
+        n_.setParam(links_param_name,end_effector_touch_links_);
+    }
+    else
+    {
+        n_.setParam(param_name,false);
+    }
+
+    ros::Duration(1.0).sleep();
+
+    ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
+    return skills_executer_msgs::SkillExecutionResponse::Success;
+}
+
 int SkillsExec::robotiqGripperMove(const std::string &action_name, const std::string &skill_name)
 {
     ROS_WHITE_STREAM("In robotiqGripperMove");
     ros::ServiceClient gripper_clnt = n_.serviceClient<manipulation_msgs::JobExecution>("/robotiq_gripper");
     ROS_YELLOW_STREAM("Waiting for "<<gripper_clnt.getService() );
-    gripper_clnt.waitForExistence();
+    if (!gripper_clnt.waitForExistence(ros::Duration(2)))
+    {
+        ROS_ERROR_STREAM(gripper_clnt.getService().c_str() << " don't connect.");
+        return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
     ROS_YELLOW_STREAM("Connection ok");
     manipulation_msgs::JobExecution gripper_srv;
 
@@ -1777,7 +1894,11 @@ int SkillsExec::reset_ur10e_ft_sensor()
 {
     ROS_WHITE_STREAM("In reset_ur10e_ft_sensor");
     ros::ServiceClient reset_force_sensor_clnt = n_.serviceClient<std_srvs::Trigger>("/ur10e_hw/zero_ftsensor");
-    reset_force_sensor_clnt.waitForExistence();
+    if (!reset_force_sensor_clnt.waitForExistence(ros::Duration(2)))
+    {
+        ROS_ERROR_STREAM(reset_force_sensor_clnt.getService().c_str() << " don't connect.");
+        return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
     std_srvs::Trigger zero_srv;
     if ( !reset_force_sensor_clnt.call(zero_srv) )
     {
@@ -1796,10 +1917,13 @@ int SkillsExec::reset_pybullet_ft_sensor()
     ROS_WHITE_STREAM("In reset_pybullet_ft_sensor");
     ros::ServiceClient reset_force_sensor_clnt = n_.serviceClient<pybullet_utils::SensorReset>("/pybullet_sensor_reset");
     ROS_WARN("Waiting for %s", reset_force_sensor_clnt.getService().c_str() );
-    reset_force_sensor_clnt.waitForExistence();
+    if (!reset_force_sensor_clnt.waitForExistence(ros::Duration(2)))
+    {
+        ROS_ERROR_STREAM(reset_force_sensor_clnt.getService().c_str() << " don't connect.");
+        return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
     ROS_WARN("Connection ok");
 
-    reset_force_sensor_clnt.waitForExistence();
     pybullet_utils::SensorReset zero_srv;
     zero_srv.request.robot_name = robot_name_;
     zero_srv.request.joint_name = sensored_joint_;
@@ -1814,21 +1938,56 @@ int SkillsExec::reset_pybullet_ft_sensor()
     else
         return skills_executer_msgs::SkillExecutionResponse::Fail;
 }
+
+int SkillsExec::reset_ati_sensor()
+{
+    ROS_WHITE_STREAM("In reset_ati_sensor");
+    ros::ServiceClient reset_force_sensor_clnt = n_.serviceClient<std_srvs::Trigger>("/battery_cell_utils/reset_ati_sensor");
+    ROS_WARN("Waiting for %s", reset_force_sensor_clnt.getService().c_str() );
+    if (!reset_force_sensor_clnt.waitForExistence(ros::Duration(2)))
+    {
+        ROS_ERROR_STREAM(reset_force_sensor_clnt.getService().c_str() << " don't connect.");
+        return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
+    ROS_WARN("Connection ok");
+
+    std_srvs::Trigger reset_srv;
+    if ( !reset_force_sensor_clnt.call(reset_srv) )
+    {
+        ROS_RED_STREAM("Unable to reset force sensor");
+        return skills_executer_msgs::SkillExecutionResponse::Error;
+    }
+    ros::Duration(0.1).sleep();
+    if ( reset_srv.response.success )
+        return skills_executer_msgs::SkillExecutionResponse::Success;
+    else
+        return skills_executer_msgs::SkillExecutionResponse::Fail;
+}
+
 int SkillsExec::reset_ft_sensor()
 {
-    if (use_pybullet_)
-        return reset_pybullet_ft_sensor();
-    else if (use_ur_)
-        return reset_ur10e_ft_sensor();
+    ROS_WHITE_STREAM("In reset_ft_sensor. Sensor type: "<<sensor_type_);
+    int result;
+    if (sensor_type_ == "pybullet")
+        result = reset_pybullet_ft_sensor();
+    else if (sensor_type_ == "ur10e")
+        result = reset_ur10e_ft_sensor();
+    else if (sensor_type_ == "ati_sensor")
+        result = reset_ati_sensor();
     else
-        return skills_executer_msgs::SkillExecutionResponse::Success;
+        ROS_WARN("The sensor type is not in the list");
+        result = skills_executer_msgs::SkillExecutionResponse::Success;
+    return result;
 }
 
 void SkillsExec::maxWrenchCalculation()
 {
     if (sensored_joint_.empty())
+    {
+        ROS_INFO_STREAM("Sensored joint name is empty.");
         return;
-
+    }
+    ROS_INFO_STREAM("In maxWrenchcalculation");
     reset_ft_sensor();
 
     geometry_msgs::WrenchStamped actual_wrench;
@@ -2158,9 +2317,9 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
     std::vector<double> target_conf = get_ik_msg.response.solution.configurations.at(0).configuration;
     std::vector<double> current_conf = move_group_->getCurrentJointValues();
 
-    ROS_RED_STREAM("Target configurtion: ["<<target_conf.at(0)<<","<<target_conf.at(1)<<","<<target_conf.at(2)<<","
+    ROS_WHITE_STREAM("Target configurtion: ["<<target_conf.at(0)<<","<<target_conf.at(1)<<","<<target_conf.at(2)<<","
                    <<target_conf.at(3)<<","<<target_conf.at(4)<<","<<target_conf.at(5)<<"]");
-    ROS_RED_STREAM("Current configurtion: ["<<current_conf.at(0)<<","<<current_conf.at(1)<<","<<current_conf.at(2)<<","
+    ROS_WHITE_STREAM("Current configurtion: ["<<current_conf.at(0)<<","<<current_conf.at(1)<<","<<current_conf.at(2)<<","
                    <<current_conf.at(3)<<","<<current_conf.at(4)<<","<<current_conf.at(5)<<"]");
 
     ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
@@ -2195,7 +2354,7 @@ int SkillsExec::attachEndEffector(const std::string &action_name, const std::str
         ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/reference_end_effector_frame is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
-    if (!getParam(action_name, skill_name, "fraattached_link_name",   attached_link_name_))
+    if (!getParam(action_name, skill_name, "attached_link_name",   attached_link_name_))
     {
         ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/attached_link_name is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;

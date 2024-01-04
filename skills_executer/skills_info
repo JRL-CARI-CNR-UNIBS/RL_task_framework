@@ -1,0 +1,15 @@
+The current skill types are:
+cart_pos: this skill perform a movement in the cartesian space. It use cnr/control/CartesianPositionController.
+	
+	
+cart_pos_to_type:
+simple_touch_type:
+parallel_2f_gripper_move_type
+robotiq_gripper_move_type
+ur_load_program_type
+move_to_type
+linear_move_type
+linear_move_to_type
+joint_move_to_type
+release_end_effector_type
+attach_end_effector_type

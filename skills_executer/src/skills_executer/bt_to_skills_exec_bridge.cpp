@@ -23,7 +23,8 @@ bool BTToSkillsExecBridge::skillsExecution(skills_executer_msgs::RobotSkillExecu
     if (req.robot_name.empty())
     {
         ROS_ERROR_STREAM("Robot param empty");
-        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+        res.result = skills_executer_msgs::SkillExecutionResponse::NoParam;
+        return true;
     }
     skills_executer_msgs::SkillExecution skill_exec_srv;
     skill_exec_srv.request.action_name = req.action_name;
@@ -32,9 +33,10 @@ bool BTToSkillsExecBridge::skillsExecution(skills_executer_msgs::RobotSkillExecu
     if (!skill_exec_clnts_.at(req.robot_name).call(skill_exec_srv))
     {
         ROS_ERROR_STREAM("Unable to contact "<<skill_exec_clnts_.at(req.robot_name).getService()<<" server");
-        return skills_executer_msgs::SkillExecutionResponse::Error;
+        res.result = skills_executer_msgs::SkillExecutionResponse::Error;
+        return true;
     }
-
-    return skill_exec_srv.response.result;
+    res.result = skill_exec_srv.response.result;
+    return true;
 }
 } // end namespace skills_executer

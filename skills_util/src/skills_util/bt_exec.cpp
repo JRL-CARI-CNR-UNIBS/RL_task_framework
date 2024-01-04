@@ -24,19 +24,24 @@ bool BTExec::runTree(skills_util_msgs::RunTree::Request  &req,
                      skills_util_msgs::RunTree::Response &res)
 {
     std::vector<std::string> repos = req.folders_paths;
+    ROS_INFO_STREAM("Repos size: "<<repos.size());
 
     for (std::string repo: repos)
     {
+        ROS_INFO_STREAM("Repository: "<<repo);
         repo.append("/");
         for ( auto const& entry : std::filesystem::directory_iterator(repo))
         {
+            ROS_INFO_STREAM("  File: "<<entry.path().string());
             if( entry.path().extension() == ".xml")
             {
-                ROS_INFO_STREAM("Repo: "<<entry.path().string());
+                ROS_INFO_STREAM("  File: "<<entry.path().string());
                 factory_.registerBehaviorTreeFromFile(entry.path().string());
             }
         }
     }
+
+    ROS_INFO_STREAM("Tree_name: "<<req.tree_name);
 
     BT::Tree tree = factory_.createTree(req.tree_name);
 
@@ -46,7 +51,7 @@ bool BTExec::runTree(skills_util_msgs::RunTree::Request  &req,
 
     factory_.clearRegisteredBehaviorTrees();
 
-    ROS_INFO("BT success");
+    ROS_INFO("BT finished");
     return true;
 }
 
