@@ -44,8 +44,12 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
     {
         if (!n_.getParam("/skills_executer/robots/" + robot_name_ + "/sensored_joint", sensored_joint_))
         {
-            ROS_ERROR_STREAM("No /skills_executer/" + robot_name_ + "/sensored_joint param");
-            exit(1);
+            ROS_WARN_STREAM("No /skills_executer/" + robot_name_ + "/sensored_joint param");
+        }
+        else
+        {
+            std::string wrench_topic = "/" + robot_name_ + "/" + sensored_joint_ + "/wrench";
+            wrench_sub_ = std::make_shared<ros_helper::SubscriptionNotifier<geometry_msgs::WrenchStamped>>(n_, wrench_topic, 10);
         }
     }
     if (!n_.getParam("/skills_executer/robots/" + robot_name_ + "/initial_attached_link_name",           attached_link_name_))
@@ -135,9 +139,6 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
 
     twist_pub_ = n_.advertise<geometry_msgs::TwistStamped>("/" + robot_name_ + "/target_cart_twist",1);
 
-    std::string wrench_topic = "/" + robot_name_ + "/" + sensored_joint_ + "/wrench";
-
-    wrench_sub_ = std::make_shared<ros_helper::SubscriptionNotifier<geometry_msgs::WrenchStamped>>(n_, wrench_topic, 10);
     js_sub_ = std::make_shared<ros_helper::SubscriptionNotifier<sensor_msgs::JointState>>(n_, "/joint_states", 10);
 
     if (use_change_config_bridge_)
@@ -161,12 +162,12 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
 
 //    if( ros::service::exists("/pybullet_sensor_reset") )
 //    {
-//        sensor_reset_clnt_ = n_.serviceClient<pybullet_utils::SensorReset>("/pybullet_sensor_reset");
+//        sensor_reset_clnt_ = n_.serviceClient<pybullet_simulation::SensorReset>("/pybullet_sensor_reset");
 //        ROS_YELLOW_STREAM("Client to pybullet_sensor_reset service created");
 //    }
 //    else if( ros::service::exists("/another_sensor_topic") )
 //    {
-//        sensor_reset_clnt_ = n_.serviceClient<pybullet_utils::SensorReset>("/another_sensor_server");
+//        sensor_reset_clnt_ = n_.serviceClient<pybullet_simulation::SensorReset>("/another_sensor_server");
 //        ROS_YELLOW_STREAM("Client to another_sensor_topic service created");
 //    }
 //    else
@@ -1915,7 +1916,12 @@ int SkillsExec::reset_ur10e_ft_sensor()
 int SkillsExec::reset_pybullet_ft_sensor()
 {
     ROS_WHITE_STREAM("In reset_pybullet_ft_sensor");
-    ros::ServiceClient reset_force_sensor_clnt = n_.serviceClient<pybullet_utils::SensorReset>("/pybullet_sensor_reset");
+    if (sensored_joint_.empty())
+    {
+        ROS_INFO_STREAM("Sensored joint name is empty.");
+        return skills_executer_msgs::SkillExecutionResponse::Success;
+    }
+    ros::ServiceClient reset_force_sensor_clnt = n_.serviceClient<pybullet_simulation::SensorReset>("/pybullet_sensor_reset");
     ROS_WARN("Waiting for %s", reset_force_sensor_clnt.getService().c_str() );
     if (!reset_force_sensor_clnt.waitForExistence(ros::Duration(2)))
     {
@@ -1924,7 +1930,7 @@ int SkillsExec::reset_pybullet_ft_sensor()
     }
     ROS_WARN("Connection ok");
 
-    pybullet_utils::SensorReset zero_srv;
+    pybullet_simulation::SensorReset zero_srv;
     zero_srv.request.robot_name = robot_name_;
     zero_srv.request.joint_name = sensored_joint_;
     if ( !reset_force_sensor_clnt.call(zero_srv) )

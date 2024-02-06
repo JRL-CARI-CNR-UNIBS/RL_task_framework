@@ -30,7 +30,7 @@
 #include <tf_conversions/tf_eigen.h>
 #include <Eigen/Geometry>
 #include <parallel_2f_gripper/MoveGripper.h>
-#include <pybullet_utils/SensorReset.h>
+#include <pybullet_simulation/SensorReset.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <skills_util_msgs/ChangeConfig.h>
 #include <skills_util/util_functions.h>

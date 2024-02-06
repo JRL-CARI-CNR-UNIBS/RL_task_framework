@@ -31,7 +31,7 @@
   <depend>eigen_conversions</depend>
   <depend>tf_conversions</depend>
   <depend>parallel_2f_gripper</depend>
-  <depend>pybullet_utils</depend>
+  <depend>pybullet_simulation</depend>
   <depend>ik_solver_msgs</depend>
 
   <!-- The export tag contains other, unspecified, tags -->

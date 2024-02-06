@@ -44,6 +44,7 @@ private:
     std::string param_ns_;
     ros::NodeHandle n_;
 
+    double initial_total_reward_ = - 1e20;
     double total_reward_, total_reward_old_;
 
     std::map<std::string,std::map<std::string,std::vector<double>>> skill_execution_parameters_info_;

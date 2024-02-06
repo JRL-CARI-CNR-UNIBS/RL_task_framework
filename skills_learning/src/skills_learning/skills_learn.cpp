@@ -307,18 +307,18 @@ bool SkillsLearn::skillsLearning(skills_learning_msgs::SkillLearning::Request  &
     if ( !getParam(req.action_name, "total_reward", total_reward_) )
     {
         ROS_YELLOW_STREAM("The parameter "<<req.action_name<<"/total_reward is not set");
-        setParam(req.action_name, "total_reward", -1000000000);
-        ROS_YELLOW_STREAM("Set /"<<req.action_name<<"/total_reward: "<<-1000000000);
-        total_reward_ = -1000000000;
+        setParam(req.action_name, "total_reward", initial_total_reward_);
+        ROS_YELLOW_STREAM("Set /"<<req.action_name<<"/total_reward: "<<initial_total_reward_);
+        total_reward_ = initial_total_reward_;
     }
     ROS_WHITE_STREAM("total_reward: "<<total_reward_);
 
     if ( !getParam(req.action_name, "total_reward_old", total_reward_old_) )
     {
         ROS_YELLOW_STREAM("The parameter "<<req.action_name<<"/total_reward_old is not set");
-        setParam(req.action_name, "total_reward_old", -1000000000);
-        ROS_WHITE_STREAM("Set /"<<req.action_name<<"/total_reward_old: "<<-1000000000);
-        total_reward_old_ = -1000000000;
+        setParam(req.action_name, "total_reward_old", initial_total_reward_);
+        ROS_WHITE_STREAM("Set /"<<req.action_name<<"/total_reward_old: "<<initial_total_reward_);
+        total_reward_old_ = initial_total_reward_;
     }
     ROS_WHITE_STREAM("total_reward_old: "<<total_reward_old_);
 
@@ -487,7 +487,6 @@ int SkillsLearn::explore(const std::string &action_name, const std::string &skil
         ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<"/"<<param_name<<" change:");
         if (exploration_type == "variable_range")
         {
-            ROS_ERROR_STREAM('A500');
             int a;
             double tot, random_value;
             for (std::size_t i = 0; i < param_value.size(); i++)
@@ -516,52 +515,32 @@ int SkillsLearn::explore(const std::string &action_name, const std::string &skil
         }
         else
         {
-            ROS_ERROR_STREAM('A01');
             if (exploration_type != "standard")
                 ROS_ERROR("Exploration type not found, use standard one");
 
-            ROS_ERROR_STREAM('A01');
             int a;
-            ROS_ERROR_STREAM('A02');
             double tot, random_value;
             for (std::size_t i = 0; i < param_value.size(); i++)
             {
-                ROS_ERROR_STREAM('A03');
                 a = i*3;
-                ROS_ERROR_STREAM('A04');
                 tot = param_ratio.at(a) + param_ratio.at(a+1) + param_ratio.at(a+2);
-                ROS_ERROR_STREAM('A05');
                 random_value = ((rand() % 101) * tot) / 100.0;
 
-                ROS_ERROR_STREAM('A06');
-                ROS_ERROR_STREAM("param_value size: "<<param_value.size());
-                ROS_ERROR_STREAM("param_max_variation size: "<<param_max_variation.size());
-                ROS_ERROR_STREAM("new_param size: "<<new_param.size());
                 if (random_value < param_ratio.at(a))
                 {
-                    ROS_ERROR_STREAM('A07');
                     new_param.at(i) = param_value.at(i) - ((param_max_variation.at(i) * (rand() % 100 + 1)) / 100.0);
-                    ROS_ERROR_STREAM('A08');
                     new_param_test_number.at(a) = param_test_number.at(a) + 1;
-                    ROS_ERROR_STREAM('A09');
                 }
                 else if ( random_value > (param_ratio.at(a)+param_ratio.at(a+1)) )
                 {
-                    ROS_ERROR_STREAM('A10');
                     new_param.at(i) = param_value.at(i) + ((param_max_variation.at(i) * (rand() % 100 + 1)) / 100.0);
-                    ROS_ERROR_STREAM('A11');
                     new_param_test_number.at(a+2) = param_test_number.at(a+2) + 1;
-                    ROS_ERROR_STREAM('A12');
                 }
                 else
                 {
-                    ROS_ERROR_STREAM('A13');
                     new_param.at(i) = param_value.at(i);
-                    ROS_ERROR_STREAM('A14');
                     new_param_test_number.at(a+1) = param_test_number.at(a+1) + 1;
-                    ROS_ERROR_STREAM('A15');
                 }
-                ROS_ERROR_STREAM('A16');
             }
         }
 
@@ -617,6 +596,11 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
         if ( test_number < 2)
         {
             ROS_GREEN_STREAM("The skill has not been performed more than once, the parameters cannot be reset");
+            if ( test_number > 0)
+            {
+                setParam(action_name, skill_name, "test_number", test_number-1);
+                ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<": "<<test_number<<"->"<<(test_number-1));
+            }
         }
         else
         {
@@ -746,8 +730,9 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
                 {
                     setParam(action_name, skill_name, name_old, param);
                 }
-                printArrayParam(param_name,param);
-                printArrayParam(name_old,param);
+//                printArrayParam(param_name,param);
+//                printArrayParam(name_old,param);
+                printNewOldParam(param_name,param,param);
             }
             setParam(action_name, skill_name, "reward_old", -10000000);
             ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/reward_old: "<<-10000000);
@@ -855,8 +840,8 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
         printArrayParam(name_test_number,param_test_number);
 
         printNewOldParam(param_name,param,param_old);
-        printArrayParam(param_name,param);
-        printArrayParam(name_old,param_old);
+//        printArrayParam(param_name,param);
+//        printArrayParam(name_old,param_old);
 
 //        if ( total_reward_ > total_reward_old_ && reward >= reward_old )
         if ( total_reward_ > total_reward_old_ )
@@ -977,6 +962,10 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
                     int a = i*3;
                     if ( param.at(i) < param_old.at(i) )
                     {
+                        if (param_test_number.at(a) == 0)
+                        {
+                            ROS_INFO_STREAM("No ");
+                        }
                         if (param_test_number.at(a) == 1)
                         {
                             param_ratio.at(a) = param_ratio.at(a) / 2;
@@ -1011,11 +1000,13 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
                 }
             }
         }
-        printArrayParam(param_name,param);
-        printArrayParam(name_old,param_old);
+//        printArrayParam(param_name,param);
+//        printArrayParam(name_old,param_old);
+        printNewOldParam(param_name,param,param_old);
+        printNewOldParam(name_ratio,param_ratio,param_ratio_old);
 
-        printArrayParam("Param ration new",param_ratio);
-        printArrayParam("Param ration old",param_ratio_old);
+//        printArrayParam("Param ration new",param_ratio);
+//        printArrayParam("Param ration old",param_ratio_old);
         setParam(action_name, skill_name, name_ratio, param_ratio);
         ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/"<<name_ratio);
     }
@@ -1305,8 +1296,9 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
                 {
                     setParam(action_name, skill_name, name_old, param);
                 }
-                printArrayParam(name,param);
-                printArrayParam(name_old,param);
+//                printArrayParam(name,param);
+//                printArrayParam(name_old,param);
+                printNewOldParam(name,param,param);
             }
             setParam(action_name, skill_name, "reward_old", -10000000);
             ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/reward_old: "<<-10000000);
@@ -1408,8 +1400,8 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
         printArrayParam(name_test_number,param_test_number);
 
         printNewOldParam(name,param,param_old);
-        printArrayParam(name,param);
-        printArrayParam(name_old,param_old);
+//        printArrayParam(name,param);
+//        printArrayParam(name_old,param_old);
 
 //        if ( total_reward_ > total_reward_old_ && reward >= reward_old )
         if ( total_reward_ > total_reward_old_ )
@@ -1512,11 +1504,13 @@ int SkillsLearn::learning(const std::string &action_name, const std::string &ski
                 }
             }
         }
-        printArrayParam(name,param);
-        printArrayParam(name_old,param_old);
+//        printArrayParam(name,param);
+//        printArrayParam(name_old,param_old);
+        printNewOldParam(name,param,param_old);
+        printNewOldParam(name_ratio,param_ratio,param_ratio_old);
 
-        printArrayParam("Param ration new",param_ratio);
-        printArrayParam("Param ration old",param_ratio_old);
+//        printArrayParam("Param ration new",param_ratio);
+//        printArrayParam("Param ration old",param_ratio_old);
         setParam(action_name, skill_name, name_ratio, param_ratio);
         ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/"<<name_ratio);
     }
@@ -1807,8 +1801,9 @@ int SkillsLearn::learning_latest_more_weight(const std::string &action_name, con
                 {
                     setParam(action_name, skill_name, name_old, param);
                 }
-                printArrayParam(name,param);
-                printArrayParam(name_old,param);
+//                printArrayParam(name,param);
+//                printArrayParam(name_old,param);
+                printNewOldParam(name,param,param_old);
             }
             setParam(action_name, skill_name, "reward_old", -10000000);
             ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/reward_old: "<<-10000000);
@@ -1910,8 +1905,8 @@ int SkillsLearn::learning_latest_more_weight(const std::string &action_name, con
         printArrayParam(name_test_number,param_test_number);
 
         printNewOldParam(name,param,param_old);
-        printArrayParam(name,param);
-        printArrayParam(name_old,param_old);
+//        printArrayParam(name,param);
+//        printArrayParam(name_old,param_old);
 
 //        if ( total_reward_ > total_reward_old_ && reward >= reward_old )
         if ( total_reward_ > total_reward_old_ )
@@ -1972,11 +1967,13 @@ int SkillsLearn::learning_latest_more_weight(const std::string &action_name, con
                 }
             }
         }
-        printArrayParam(name,param);
-        printArrayParam(name_old,param_old);
+//        printArrayParam(name,param);
+//        printArrayParam(name_old,param_old);
+        printNewOldParam(name,param,param_old);
+        printNewOldParam(name_ratio,param_ratio,param_ratio_old);
 
-        printArrayParam("Param ration new",param_ratio);
-        printArrayParam("Param ration old",param_ratio_old);
+//        printArrayParam("Param ration new",param_ratio);
+//        printArrayParam("Param ration old",param_ratio_old);
         setParam(action_name, skill_name, name_ratio, param_ratio);
         ROS_WHITE_STREAM("Set /"<<action_name<<"/"<<skill_name<<"/"<<name_ratio);
     }
