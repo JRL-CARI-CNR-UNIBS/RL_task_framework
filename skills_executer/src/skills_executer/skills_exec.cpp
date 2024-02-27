@@ -5,25 +5,15 @@ namespace skills_executer
 
 SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n), robot_name_(name)
 {
-//    if (!n_.getParam("/skills_executer/use_ur", use_ur_))
-//    {
-//        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/use_ur param, defaul false");
-//        use_ur_ = false;
-//    }
-//    if (!n_.getParam("/skills_executer/use_pybullet", use_pybullet_))
-//    {
-//        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/use_pybullet param, defaul false");
-//        use_pybullet_ = false;
-//    }
     if (!n_.getParam("/skills_executer/use_change_config_bridge", use_change_config_bridge_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/use_change_config_bridge param, defaul false");
+        ROS_WARN_STREAM("No /skills_executer/use_change_config_bridge param, defaul false");
         use_change_config_bridge_ = false;
     }
     if (!n_.getParam("/skills_executer/skills_parameters_name_space", param_ns_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skills_parameters_name_space param, defaul 'RL_params'");
-        param_ns_ = "RL_params";
+        ROS_WARN_STREAM("No /skills_executer/skills_parameters_name_space param, defaul 'RL_params'");
+        param_ns_ = "exec_params";
     }
 
     if (!n_.getParam("/skills_executer/robots/" + robot_name_ + "/end_link_frame",                       end_link_frame_))
@@ -33,12 +23,12 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
     }
     if (!n_.getParam("/skills_executer/robots/" + robot_name_ + "/initial_reference_end_effector_frame", reference_end_effector_frame_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/initial_reference_end_effector_frame param");
+        ROS_WARN_STREAM("No /skills_executer/" + robot_name_ + "/initial_reference_end_effector_frame param");
         reference_end_effector_frame_ = end_link_frame_;
     }
     if (!n_.getParam("/skills_executer/robots/" + robot_name_ + "/sensor_type",                          sensor_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/sensor_type param");
+        ROS_WARN_STREAM("No /skills_executer/" + robot_name_ + "/sensor_type param");
     }
     else
     {
@@ -54,86 +44,91 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
     }
     if (!n_.getParam("/skills_executer/robots/" + robot_name_ + "/initial_attached_link_name",           attached_link_name_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/initial_attached_link_name param");
+        ROS_WARN_STREAM("No /skills_executer/" + robot_name_ + "/initial_attached_link_name param");
     }
     if (!n_.getParam("/skills_executer/robots/" + robot_name_ + "/initial_end_effector_touch_links",     end_effector_touch_links_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/initial_end_effector_touch_links param");
+        ROS_WARN_STREAM("No /skills_executer/" + robot_name_ + "/initial_end_effector_touch_links param");
     }
 
     if (!n_.getParam("/skills_executer/skill_types_names/watch_type",                         watch_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/watch_type param, defaul 'watch'");
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/watch_type param, defaul 'watch'");
         watch_type_ = "watch";
     }
     if (!n_.getParam("/skills_executer/skill_types_names/cart_vel_type",                      cart_vel_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/cart_vel_type param, defaul 'cartesian_velocity'");
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/cart_vel_type param, defaul 'cartesian_velocity'");
         cart_vel_type_ = "cartesian_velocity";
     }
     if (!n_.getParam("/skills_executer/skill_types_names/cart_pos_type",                      cart_pos_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/cart_pos_type param, defaul 'cartesian_position'");
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/cart_pos_type param, defaul 'cartesian_position'");
         cart_pos_type_ = "cartesian_position";
     }
     if (!n_.getParam("/skills_executer/skill_types_names/cart_pos_to_type",                   cart_pos_to_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/cart_pos_to_type param, defaul 'cart_pos_to'");
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/cart_pos_to_type param, defaul 'cart_pos_to'");
         cart_pos_to_type_ = "cart_pos_to";
     }
     if (!n_.getParam("/skills_executer/skill_types_names/simple_touch_type",                  simple_touch_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/simple_touch_type param, defaul 'simple_touch'");
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/simple_touch_type param, defaul 'simple_touch'");
         simple_touch_type_ = "simple_touch";
     }
     if (!n_.getParam("/skills_executer/skill_types_names/parallel_2f_gripper_move_type",      parallel_2f_gripper_move_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/parallel_2f_gripper_move_type param, defaul 'parallel_gripper_move'");
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/parallel_2f_gripper_move_type param, defaul 'parallel_gripper_move'");
         parallel_2f_gripper_move_type_ = "parallel_gripper_move";
     }
     if (!n_.getParam("/skills_executer/skill_types_names/robotiq_gripper_move_type",          robotiq_gripper_move_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/robotiq_gripper_move_type param, defaul 'robotiq_gripper_move'");
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/robotiq_gripper_move_type param, defaul 'robotiq_gripper_move'");
         robotiq_gripper_move_type_ = "robotiq_gripper_move";
+    }
+    if (!n_.getParam("/skills_executer/skill_types_names/panda_gripper_move_type",            panda_gripper_move_type_))
+    {
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/panda_gripper_move_type param, defaul 'panda_gripper_move'");
+        panda_gripper_move_type_ = "panda_gripper_move";
     }
     if (!n_.getParam("/skills_executer/skill_types_names/ur_load_program_type",               ur_load_program_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/ur_load_program_type param, defaul 'ur_load_program'");
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/ur_load_program_type param, defaul 'ur_load_program'");
         ur_load_program_type_ = "ur_load_program";
     }
     if (!n_.getParam("/skills_executer/skill_types_names/move_to_type",                       move_to_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/move_to_type param, defaul 'move_to'");
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/move_to_type param, defaul 'move_to'");
         move_to_type_ = "move_to";
     }
     if (!n_.getParam("/skills_executer/skill_types_names/linear_move_type",                   linear_move_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/linear_move_type param, defaul 'linear_move'");
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/linear_move_type param, defaul 'linear_move'");
         linear_move_type_ = "linear_move";
     }
     if (!n_.getParam("/skills_executer/skill_types_names/linear_move_to_type",                linear_move_to_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/linear_move_to_type param, defaul 'linear_move_to'");
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/linear_move_to_type param, defaul 'linear_move_to'");
         linear_move_to_type_ = "linear_move_to";
     }
     if (!n_.getParam("/skills_executer/skill_types_names/joint_move_to_type",                 joint_move_to_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/joint_move_to_type param, defaul 'joint_move_to'");
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/joint_move_to_type param, defaul 'joint_move_to'");
         joint_move_to_type_ = "joint_move_to";
     }
     if (!n_.getParam("/skills_executer/skill_types_names/release_end_effector_type",          release_end_effector_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/release_end_effector_type param, defaul 'release_end_effector'");
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/release_end_effector_type param, defaul 'release_end_effector'");
         release_end_effector_type_ = "release_end_effector";
     }
     if (!n_.getParam("/skills_executer/skill_types_names/attach_end_effector_type",           attach_end_effector_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/attach_end_effector_type param, defaul 'attach_end_effector'");
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/attach_end_effector_type param, defaul 'attach_end_effector'");
         attach_end_effector_type_ = "attach_end_effector";
     }
     if (!n_.getParam("/skills_executer/skill_types_names/pneumatic_schunk_gripper_move_type", pneumatic_schunk_gripper_move_type_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skill_types_names/pneumatic_schunk_gripper_move_type param, defaul 'pneumatic_schunk_gripper_move'");
+        ROS_WARN_STREAM("No /skills_executer/skill_types_names/pneumatic_schunk_gripper_move_type param, defaul 'pneumatic_schunk_gripper_move'");
         pneumatic_schunk_gripper_move_type_ = "pneumatic_schunk_gripper_move";
     }
 
@@ -144,36 +139,21 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
     if (use_change_config_bridge_)
     {
         change_config_clnt_ = n_.serviceClient<skills_util_msgs::ChangeConfig>("/skills_util/change_config");
-        ROS_YELLOW_STREAM("Waiting for "<<change_config_clnt_.getService());
+        ROS_WARN_STREAM("Waiting for "<<change_config_clnt_.getService());
         change_config_clnt_.waitForExistence();
-        ROS_YELLOW_STREAM("Connection ok");
+        ROS_WARN_STREAM("Connection ok");
     }
     else
     {
         change_config_clnt_ = n_.serviceClient<configuration_msgs::StartConfiguration>("/configuration_manager/start_configuration");
-        ROS_YELLOW_STREAM("Waiting for "<<change_config_clnt_.getService());
+        ROS_WARN_STREAM("Waiting for "<<change_config_clnt_.getService());
         change_config_clnt_.waitForExistence();
-        ROS_YELLOW_STREAM("Connection ok");
+        ROS_WARN_STREAM("Connection ok");
     }
     get_ik_clnt_ = n_.serviceClient<ik_solver_msgs::GetIk>("/" + robot_name_ + "/get_ik");
-    ROS_YELLOW_STREAM("Waiting for "<<get_ik_clnt_.getService());
+    ROS_WARN_STREAM("Waiting for "<<get_ik_clnt_.getService());
     get_ik_clnt_.waitForExistence();
-    ROS_YELLOW_STREAM("Connection ok");
-
-//    if( ros::service::exists("/pybullet_sensor_reset") )
-//    {
-//        sensor_reset_clnt_ = n_.serviceClient<pybullet_simulation::SensorReset>("/pybullet_sensor_reset");
-//        ROS_YELLOW_STREAM("Client to pybullet_sensor_reset service created");
-//    }
-//    else if( ros::service::exists("/another_sensor_topic") )
-//    {
-//        sensor_reset_clnt_ = n_.serviceClient<pybullet_simulation::SensorReset>("/another_sensor_server");
-//        ROS_YELLOW_STREAM("Client to another_sensor_topic service created");
-//    }
-//    else
-//    {
-//        ROS_YELLOW_STREAM("No sensor server");
-//    }
+    ROS_WARN_STREAM("Connection ok");
 
     touch_action_         = std::make_shared<actionlib::SimpleActionClient<simple_touch_controller_msgs::SimpleTouchAction>>("/" + robot_name_ + "/simple_touch", true);
     relative_move_action_ = std::make_shared<actionlib::SimpleActionClient<relative_cartesian_controller_msgs::RelativeMoveAction>>("/" + robot_name_ + "/relative_move", true);
@@ -194,7 +174,7 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
     fjt_ac_.reset(new actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction>("/"+robot_name_+"/follow_joint_trajectory",true));
     if (!n_.getParam("/skills_executer/" + robot_name_ + "/trajectory_joint_tollerance", trajectory_joint_tollerance_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/trajectory_joint_tollerance param, defaul 0.001 for all joints");
+        ROS_WARN_STREAM("No /skills_executer/" + robot_name_ + "/trajectory_joint_tollerance param, defaul 0.001 for all joints");
         for ( std::size_t i = 0; i < move_group_->getJointNames().size(); i++)
         {
             trajectory_joint_tollerance_.push_back(0.001);
@@ -210,7 +190,7 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
     }
     if (!n_.getParam("/skills_executer/" + robot_name_ + "/trajectory_time_tollerance", trajectory_time_tollerance_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/trajectory_time_tollerance param, defaul 2 second");
+        ROS_WARN_STREAM("No /skills_executer/" + robot_name_ + "/trajectory_time_tollerance param, defaul 2 second");
         trajectory_time_tollerance_ = 2;
     }
     //    end
@@ -218,8 +198,8 @@ SkillsExec::SkillsExec(const ros::NodeHandle &n, const std::string &name) : n_(n
     double goal_joint_tollerance;
     if (!n_.getParam("/skills_executer/" + robot_name_ + "/goal_joint_tollerance", goal_joint_tollerance))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/" + robot_name_ + "/goal_joint_tollerance param, defaul 0.0001");
-        move_group_->setGoalJointTolerance(0.0001);
+        ROS_WARN_STREAM("No /skills_executer/" + robot_name_ + "/goal_joint_tollerance param, defaul 0.001");
+        move_group_->setGoalJointTolerance(0.001);
     }
     else
     {
@@ -239,29 +219,30 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     std::string location_name;
     int exec;
     double total_duration, total_max_force, final_distance;
+    std::vector<double> total_max_wrench;
 
     if (!getParam(req.action_name, "action_type",   action_type))
     {
-        ROS_RED_STREAM("No param /"<<req.action_name<<"/action_type, skill execution finish");
+        ROS_ERROR_STREAM("No param /"<<req.action_name<<"/action_type, skill execution finish");
         res.result = skills_executer_msgs::SkillExecutionResponse::NoParam;
         return true;
     }
-    ROS_WHITE_STREAM("Action type: "<<action_type);
+    ROS_INFO_STREAM("Action type: "<<action_type);
 
     if (!getParam(req.action_name, req.skill_name, "skill_type",   skill_type))
     {
-        ROS_RED_STREAM("No param /"<<req.action_name<<"/"<<req.skill_name<<"/skill_type, skill execution finish");
+        ROS_ERROR_STREAM("No param /"<<req.action_name<<"/"<<req.skill_name<<"/skill_type, skill execution finish");
         res.result = skills_executer_msgs::SkillExecutionResponse::NoParam;
         return true;
     }
-    ROS_WHITE_STREAM("Skill type: "<<skill_type);
+    ROS_INFO_STREAM("Skill type: "<<skill_type);
 
     if (!getParam(req.action_name, "executed", exec))
     {
-        ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/executed, considered equal to 0");
+        ROS_WARN_STREAM("No param /"<<req.action_name<<"/executed, considered equal to 0");
         exec = 0;
     }
-    ROS_WHITE_STREAM("executed: "<<exec);
+    ROS_INFO_STREAM("executed: "<<exec);
     if ( exec == 0)
     {
         setParam(req.action_name,"duration",0);
@@ -270,39 +251,46 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
 
     if (!getParam(req.action_name, "duration", total_duration))
     {
-        ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/duration, considered equal to 0");
+        ROS_WARN_STREAM("No param /"<<req.action_name<<"/duration, considered equal to 0");
         total_duration = 0;
         setParam(req.action_name, "duration", total_duration);
     }
     if (!getParam(req.action_name, "max_force", total_max_force))
     {
-        ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/max_force, considered equal to 0");
+        ROS_WARN_STREAM("No param /"<<req.action_name<<"/max_force, considered equal to 0");
         total_max_force = 0;
         setParam(req.action_name, "max_force", total_max_force);
     }
+    if (!getParam(req.action_name, "max_wrench", total_max_wrench))
+    {
+        ROS_WARN_STREAM("No param /"<<req.action_name<<"/max_wrench, considered equal to [0,0,0,0,0,0]");
+        total_max_wrench = {0.0,0.0,0.0,0.0,0.0,0.0};
+        setParam(req.action_name, "max_force", total_max_wrench);
+    }
 
     setParam(req.action_name,"executed",1);
-    ROS_WHITE_STREAM("Set /"<<req.action_name<<"/executed: "<<1);
+    ROS_INFO_STREAM("Set /"<<req.action_name<<"/executed: "<<1);
 
-    if( !action_type.compare("pick_and_place") )
+    if( !action_type.compare("pick_and_place") || !action_type.compare("peg_in_hole"))
     {
         if (!getParam(req.action_name, "location_name", location_name))
         {
-            ROS_RED_STREAM("No param /"<<req.action_name<<"/location_name, skill execution finish");
+            ROS_ERROR_STREAM("No param /"<<req.action_name<<"/location_name, skill execution finish");
             res.result = skills_executer_msgs::SkillExecutionResponse::NoParam;
             return true;
         }
-        ROS_WHITE_STREAM(req.action_name<<" location_name: "<<location_name);
+        ROS_INFO_STREAM(req.action_name<<" location_name: "<<location_name);
         if (!getParam(req.action_name, "object_name", object_name))
         {
-            ROS_RED_STREAM("No param /"<<req.action_name<<"/object_name, skill execution finish");
+            ROS_ERROR_STREAM("No param /"<<req.action_name<<"/object_name, skill execution finish");
             res.result = skills_executer_msgs::SkillExecutionResponse::NoParam;
             return true;
         }
-        ROS_WHITE_STREAM(req.action_name<<" object_name: "<<object_name);
+        ROS_INFO_STREAM(req.action_name<<" object_name: "<<object_name);
     }
 
     max_force_ = 0.0;
+    max_wrench_ = {0.0,0.0,0.0,0.0,0.0,0.0};
     contact_ = false;
     end_force_thread_ = false;
 
@@ -366,22 +354,35 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
         }
         res.result = pneumaticSchunkGripperMove(req.action_name, req.skill_name);
     }
+    else if ( !skill_type.compare(panda_gripper_move_type_) )
+    {
+        if (!object_name.empty())
+        {
+            current_grasped_object_ = object_name;
+        }
+        res.result = pandaGripperMove(req.action_name, req.skill_name);
+    }
     else
     {
-        ROS_RED_STREAM("/"<<req.action_name<<"/"<<req.skill_name<<" result: NoSkillType");
+        ROS_ERROR_STREAM("/"<<req.action_name<<"/"<<req.skill_name<<" result: NoSkillType");
         res.result = skills_executer_msgs::SkillExecutionResponse::NoSkillType;
         return true;
     }
 
     int int_result = res.result;
-    ROS_WHITE_STREAM("/"<<req.action_name<<"/"<<req.skill_name<<" result: "<<int_result);
+    ROS_INFO_STREAM("/"<<req.action_name<<"/"<<req.skill_name<<" result: "<<int_result);
 
     setParam(req.action_name,req.skill_name,"executed",1);
-    ROS_WHITE_STREAM("Set /"<<req.action_name<<"/"<<req.skill_name<<"/executed: "<<1);
+    ROS_INFO_STREAM("Set /"<<req.action_name<<"/"<<req.skill_name<<"/executed: "<<1);
     if ( res.result != skills_executer_msgs::SkillExecutionResponse::Success )
     {
         setParam(req.action_name, "failure", 1);
-        ROS_YELLOW_STREAM("Set /"<<req.action_name<<"/fail: "<<1);
+        ROS_WARN_STREAM("Set /"<<req.action_name<<"/fail: "<<1);
+    }
+    else
+    {
+        setParam(req.action_name, "failure", 0);
+        ROS_INFO_STREAM("Set /"<<req.action_name<<"/fail: "<<0);
     }
 
     double duration = ros::Time::now().toSec() - initial_time.toSec();
@@ -397,42 +398,71 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     if ( max_force_ > total_max_force )
     {
         setParam(req.action_name, "max_force", max_force_);
+        ROS_INFO_STREAM("Set /"<<req.action_name<<"/max_force: "<<max_force_);
     }
+    std::vector<double> new_total_max_wrench = {0,0,0,0,0,0};
+    for (auto i = 0; i < total_max_wrench.size(); i++)
+    {
+        if (max_wrench_.at(i) > total_max_wrench.at(i))
+        {
+            new_total_max_wrench.at(i) = max_wrench_.at(i);
+        }
+        else
+        {
+            new_total_max_wrench.at(i) = total_max_wrench.at(i);
+        }
+    }
+    setParam(req.action_name, "max_wrench", new_total_max_wrench);
+    ROS_INFO_STREAM("Set /"<<req.action_name<<"/max_wrench: ["
+                    <<new_total_max_wrench.at(0)<<","
+                    <<new_total_max_wrench.at(1)<<","
+                    <<new_total_max_wrench.at(2)<<","
+                    <<new_total_max_wrench.at(3)<<","
+                    <<new_total_max_wrench.at(4)<<","
+                    <<new_total_max_wrench.at(5)<<"]");
 
     setParam(req.action_name,req.skill_name,"duration",duration);
-    ROS_WHITE_STREAM("Set /"<<req.action_name<<"/"<<req.skill_name<<"/duration: "<<duration);
+    ROS_INFO_STREAM("Set /"<<req.action_name<<"/"<<req.skill_name<<"/duration: "<<duration);
     setParam(req.action_name,req.skill_name,"max_force",max_force_);
-    ROS_WHITE_STREAM("Set /"<<req.action_name<<"/"<<req.skill_name<<"/max_force: "<<max_force_);
+    ROS_INFO_STREAM("Set /"<<req.action_name<<"/"<<req.skill_name<<"/max_force: "<<max_force_);
     setParam(req.action_name,req.skill_name,"contact",contact_);
-    ROS_WHITE_STREAM("Set /"<<req.action_name<<"/"<<req.skill_name<<"/contact: "<<contact_);
+    ROS_INFO_STREAM("Set /"<<req.action_name<<"/"<<req.skill_name<<"/contact: "<<contact_);
+    setParam(req.action_name,req.skill_name,"max_wrench",max_wrench_);
+    ROS_INFO_STREAM("Set /"<<req.action_name<<"/"<<req.skill_name<<"/max_wrench: ["
+                    <<max_wrench_.at(0)<<","
+                    <<max_wrench_.at(1)<<","
+                    <<max_wrench_.at(2)<<","
+                    <<max_wrench_.at(3)<<","
+                    <<max_wrench_.at(4)<<","
+                    <<max_wrench_.at(5)<<"]");
 
-    if( !action_type.compare("pick_and_place") )
+    if( !action_type.compare("pick_and_place")  || !action_type.compare("peg_in_hole"))
     {
         if ( skill_type.find("gripper") == std::string::npos )
         {
             final_distance = tf_distance(object_name, location_name);
             double place_tollerance;
-            ROS_WHITE_STREAM("Final distance: "<<final_distance);
+            ROS_INFO_STREAM("Final distance: "<<final_distance);
             setParam(req.action_name,req.skill_name,"final_distance",final_distance);
-            ROS_WHITE_STREAM("/"<<req.action_name<<"/"<<req.skill_name<<"/final_distance: "<<final_distance);
+            ROS_INFO_STREAM("/"<<req.action_name<<"/"<<req.skill_name<<"/final_distance: "<<final_distance);
             setParam(req.action_name,"final_distance",final_distance);
-            ROS_WHITE_STREAM("Set /"<<req.action_name<<"/final_distance: "<<final_distance);
+            ROS_INFO_STREAM("Set /"<<req.action_name<<"/final_distance: "<<final_distance);
             if (!getParam(req.action_name, "place_tollerance", place_tollerance))
             {
-                ROS_YELLOW_STREAM("No param: /"<<req.action_name<<"/place_tollerance, default: 0.01");
+                ROS_WARN_STREAM("No param: /"<<req.action_name<<"/place_tollerance, default: 0.01");
                 place_tollerance = 0.01;
                 setParam(req.action_name,"place_tollerance",place_tollerance);
-                ROS_WHITE_STREAM("Set /"<<req.action_name<<"/place_tollerance: "<<place_tollerance);
+                ROS_INFO_STREAM("Set /"<<req.action_name<<"/place_tollerance: "<<place_tollerance);
             }
-            ROS_WHITE_STREAM("Place_tollerance: "<<place_tollerance);
+            ROS_INFO_STREAM("Place_tollerance: "<<place_tollerance);
             if ( final_distance < place_tollerance )
             {
-                ROS_WHITE_STREAM("Object in tollerance. Fail set to 0");
+                ROS_INFO_STREAM("Object in tollerance. Fail set to 0");
                 setParam(req.action_name,"fail",0);
             }
             else
             {
-                ROS_WHITE_STREAM("Object not in tollerance. Fail set to 1");
+                ROS_INFO_STREAM("Object not in tollerance. Fail set to 1");
                 setParam(req.action_name,"fail",1);
             }
         }
@@ -447,13 +477,13 @@ int SkillsExec::urLoadProgram(const std::string &action_name, const std::string 
   std::string hw_name;
   if (not getParam(action_name, skill_name, "ur_hw_name", hw_name))
   {
-      ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/ur_hw_name is not set");
+      ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/ur_hw_name is not set");
       return skills_executer_msgs::SkillExecutionResponse::NoParam;
   }
   std::vector<std::string> programs;
   if (not getParam(action_name, skill_name, "programs", programs))
   {
-      ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/program_name is not set");
+      ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/program_name is not set");
       return skills_executer_msgs::SkillExecutionResponse::NoParam;
   }
   bool play;
@@ -463,12 +493,12 @@ int SkillsExec::urLoadProgram(const std::string &action_name, const std::string 
   ros::ServiceClient load_clnt = n_.serviceClient<ur_dashboard_msgs::Load>(hw_name+"/dashboard/load_program");
   ros::ServiceClient play_clnt = n_.serviceClient<std_srvs::Trigger>(hw_name+"/dashboard/play");
 
-  ROS_YELLOW_STREAM("Waiting for "<<load_clnt.getService());
+  ROS_WARN_STREAM("Waiting for "<<load_clnt.getService());
   load_clnt.waitForExistence();
-  ROS_YELLOW_STREAM("Waiting for "<<play_clnt.getService());
+  ROS_WARN_STREAM("Waiting for "<<play_clnt.getService());
   play_clnt.waitForExistence();
 
-  ROS_YELLOW_STREAM("Connection ok");
+  ROS_WARN_STREAM("Connection ok");
 
   for(const std::string& program:programs)
   {
@@ -488,7 +518,7 @@ int SkillsExec::urLoadProgram(const std::string &action_name, const std::string 
         return skills_executer_msgs::SkillExecutionResponse::Fail;
     }
 
-    ROS_YELLOW_STREAM("Program "<<load_srv.request.filename<<" loaded");
+    ROS_WARN_STREAM("Program "<<load_srv.request.filename<<" loaded");
 
     if(play)
     {
@@ -503,7 +533,7 @@ int SkillsExec::urLoadProgram(const std::string &action_name, const std::string 
           return skills_executer_msgs::SkillExecutionResponse::Fail;
       }
 
-      ROS_YELLOW_STREAM("Program "<<load_srv.request.filename<<" launched");
+      ROS_WARN_STREAM("Program "<<load_srv.request.filename<<" launched");
     }
   }
 
@@ -512,18 +542,18 @@ int SkillsExec::urLoadProgram(const std::string &action_name, const std::string 
 
 int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std::string &skill_name)
 {
-    ROS_WHITE_STREAM("In parallel2fGripperMove");
+    ROS_INFO_STREAM("In parallel2fGripperMove");
     parallel_gripper_move_clnt_ = n_.serviceClient<parallel_2f_gripper::MoveGripper>("/move_parallel_gripper");
-    ROS_WHITE_STREAM("Waiting for "<<parallel_gripper_move_clnt_.getService());
+    ROS_INFO_STREAM("Waiting for "<<parallel_gripper_move_clnt_.getService());
     if (!parallel_gripper_move_clnt_.waitForExistence(ros::Duration(2)))
     {
         ROS_ERROR_STREAM(parallel_gripper_move_clnt_.getService().c_str() << " don't connect.");
         return skills_executer_msgs::SkillExecutionResponse::Fail;
     }
-    ROS_WHITE_STREAM("Connection ok");
+    ROS_INFO_STREAM("Connection ok");
 
     setParam(action_name,skill_name,"fail",0);
-    ROS_WHITE_STREAM("Set "<<action_name<<"/"<<skill_name<<"/fail: 0");
+    ROS_INFO_STREAM("Set "<<action_name<<"/"<<skill_name<<"/fail: 0");
 
     double torque;
     double velocity;
@@ -532,31 +562,31 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
     bool set = false;
 
 
-    ROS_WHITE_STREAM("Read params");
+    ROS_INFO_STREAM("Read params");
 
     if (!getParam(action_name, skill_name, "control_mode", control_mode))
     {
-        ROS_RED_STREAM("Control_mode not set");
+        ROS_ERROR_STREAM("Control_mode not set");
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
 
-    ROS_WHITE_STREAM("Control_mode: "<<control_mode);
+    ROS_INFO_STREAM("Control_mode: "<<control_mode);
 
     if (!control_mode.compare("torque"))
     {
         if (getParam(action_name, skill_name, "torque", torque))
         {
-            ROS_WHITE_STREAM("Read torque: "<<torque);
+            ROS_INFO_STREAM("Read torque: "<<torque);
             set = true;
         }
         else
         {
-            ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<": torque parameter is missing. Return NoParam");
+            ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<": torque parameter is missing. Return NoParam");
             return skills_executer_msgs::SkillExecutionResponse::NoParam;
         }
         if (getParam(action_name, skill_name, "velocity", velocity))
         {
-            ROS_WHITE_STREAM("Read velocity: "<<velocity);
+            ROS_INFO_STREAM("Read velocity: "<<velocity);
         }
         else
         {
@@ -568,17 +598,17 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
     {
         if (getParam(action_name, skill_name, "velocity", velocity))
         {
-            ROS_WHITE_STREAM("Read velocity: "<<velocity);
+            ROS_INFO_STREAM("Read velocity: "<<velocity);
             set = true;
         }
         else
         {
-            ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<": velocity parameter is missing. Return NoParam");
+            ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<": velocity parameter is missing. Return NoParam");
             return skills_executer_msgs::SkillExecutionResponse::NoParam;
         }
         if (getParam(action_name, skill_name, "torque", torque))
         {
-            ROS_WHITE_STREAM("Read torque: "<<torque);
+            ROS_INFO_STREAM("Read torque: "<<torque);
         }
         else
         {
@@ -590,17 +620,17 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
     {
         if (getParam(action_name, skill_name, "position", position))
         {
-            ROS_WHITE_STREAM("Read position: "<<position);
+            ROS_INFO_STREAM("Read position: "<<position);
             set = true;
         }
         else
         {
-            ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<": position parameter is missing. Return NoParam");
+            ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<": position parameter is missing. Return NoParam");
             return skills_executer_msgs::SkillExecutionResponse::NoParam;
         }
         if (getParam(action_name, skill_name, "torque", torque))
         {
-            ROS_WHITE_STREAM("Read torque: "<<torque);
+            ROS_INFO_STREAM("Read torque: "<<torque);
         }
         else
         {
@@ -608,7 +638,7 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
         }
         if (getParam(action_name, skill_name, "velocity", velocity))
         {
-            ROS_WHITE_STREAM("Read velocity: "<<velocity);
+            ROS_INFO_STREAM("Read velocity: "<<velocity);
         }
         else
         {
@@ -621,7 +651,7 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
         set = true;
         if (getParam(action_name, skill_name, "torque", torque))
         {
-            ROS_WHITE_STREAM("Read torque: "<<torque);
+            ROS_INFO_STREAM("Read torque: "<<torque);
         }
         else
         {
@@ -629,7 +659,7 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
         }
         if (getParam(action_name, skill_name, "velocity", velocity))
         {
-            ROS_WHITE_STREAM("Read velocity: "<<velocity);
+            ROS_INFO_STREAM("Read velocity: "<<velocity);
         }
         else
         {
@@ -642,7 +672,7 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
         set = true;
         if (getParam(action_name, skill_name, "torque", torque))
         {
-            ROS_WHITE_STREAM("Read torque: "<<torque);
+            ROS_INFO_STREAM("Read torque: "<<torque);
         }
         else
         {
@@ -650,7 +680,7 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
         }
         if (getParam(action_name, skill_name, "velocity", velocity))
         {
-            ROS_WHITE_STREAM("Read velocity: "<<velocity);
+            ROS_INFO_STREAM("Read velocity: "<<velocity);
         }
         else
         {
@@ -660,13 +690,13 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
 
     if ( !set )
     {
-        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<": some parameters are missing");
-        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+        ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<": some parameters are missing");
+        ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
-    ROS_WHITE_STREAM(skill_name<<"-> torque: "<<torque);
-    ROS_WHITE_STREAM(skill_name<<"-> velocity: "<<velocity);
-    ROS_WHITE_STREAM(skill_name<<"-> position: "<<position);
+    ROS_INFO_STREAM(skill_name<<"-> torque: "<<torque);
+    ROS_INFO_STREAM(skill_name<<"-> velocity: "<<velocity);
+    ROS_INFO_STREAM(skill_name<<"-> position: "<<position);
 
     parallel_2f_gripper::MoveGripper move_gripper_srv;
     move_gripper_srv.request.control_mode = control_mode;
@@ -694,11 +724,11 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
 
     if (!parallel_gripper_move_clnt_.call(move_gripper_srv))
     {
-      ROS_RED_STREAM("Unable to call "<<parallel_gripper_move_clnt_.getService()<<" service ");
+      ROS_ERROR_STREAM("Unable to call "<<parallel_gripper_move_clnt_.getService()<<" service ");
       return skills_executer_msgs::SkillExecutionResponse::Fail;
     }
 
-    ROS_WHITE_STREAM("Parallel_gripper_move return :"<<move_gripper_srv.response.result);
+    ROS_INFO_STREAM("Parallel_gripper_move return :"<<move_gripper_srv.response.result);
     if ( !move_gripper_srv.response.result.compare("true") )
     {
         sensor_msgs::JointState actual_js;
@@ -716,7 +746,7 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
                 setParam(action_name,"fail",1);
                 std::string param_name = "/" + current_grasped_object_ + "/attached";
                 n_.setParam(param_name,false);
-                ROS_YELLOW_STREAM("No object in the gripper. Current position: "<<actual_js.position.at(index - actual_js.name.begin()));
+                ROS_WARN_STREAM("No object in the gripper. Current position: "<<actual_js.position.at(index - actual_js.name.begin()));
                 return skills_executer_msgs::SkillExecutionResponse::Fail;
             }
         }
@@ -751,52 +781,52 @@ int SkillsExec::parallel2fGripperMove(const std::string &action_name, const std:
         }
         end_gripper_feedback_ = false;
 
-        ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
+        ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
         return skills_executer_msgs::SkillExecutionResponse::Success;
     }
     else
     {
-        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
+        ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
         return skills_executer_msgs::SkillExecutionResponse::Fail;
     }
 
     ros::Duration(1.0).sleep();
 
-    ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
+    ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
 int SkillsExec::pneumaticSchunkGripperMove(const std::string &action_name, const std::string &skill_name)
 {
-    ROS_WHITE_STREAM("In pneumaticSchunkGripperMove");
+    ROS_INFO_STREAM("In pneumaticSchunkGripperMove");
     std::string gripper_type;
     if (!getParam(action_name, skill_name, "gripper_type", gripper_type))
     {
-        ROS_RED_STREAM("gripper_type param not set, default 'fake'");
+        ROS_ERROR_STREAM("gripper_type param not set, default 'fake'");
         gripper_type = "fake";
     }
 
     if (gripper_type == "pybullet")
     {
         pneumatic_schunk_gripper_move_clnt_ = n_.serviceClient<std_srvs::SetBool>("/move_schunk_jpg_p_160_gripper");
-        ROS_WHITE_STREAM("Waiting for "<<pneumatic_schunk_gripper_move_clnt_.getService());
+        ROS_INFO_STREAM("Waiting for "<<pneumatic_schunk_gripper_move_clnt_.getService());
         if (!pneumatic_schunk_gripper_move_clnt_.waitForExistence(ros::Duration(2)))
         {
             ROS_ERROR_STREAM(pneumatic_schunk_gripper_move_clnt_.getService().c_str() << " don't connect.");
             return skills_executer_msgs::SkillExecutionResponse::Fail;
         }
-        ROS_WHITE_STREAM("Connection ok");
+        ROS_INFO_STREAM("Connection ok");
     }
     else if (gripper_type == "real")
     {
         pneumatic_schunk_gripper_move_clnt_ = n_.serviceClient<std_srvs::SetBool>("/battery_cell_utils/pneumatic_gripper");
-        ROS_WHITE_STREAM("Waiting for "<<pneumatic_schunk_gripper_move_clnt_.getService());
+        ROS_INFO_STREAM("Waiting for "<<pneumatic_schunk_gripper_move_clnt_.getService());
         if (!pneumatic_schunk_gripper_move_clnt_.waitForExistence(ros::Duration(2)))
         {
             ROS_ERROR_STREAM(pneumatic_schunk_gripper_move_clnt_.getService().c_str() << " don't connect.");
             return skills_executer_msgs::SkillExecutionResponse::Fail;
         }
-        ROS_WHITE_STREAM("Connection ok");
+        ROS_INFO_STREAM("Connection ok");
     }
     else if (gripper_type == "fake")
     {
@@ -810,15 +840,15 @@ int SkillsExec::pneumaticSchunkGripperMove(const std::string &action_name, const
     }
 
     setParam(action_name,skill_name,"fail",0);
-    ROS_WHITE_STREAM("Set "<<action_name<<"/"<<skill_name<<"/fail: 0");
+    ROS_INFO_STREAM("Set "<<action_name<<"/"<<skill_name<<"/fail: 0");
 
     std::string move;
 
-    ROS_WHITE_STREAM("Read params");
+    ROS_INFO_STREAM("Read params");
 
     if (!getParam(action_name, skill_name, "movement", move))
     {
-        ROS_RED_STREAM("movement param not set");
+        ROS_ERROR_STREAM("movement param not set");
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
 
@@ -832,11 +862,11 @@ int SkillsExec::pneumaticSchunkGripperMove(const std::string &action_name, const
 
     if (!pneumatic_schunk_gripper_move_clnt_.call(move_srv))
     {
-      ROS_RED_STREAM("Unable to call "<<pneumatic_schunk_gripper_move_clnt_.getService()<<" service ");
+      ROS_ERROR_STREAM("Unable to call "<<pneumatic_schunk_gripper_move_clnt_.getService()<<" service ");
       return skills_executer_msgs::SkillExecutionResponse::Fail;
     }
 
-    ROS_WHITE_STREAM("pneumatic_schunk_gripper_move_clnt_ return :"<<move_srv.response.message);
+    ROS_INFO_STREAM("pneumatic_schunk_gripper_move_clnt_ return :"<<move_srv.response.message);
 
     if (move_srv.request.data)
     {
@@ -853,36 +883,127 @@ int SkillsExec::pneumaticSchunkGripperMove(const std::string &action_name, const
 
     ros::Duration(1.0).sleep();
 
-    ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
+    ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
+    return skills_executer_msgs::SkillExecutionResponse::Success;
+}
+
+int SkillsExec::pandaGripperMove(const std::string &action_name, const std::string &skill_name)
+{
+    ROS_INFO_STREAM("In pandaGripperMove");
+    std::string gripper_type;
+    if (!getParam(action_name, skill_name, "gripper_type", gripper_type))
+    {
+        ROS_ERROR_STREAM("gripper_type param not set, default 'fake'");
+        gripper_type = "fake";
+    }
+
+    if (gripper_type == "pybullet")
+    {
+        panda_gripper_move_clnt_ = n_.serviceClient<std_srvs::SetBool>("/move_panda_hand");
+        ROS_INFO_STREAM("Waiting for "<<panda_gripper_move_clnt_.getService());
+        if (!panda_gripper_move_clnt_.waitForExistence(ros::Duration(2)))
+        {
+            ROS_ERROR_STREAM(panda_gripper_move_clnt_.getService().c_str() << " don't connect.");
+            return skills_executer_msgs::SkillExecutionResponse::Fail;
+        }
+        ROS_INFO_STREAM("Connection ok");
+    }
+//    else if (gripper_type == "real")
+//    {
+//        panda_gripper_move_clnt_ = n_.serviceClient<std_srvs::SetBool>("/battery_cell_utils/pneumatic_gripper");
+//        ROS_INFO_STREAM("Waiting for "<<panda_gripper_move_clnt_.getService());
+//        if (!panda_gripper_move_clnt_.waitForExistence(ros::Duration(2)))
+//        {
+//            ROS_ERROR_STREAM(panda_gripper_move_clnt_.getService().c_str() << " don't connect.");
+//            return skills_executer_msgs::SkillExecutionResponse::Fail;
+//        }
+//        ROS_INFO_STREAM("Connection ok");
+//    }
+    else if (gripper_type == "fake")
+    {
+//        add fake service
+        return skills_executer_msgs::SkillExecutionResponse::Success;
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Wrong gripper type: "<< gripper_type);
+        ROS_ERROR_STREAM("The possible values are: pybullet, real and fake");
+    }
+
+    setParam(action_name,skill_name,"fail",0);
+    ROS_INFO_STREAM("Set "<<action_name<<"/"<<skill_name<<"/fail: 0");
+
+    std::string move;
+
+    ROS_INFO_STREAM("Read params");
+
+    if (!getParam(action_name, skill_name, "movement", move))
+    {
+        ROS_ERROR_STREAM("movement param not set");
+        return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+
+    std_srvs::SetBool move_srv;
+    if (move == "open")
+        move_srv.request.data = false;
+    else if (move == "close")
+        move_srv.request.data = true;
+
+    std::string param_name = "/" + current_grasped_object_ + "/attached";
+
+    if (!panda_gripper_move_clnt_.call(move_srv))
+    {
+      ROS_ERROR_STREAM("Unable to call "<<panda_gripper_move_clnt_.getService()<<" service ");
+      return skills_executer_msgs::SkillExecutionResponse::Fail;
+    }
+
+    ROS_INFO_STREAM("panda_gripper_move_clnt_ return :"<<move_srv.response.message);
+
+    if (move_srv.request.data)
+    {
+        std::string link_param_name = "/" + current_grasped_object_ + "/attached_link";
+        std::string links_param_name = "/" + current_grasped_object_ + "/touch_links";
+        n_.setParam(param_name,true);
+        n_.setParam(link_param_name,attached_link_name_);
+        n_.setParam(links_param_name,end_effector_touch_links_);
+    }
+    else
+    {
+        n_.setParam(param_name,false);
+    }
+
+    ros::Duration(1.0).sleep();
+
+    ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
 int SkillsExec::robotiqGripperMove(const std::string &action_name, const std::string &skill_name)
 {
-    ROS_WHITE_STREAM("In robotiqGripperMove");
+    ROS_INFO_STREAM("In robotiqGripperMove");
     ros::ServiceClient gripper_clnt = n_.serviceClient<manipulation_msgs::JobExecution>("/robotiq_gripper");
-    ROS_YELLOW_STREAM("Waiting for "<<gripper_clnt.getService() );
+    ROS_WARN_STREAM("Waiting for "<<gripper_clnt.getService() );
     if (!gripper_clnt.waitForExistence(ros::Duration(2)))
     {
         ROS_ERROR_STREAM(gripper_clnt.getService().c_str() << " don't connect.");
         return skills_executer_msgs::SkillExecutionResponse::Fail;
     }
-    ROS_YELLOW_STREAM("Connection ok");
+    ROS_WARN_STREAM("Connection ok");
     manipulation_msgs::JobExecution gripper_srv;
 
     if (!getParam(action_name, skill_name, "property_id", gripper_srv.request.property_id))
     {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/property_id is not set" );
+        ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/property_id is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
     if (!getParam(action_name, skill_name, "skill_name", gripper_srv.request.skill_name))
     {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/skill_name is not set" );
+        ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/skill_name is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
     if (!getParam(action_name, skill_name, "tool_id", gripper_srv.request.tool_id))
     {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/tool_id is not set" );
+        ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/tool_id is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
 
@@ -900,34 +1021,43 @@ int SkillsExec::robotiqGripperMove(const std::string &action_name, const std::st
 
 int SkillsExec::cartVel(const std::string &action_name, const std::string &skill_name)
 {
-    ROS_WHITE_STREAM("In cartVel");
+    ROS_INFO_STREAM("In cartVel");
     std::string        skill_type;
     std::string        frame_id;
     std::vector<float> twist_move;
     float              move_time;
     if (!getParam(action_name, skill_name, "skill_type", skill_type))
     {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/skill_type is not set" );
+        ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/skill_type is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
     if (!getParam(action_name, skill_name, "frame_id",   frame_id))
     {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/frame_id is not set" );
+        ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/frame_id is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+    else
+    {
+        tf_listener_.getFrameStrings(all_frames_);
+        if (std::find(std::begin(all_frames_), std::end(all_frames_), frame_id) == all_frames_.end())
+        {
+            ROS_ERROR_RED_STREAM(frame_id<<" not in tf list");
+            return skills_executer_msgs::SkillExecutionResponse::NoParam;
+        }
     }
     if (!getParam(action_name, skill_name, "twist_move", twist_move))
     {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/twist_move is not set" );
+        ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/twist_move is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
     if (!getParam(action_name, skill_name, "move_time",  move_time))
     {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/move_time is not set" );
+        ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/move_time is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
-    ROS_WHITE_STREAM(skill_name<<"-> frame_id: "<<frame_id.c_str());
-    ROS_WHITE_STREAM(skill_name<<"-> twist_move: ["<<twist_move.at(0)<<","<<twist_move.at(1)<<","<<twist_move.at(2)<<","<<twist_move.at(3)<<","<<twist_move.at(4)<<","<<twist_move.at(5)<<"]");
-    ROS_WHITE_STREAM(skill_name<<"-> move_time: "<<move_time);
+    ROS_INFO_STREAM(skill_name<<"-> frame_id: "<<frame_id.c_str());
+    ROS_INFO_STREAM(skill_name<<"-> twist_move: ["<<twist_move.at(0)<<","<<twist_move.at(1)<<","<<twist_move.at(2)<<","<<twist_move.at(3)<<","<<twist_move.at(4)<<","<<twist_move.at(5)<<"]");
+    ROS_INFO_STREAM(skill_name<<"-> move_time: "<<move_time);
 
     geometry_msgs::TwistStamped twist_command;
 
@@ -939,14 +1069,14 @@ int SkillsExec::cartVel(const std::string &action_name, const std::string &skill
     twist_command.twist.angular.y=twist_move.at(4);
     twist_command.twist.angular.z=twist_move.at(5);
 
-    ROS_WHITE_STREAM("Change configuration: "<<skill_type);
+    ROS_INFO_STREAM("Change configuration: "<<skill_type);
 
     if ( !changeConfig(skill_type) )
     {
         return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
     }
 
-    ROS_WHITE_STREAM("Execution Cart Move..");
+    ROS_INFO_STREAM("Execution Cart Move..");
 
     ros::Rate lp(100);
 
@@ -977,7 +1107,7 @@ int SkillsExec::cartVel(const std::string &action_name, const std::string &skill
 
     if ( contact_ )
     {
-        ROS_YELLOW_STREAM("Contact! /"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
+        ROS_WARN_STREAM("Contact! /"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
         return skills_executer_msgs::SkillExecutionResponse::Fail;
     }
 
@@ -986,7 +1116,7 @@ int SkillsExec::cartVel(const std::string &action_name, const std::string &skill
 
 int SkillsExec::cartPos(const std::string &action_name, const std::string &skill_name, const int &move_type)
 {
-    ROS_WHITE_STREAM("In cartPos");
+    ROS_INFO_STREAM("In cartPos");
     double rotZdeg, rotYdeg, rotXdeg, traXmm, traYmm, traZmm, target_angular_velocity, target_linear_velocity, vel;
     geometry_msgs::PoseStamped relative_pose;
     tf2::Quaternion quat;
@@ -998,42 +1128,42 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
     {
         if ( !getParam(action_name, skill_name, "linear_velocity_mm_s", vel) )
         {
-            ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/linear_velocity_m_s or linear_velocity_mm_s is not set" );
-            ROS_YELLOW_STREAM("The default value is linear_velocity_m_s = 0.250 m/s");
+            ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/linear_velocity_m_s or linear_velocity_mm_s is not set" );
+            ROS_WARN_STREAM("The default value is linear_velocity_m_s = 0.250 m/s");
             target_linear_velocity = 0.250;
         }
         else
         {
             target_linear_velocity = vel / 1000;
-            ROS_WHITE_STREAM("Read linear_velocity_mm_s: "<<vel);
+            ROS_INFO_STREAM("Read linear_velocity_mm_s: "<<vel);
         }
     }
     else
     {
-        ROS_WHITE_STREAM("Read linear_velocity_m_s: "<<target_linear_velocity);
+        ROS_INFO_STREAM("Read linear_velocity_m_s: "<<target_linear_velocity);
     }
     if ( !getParam(action_name, skill_name, "angular_velocity_rad_s", target_angular_velocity) )
     {
         if ( !getParam(action_name, skill_name, "angular_velocity_deg_s", vel) )
         {
-            ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/angular_velocity_rad_s or angular_velocity_deg_s is not set" );
-            ROS_YELLOW_STREAM("The default value is angular_velocity_deg_s = 30 deg/sec");
+            ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/angular_velocity_rad_s or angular_velocity_deg_s is not set" );
+            ROS_WARN_STREAM("The default value is angular_velocity_deg_s = 30 deg/sec");
             target_angular_velocity = 30*M_PI/180;
         }
         else
         {
             target_angular_velocity = vel*M_PI/180;
-            ROS_WHITE_STREAM("Read angular_velocity_deg_s: "<<vel);
-            ROS_WHITE_STREAM("Angular_velocity_rad_s: "<<target_angular_velocity);
+            ROS_INFO_STREAM("Read angular_velocity_deg_s: "<<vel);
+            ROS_INFO_STREAM("Angular_velocity_rad_s: "<<target_angular_velocity);
         }
     }
     else
     {
-        ROS_WHITE_STREAM("Read angular_velocity_rad_s: "<<target_angular_velocity);
+        ROS_INFO_STREAM("Read angular_velocity_rad_s: "<<target_angular_velocity);
     }
     if ( !getParam(action_name, skill_name, "skill_type", skill_type) )
     {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/skill_type is not set" );
+        ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/skill_type is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
 
@@ -1041,9 +1171,18 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
     {
         if ( !getParam(action_name, skill_name, "frame", relative_pose.header.frame_id) )
         {
-            ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/frame is not set" );
-            ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+            ROS_ERROR_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/frame is not set" );
+            ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
             return skills_executer_msgs::SkillExecutionResponse::NoParam;
+        }
+        else
+        {
+            tf_listener_.getFrameStrings(all_frames_);
+            if (std::find(std::begin(all_frames_), std::end(all_frames_), relative_pose.header.frame_id) == all_frames_.end())
+            {
+                ROS_ERROR_RED_STREAM(relative_pose.header.frame_id<<" not in tf list");
+                return skills_executer_msgs::SkillExecutionResponse::NoParam;
+            }
         }
         if ( getParam(action_name, skill_name, "rotZdeg", rotZdeg) )
         {
@@ -1057,9 +1196,9 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
             relative_pose.pose.position.x = 0.0;
             relative_pose.pose.position.y = 0.0;
             relative_pose.pose.position.z = 0.0;
-            ROS_WHITE_STREAM("Read rotZdeg: "<<rotZdeg);
-            ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
-            ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
+            ROS_INFO_STREAM("Read rotZdeg: "<<rotZdeg);
+            ROS_INFO_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
+            ROS_INFO_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
         }
         else if( getParam(action_name, skill_name, "rotYdeg", rotYdeg) )
         {
@@ -1073,9 +1212,9 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
             relative_pose.pose.position.x = 0.0;
             relative_pose.pose.position.y = 0.0;
             relative_pose.pose.position.z = 0.0;
-            ROS_WHITE_STREAM("Read rotYdeg: "<<rotYdeg);
-            ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
-            ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
+            ROS_INFO_STREAM("Read rotYdeg: "<<rotYdeg);
+            ROS_INFO_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
+            ROS_INFO_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
         }
         else if( getParam(action_name, skill_name, "rotXdeg", rotXdeg) )
         {
@@ -1089,9 +1228,9 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
             relative_pose.pose.position.x = 0.0;
             relative_pose.pose.position.y = 0.0;
             relative_pose.pose.position.z = 0.0;
-            ROS_WHITE_STREAM("Read rotXdeg: "<<rotXdeg);
-            ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
-            ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
+            ROS_INFO_STREAM("Read rotXdeg: "<<rotXdeg);
+            ROS_INFO_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
+            ROS_INFO_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
         }
         else if( getParam(action_name, skill_name, "traXmm", traXmm) )
         {
@@ -1102,9 +1241,9 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
             relative_pose.pose.orientation.y = 0.0;
             relative_pose.pose.orientation.z = 0.0;
             relative_pose.pose.orientation.w = 1.0;
-            ROS_WHITE_STREAM("Read traXmm: "<<traXmm);
-            ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
-            ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
+            ROS_INFO_STREAM("Read traXmm: "<<traXmm);
+            ROS_INFO_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
+            ROS_INFO_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
         }
         else if( getParam(action_name, skill_name, "traYmm", traYmm) )
         {
@@ -1115,9 +1254,9 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
             relative_pose.pose.orientation.y = 0.0;
             relative_pose.pose.orientation.z = 0.0;
             relative_pose.pose.orientation.w = 1.0;
-            ROS_WHITE_STREAM("Read traYmm: "<<traYmm);
-            ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
-            ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
+            ROS_INFO_STREAM("Read traYmm: "<<traYmm);
+            ROS_INFO_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
+            ROS_INFO_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
         }
         else if( getParam(action_name, skill_name, "traZmm", traZmm) )
         {
@@ -1128,50 +1267,50 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
             relative_pose.pose.orientation.y = 0.0;
             relative_pose.pose.orientation.z = 0.0;
             relative_pose.pose.orientation.w = 1.0;
-            ROS_WHITE_STREAM("Read traZmm: "<<traZmm);
-            ROS_WHITE_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
-            ROS_WHITE_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
+            ROS_INFO_STREAM("Read traZmm: "<<traZmm);
+            ROS_INFO_STREAM("Position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
+            ROS_INFO_STREAM("Orientation: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
         }
         else
         {
             if ( !getParam(action_name, skill_name, "position", position) )
             {
-                ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/position is not set" );
-                ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+                ROS_ERROR_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/position is not set" );
+                ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
                 return skills_executer_msgs::SkillExecutionResponse::NoParam;
             }
             else
             {
                 if ( position.size() != 3 )
                 {
-                    ROS_RED_STREAM("The position size is not 3");
-                    ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+                    ROS_ERROR_STREAM("The position size is not 3");
+                    ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
                     return skills_executer_msgs::SkillExecutionResponse::NoParam;
                 }
                 relative_pose.pose.position.x = position.at(0);
                 relative_pose.pose.position.y = position.at(1);
                 relative_pose.pose.position.z = position.at(2);
-                ROS_WHITE_STREAM("Read position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
+                ROS_INFO_STREAM("Read position: ["<<relative_pose.pose.position.x<<","<<relative_pose.pose.position.y<<","<<relative_pose.pose.position.z<<"]");
             }
             if ( !getParam(action_name, skill_name, "quaternion", orientation) )
             {
-                ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/quaternion is not set" );
-                ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+                ROS_ERROR_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/quaternion is not set" );
+                ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
                 return skills_executer_msgs::SkillExecutionResponse::NoParam;
             }
             else
             {
                 if ( orientation.size() != 4 )
                 {
-                    ROS_RED_STREAM("The quaternion size is not 4");
-                    ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+                    ROS_ERROR_STREAM("The quaternion size is not 4");
+                    ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
                     return skills_executer_msgs::SkillExecutionResponse::NoParam;
                 }
                 relative_pose.pose.orientation.x = orientation.at(0);
                 relative_pose.pose.orientation.y = orientation.at(1);
                 relative_pose.pose.orientation.z = orientation.at(2);
                 relative_pose.pose.orientation.w = orientation.at(3);
-                ROS_WHITE_STREAM("Read quaternion: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
+                ROS_INFO_STREAM("Read quaternion: ["<<relative_pose.pose.orientation.x<<","<<relative_pose.pose.orientation.y<<","<<relative_pose.pose.orientation.z<<","<<relative_pose.pose.orientation.w<<"]");
             }
         }
 
@@ -1179,11 +1318,11 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         rel_move_goal.target_linear_velocity = target_linear_velocity;
         rel_move_goal.relative_pose = relative_pose;
 
-        ROS_WHITE_STREAM("Goal:");
-        ROS_WHITE_STREAM("Frame: "<<rel_move_goal.relative_pose.header.frame_id);
-        ROS_WHITE_STREAM("Position: ["<<rel_move_goal.relative_pose.pose.position.x<<","<<rel_move_goal.relative_pose.pose.position.y<<","<<rel_move_goal.relative_pose.pose.position.z<<"]");
-        ROS_WHITE_STREAM("Quaternion: ["<<rel_move_goal.relative_pose.pose.orientation.x<<","<<rel_move_goal.relative_pose.pose.orientation.y<<","<<rel_move_goal.relative_pose.pose.orientation.z<<","<<rel_move_goal.relative_pose.pose.orientation.w<<"]");
-        ROS_WHITE_STREAM("Velocity: lin "<<rel_move_goal.target_linear_velocity<<", rot "<<rel_move_goal.target_angular_velocity);
+        ROS_INFO_STREAM("Goal:");
+        ROS_INFO_STREAM("  Frame: "<<rel_move_goal.relative_pose.header.frame_id);
+        ROS_INFO_STREAM("  Position: ["<<rel_move_goal.relative_pose.pose.position.x<<","<<rel_move_goal.relative_pose.pose.position.y<<","<<rel_move_goal.relative_pose.pose.position.z<<"]");
+        ROS_INFO_STREAM("  Quaternion: ["<<rel_move_goal.relative_pose.pose.orientation.x<<","<<rel_move_goal.relative_pose.pose.orientation.y<<","<<rel_move_goal.relative_pose.pose.orientation.z<<","<<rel_move_goal.relative_pose.pose.orientation.w<<"]");
+        ROS_INFO_STREAM("  Velocity: lin "<<rel_move_goal.target_linear_velocity<<", rot "<<rel_move_goal.target_angular_velocity);
     }
     if ( move_type == 1)
     {
@@ -1191,9 +1330,18 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
 
         if (!getParam(action_name, skill_name, "target_frame", target_TF))
         {
-            ROS_RED_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/target_TF is not set" );
-            ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+            ROS_ERROR_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/target_TF is not set" );
+            ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
             return skills_executer_msgs::SkillExecutionResponse::NoParam;
+        }
+        else
+        {
+            tf_listener_.getFrameStrings(all_frames_);
+            if (std::find(std::begin(all_frames_), std::end(all_frames_), target_TF) == all_frames_.end())
+            {
+                ROS_ERROR_RED_STREAM(target_TF<<" not in tf list");
+                return skills_executer_msgs::SkillExecutionResponse::NoParam;
+            }
         }
 
         tf::StampedTransform gripper_to_goal_frame_transform;
@@ -1205,7 +1353,7 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
             ROS_ERROR("%s",ex.what());
             ros::Duration(1.0).sleep();
         }
-        ROS_WHITE_STREAM("  target_frame: "<<target_TF);
+        ROS_INFO_STREAM("  target_frame: "<<target_TF);
         Eigen::Affine3d T_gripper_to_goal_frame;
         tf::transformTFToEigen( gripper_to_goal_frame_transform, T_gripper_to_goal_frame);
 
@@ -1216,7 +1364,7 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         Eigen::Affine3d T_relative;
         if ( !getParam(action_name, skill_name, "relative_position", relative_position) )
         {
-            ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is not set. It is considered [0,0,0]" );
+            ROS_WARN_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is not set. It is considered [0,0,0]" );
             relative_position.clear();
             relative_position.push_back(0);
             relative_position.push_back(0);
@@ -1230,8 +1378,8 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         {
             if ( relative_position.size() != 3 )
             {
-                ROS_YELLOW_STREAM("The relative_position size is not 3");
-                ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is considered [0,0,0]" );
+                ROS_WARN_STREAM("The relative_position size is not 3");
+                ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is considered [0,0,0]" );
                 relative_position.push_back(0);
                 relative_position.push_back(0);
                 relative_position.push_back(0);
@@ -1241,12 +1389,12 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
                 rel_pos.setX(relative_position.at(0));
                 rel_pos.setY(relative_position.at(1));
                 rel_pos.setZ(relative_position.at(2));
-                ROS_WHITE_STREAM("  relative_position: ["<<rel_pos.getX()<<","<<rel_pos.getY()<<","<<rel_pos.getZ()<<"]");
+                ROS_INFO_STREAM("  relative_position: ["<<rel_pos.getX()<<","<<rel_pos.getY()<<","<<rel_pos.getZ()<<"]");
             }
         }
         if ( !getParam(action_name, skill_name, "relative_orientation", relative_quaternion) )
         {
-            ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is not set. It is considered [0,0,0,1]" );
+            ROS_WARN_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is not set. It is considered [0,0,0,1]" );
             relative_quaternion.clear();
             relative_quaternion.push_back(0);
             relative_quaternion.push_back(0);
@@ -1262,8 +1410,8 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         {
             if ( relative_quaternion.size() != 4 )
             {
-                ROS_YELLOW_STREAM("The relative_quaternion size is not 4");
-                ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is considered [0,0,0,1]" );
+                ROS_WARN_STREAM("The relative_quaternion size is not 4");
+                ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is considered [0,0,0,1]" );
                 relative_quaternion.push_back(0);
                 relative_quaternion.push_back(0);
                 relative_quaternion.push_back(0);
@@ -1273,7 +1421,7 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
             rel_quat.setY(relative_quaternion.at(1));
             rel_quat.setZ(relative_quaternion.at(2));
             rel_quat.setW(relative_quaternion.at(3));
-            ROS_WHITE_STREAM("  relative_orientation: ["<<rel_quat.getX()<<","<<rel_quat.getY()<<","<<rel_quat.getZ()<<","<<rel_quat.getW()<<"]");
+            ROS_INFO_STREAM("  relative_orientation: ["<<rel_quat.getX()<<","<<rel_quat.getY()<<","<<rel_quat.getZ()<<","<<rel_quat.getW()<<"]");
         }
         relative_transform.setOrigin(rel_pos);
         relative_transform.setRotation(rel_quat);
@@ -1295,49 +1443,51 @@ int SkillsExec::cartPos(const std::string &action_name, const std::string &skill
         rel_move_goal.target_linear_velocity = target_linear_velocity;
         rel_move_goal.relative_pose = relative_pose;
 
-        ROS_WHITE_STREAM("Goal:");
-        ROS_WHITE_STREAM("Frame: "<<rel_move_goal.relative_pose.header.frame_id);
-        ROS_WHITE_STREAM("Position: ["<<rel_move_goal.relative_pose.pose.position.x<<","<<rel_move_goal.relative_pose.pose.position.y<<","<<rel_move_goal.relative_pose.pose.position.z<<"]");
-        ROS_WHITE_STREAM("Quaternion: ["<<rel_move_goal.relative_pose.pose.orientation.x<<","<<rel_move_goal.relative_pose.pose.orientation.y<<","<<rel_move_goal.relative_pose.pose.orientation.z<<","<<rel_move_goal.relative_pose.pose.orientation.w<<"]");
-        ROS_WHITE_STREAM("Velocity: lin "<<rel_move_goal.target_linear_velocity<<", rot "<<rel_move_goal.target_angular_velocity);
+        ROS_INFO_STREAM("Goal:");
+        ROS_INFO_STREAM("Frame: "<<rel_move_goal.relative_pose.header.frame_id);
+        ROS_INFO_STREAM("Position: ["<<rel_move_goal.relative_pose.pose.position.x<<","<<rel_move_goal.relative_pose.pose.position.y<<","<<rel_move_goal.relative_pose.pose.position.z<<"]");
+        ROS_INFO_STREAM("Quaternion: ["<<rel_move_goal.relative_pose.pose.orientation.x<<","<<rel_move_goal.relative_pose.pose.orientation.y<<","<<rel_move_goal.relative_pose.pose.orientation.z<<","<<rel_move_goal.relative_pose.pose.orientation.w<<"]");
+        ROS_INFO_STREAM("Velocity: lin "<<rel_move_goal.target_linear_velocity<<", rot "<<rel_move_goal.target_angular_velocity);
     }
 
     if ( !changeConfig(skill_type) )
     {
-        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return ProblemConfManager: "<<skills_executer_msgs::SkillExecutionResponse::ProblemConfManager);
+        ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return ProblemConfManager: "<<skills_executer_msgs::SkillExecutionResponse::ProblemConfManager);
         return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
     }
 
+    ROS_INFO_STREAM("Wait for /" + robot_name_ + "/relative_move action");
     relative_move_action_->waitForServer();
+    ROS_INFO_STREAM("Connection ok.");
     relative_move_action_->sendGoalAndWait(rel_move_goal);
 
     if ( !changeConfig(watch_type_) )
     {
-        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return ProblemConfManager: "<<skills_executer_msgs::SkillExecutionResponse::ProblemConfManager);
+        ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return ProblemConfManager: "<<skills_executer_msgs::SkillExecutionResponse::ProblemConfManager);
         return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
     }
 
     if ( contact_ )
     {
-        ROS_RED_STREAM("Contact! /"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
+        ROS_ERROR_STREAM("Contact! /"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
         return skills_executer_msgs::SkillExecutionResponse::Fail;
     }
 
     if ( relative_move_action_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
     {
-        ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
+        ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
         return skills_executer_msgs::SkillExecutionResponse::Success;
     }
     else
     {
-        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
+        ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
         return skills_executer_msgs::SkillExecutionResponse::Fail;
     }
 }
 
 int SkillsExec::simpleTouch(const std::string &action_name, const std::string &skill_name)
 {
-    ROS_WHITE_STREAM("In simpleTouch");
+    ROS_INFO_STREAM("In simpleTouch");
     std::string         skill_type;
     std::string         goal_twist_frame;
     std::vector<double> goal_twist;
@@ -1349,22 +1499,31 @@ int SkillsExec::simpleTouch(const std::string &action_name, const std::string &s
 
     if (!getParam(action_name, skill_name, "skill_type", skill_type) )
     {
-        ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/skill_type is not set" );
+        ROS_ERROR_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/skill_type is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
-    ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<"-> skill_type: "<<skill_type);
+    ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<"-> skill_type: "<<skill_type);
     if (!getParam(action_name, skill_name, "goal_twist_frame", goal_twist_frame))
     {
-        ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/goal_twist_frame is not set");
+        ROS_ERROR_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/goal_twist_frame is not set");
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
-    ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<"-> goal_twist_frame: "<<goal_twist_frame);
+    else
+    {
+        tf_listener_.getFrameStrings(all_frames_);
+        if (std::find(std::begin(all_frames_), std::end(all_frames_), goal_twist_frame) == all_frames_.end())
+        {
+            ROS_ERROR_RED_STREAM(goal_twist_frame<<" not in tf list");
+            return skills_executer_msgs::SkillExecutionResponse::NoParam;
+        }
+    }
+    ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<"-> goal_twist_frame: "<<goal_twist_frame);
     if (!getParam(action_name, skill_name, "goal_twist", goal_twist))
     {
         double d_g_t;
         if (!getParam(action_name, skill_name, "goal_twist", d_g_t))
         {
-            ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/goal_twist is not set" );
+            ROS_ERROR_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/goal_twist is not set" );
             return skills_executer_msgs::SkillExecutionResponse::NoParam;
         }
         goal_twist.clear();
@@ -1372,15 +1531,15 @@ int SkillsExec::simpleTouch(const std::string &action_name, const std::string &s
     }
     if ( goal_twist.size() == 1)
     {
-        ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<"-> goal_twist: "<<goal_twist.at(0));
+        ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<"-> goal_twist: "<<goal_twist.at(0));
     }
     else if ( goal_twist.size() == 6 )
     {
-        ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<"-> goal_twist: ["<<goal_twist.at(0)<<","<<goal_twist.at(1)<<","<<goal_twist.at(2)<<","<<goal_twist.at(3)<<","<<goal_twist.at(4)<<","<<goal_twist.at(5)<<"]");
+        ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<"-> goal_twist: ["<<goal_twist.at(0)<<","<<goal_twist.at(1)<<","<<goal_twist.at(2)<<","<<goal_twist.at(3)<<","<<goal_twist.at(4)<<","<<goal_twist.at(5)<<"]");
     }
     else
     {
-        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<"-> goal_twist has wrong size");
+        ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<"-> goal_twist has wrong size");
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
 
@@ -1388,51 +1547,51 @@ int SkillsExec::simpleTouch(const std::string &action_name, const std::string &s
     {
         if (!getParam(action_name, skill_name, "target_wrench", target_force))
         {
-            ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/target_wrench or target_force are not set" );
+            ROS_ERROR_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/target_wrench or target_force are not set" );
             return skills_executer_msgs::SkillExecutionResponse::NoParam;
         }
     }
-    ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<"-> target_wrench: "<<target_force);
+    ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<"-> target_wrench: "<<target_force);
 
     if (!getParam(action_name, skill_name, "release", release))
     {
-        ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/release is not set" );
+        ROS_ERROR_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/release is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
     else
     {
-        ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<"-> release: "<<release);
+        ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<"-> release: "<<release);
     }
 
     if (!getParam(action_name, skill_name, "release_condition", release_condition))
     {
-        ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/release_condition is not set" );
+        ROS_ERROR_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/release_condition is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
     else
     {
-        ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<"-> release_condition: "<<release_condition);
+        ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<"-> release_condition: "<<release_condition);
     }
 
     if (!getParam(action_name, skill_name, "relative_target", relative_target))
     {
-        ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_target is not set" );
+        ROS_ERROR_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_target is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
     if (relative_target)
-        ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<"-> relative_target: true");
+        ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<"-> relative_target: true");
     else
-        ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<"-> relative_target: false");
+        ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<"-> relative_target: false");
 
-    ROS_WHITE_STREAM("Change configuration: "<<skill_type );
+    ROS_INFO_STREAM("Change configuration: "<<skill_type );
 
     if ( !changeConfig(skill_type) )
     {
-        ROS_RED_STREAM("Problem with configuration manager" );
+        ROS_ERROR_STREAM("Problem with configuration manager" );
         return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
     }
 
-    ROS_WHITE_STREAM("Execution Simple Touch..");
+    ROS_INFO_STREAM("Execution Simple Touch..");
 
     simple_touch_controller_msgs::SimpleTouchGoal goal_touch;
 
@@ -1446,86 +1605,87 @@ int SkillsExec::simpleTouch(const std::string &action_name, const std::string &s
     touch_action_->waitForServer();
     touch_action_->sendGoalAndWait(goal_touch);
 
-    ROS_WHITE_STREAM("Simple Touch finisched");
+    ROS_INFO_STREAM("Simple Touch finisched");
 
     if ( !changeConfig(watch_type_) )
     {
-        ROS_RED_STREAM("Problem with configuration manager" );
+        ROS_ERROR_STREAM("Problem with configuration manager" );
         return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
     }
 
     if ( touch_action_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
     {
-        ROS_WHITE_STREAM("Simple Touch success");
+        ROS_INFO_STREAM("Simple Touch success");
         return skills_executer_msgs::SkillExecutionResponse::Success;
     }
     else
     {
-        ROS_RED_STREAM("Simple touch failed" );
+        ROS_ERROR_STREAM("Simple touch failed" );
         return skills_executer_msgs::SkillExecutionResponse::Fail;
     }
 }
 
 int SkillsExec::move_to(const std::string &action_name, const std::string &skill_name, const int &move_type)
 {
-    ROS_WHITE_STREAM("In move_to");
+    ROS_INFO_STREAM("In move_to");
+
     if ( !changeConfig("trajectory_tracking") )
     {
-        ROS_RED_STREAM("Problem with configuration manager");
+        ROS_ERROR_STREAM("Problem with configuration manager");
         return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
     }
 
     if ( !fjt_ac_->waitForServer(ros::Duration(10)) )
     {
-        ROS_RED_STREAM("Timeout FollowJointTrajectory client for robot "<<robot_name_);
+        ROS_ERROR_STREAM("Timeout FollowJointTrajectory client for robot "<<robot_name_);
         return skills_executer_msgs::SkillExecutionResponse::Error;
     }
 
     ros::Duration(0.5).sleep();
-    ROS_WHITE_STREAM("Move info: ");
+    ROS_INFO_STREAM("Move info: ");
     std::string target_TF;
     double acc, vel, p_time;
     int r_att;
 
     if (!getParam(action_name, skill_name, "acceleration_scaling", acc))
     {
-        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/acceleration_scaling is not set, defaul value: 0.5" );
+        ROS_WARN_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/acceleration_scaling is not set, defaul value: 0.5" );
         acc = 0.5;
         setParam(action_name, skill_name, "acceleration_scaling", acc);
-        ROS_WHITE_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/acceleration_scaling: "<<acc);
+        ROS_INFO_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/acceleration_scaling: "<<acc);
     }
     move_group_->setMaxAccelerationScalingFactor(acc);
-    ROS_WHITE_STREAM("  acceleration_scaling: "<<acc);
+    ROS_INFO_STREAM("  acceleration_scaling: "<<acc);
 
     if (!getParam(action_name, skill_name, "velocity_scaling", vel))
     {
-        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/velocity_scaling is not set, defaul value: 0.5" );
+        ROS_WARN_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/velocity_scaling is not set, defaul value: 0.5" );
         vel = 0.5;
         setParam(action_name, skill_name, "velocity_scaling", vel);
-        ROS_WHITE_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/velocity_scaling: "<<vel);
+        ROS_INFO_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/velocity_scaling: "<<vel);
     }
     move_group_->setMaxVelocityScalingFactor(vel);
-    ROS_WHITE_STREAM("  velocity_scaling: "<<vel);
+    ROS_INFO_STREAM("  velocity_scaling: "<<vel);
 
     if (!getParam(action_name, skill_name, "planning_time", p_time))
     {
-        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/planning_time is not set, defaul value: 5.0" );
+        ROS_WARN_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/planning_time is not set, defaul value: 5.0" );
         p_time = 0.5;
         setParam(action_name, skill_name, "planning_time", p_time);
-        ROS_WHITE_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/planning_time: "<<p_time);
+        ROS_INFO_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/planning_time: "<<p_time);
     }
     move_group_->setPlanningTime(p_time);
-    ROS_WHITE_STREAM("  planning_time: "<<p_time);
+    ROS_INFO_STREAM("  planning_time: "<<p_time);
 
     if (!getParam(action_name, skill_name, "replan_attempts", r_att))
     {
-        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/replan_attempts is not set, defaul value: 10" );
+        ROS_WARN_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/replan_attempts is not set, defaul value: 10" );
         r_att = 10;
         setParam(action_name, skill_name, "replan_attempts", r_att);
-        ROS_WHITE_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/replan_attempts: "<<r_att);
+        ROS_INFO_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/replan_attempts: "<<r_att);
     }
     move_group_->setReplanAttempts(r_att);
-    ROS_WHITE_STREAM("  replan_attempts: "<<r_att);
+    ROS_INFO_STREAM("  replan_attempts: "<<r_att);
 
     if ( move_type < 2)
     {
@@ -1536,11 +1696,23 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
         tf::StampedTransform relative_transform;
         Eigen::Affine3d T_relative;
 
+        geometry_msgs::TransformStamped transform_stamped;
+        tf::StampedTransform origin_gripper_goal_transform;
+
         if (!getParam(action_name, skill_name, "target_frame", target_TF))
         {
-            ROS_RED_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/target_TF is not set" );
-            ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+            ROS_ERROR_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/target_TF is not set" );
+            ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
             return skills_executer_msgs::SkillExecutionResponse::NoParam;
+        }
+        else
+        {
+            tf_listener_.getFrameStrings(all_frames_);
+            if (std::find(std::begin(all_frames_), std::end(all_frames_), target_TF) == all_frames_.end())
+            {
+                ROS_ERROR_RED_STREAM(target_TF<<" not in tf list");
+                return skills_executer_msgs::SkillExecutionResponse::NoParam;
+            }
         }
 
         try
@@ -1551,11 +1723,11 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
             ROS_ERROR("%s",ex.what());
             ros::Duration(1.0).sleep();
         }
-        ROS_WHITE_STREAM("  target_frame: "<<target_TF);
+        ROS_INFO_STREAM("  target_frame: "<<target_TF);
 
         if ( !getParam(action_name, skill_name, "relative_position", relative_position) )
         {
-            ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is not set. It is considered [0,0,0]" );
+            ROS_WARN_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is not set. It is considered [0,0,0]" );
             relative_position.clear();
             relative_position.push_back(0);
             relative_position.push_back(0);
@@ -1569,8 +1741,8 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
         {
             if ( relative_position.size() != 3 )
             {
-                ROS_YELLOW_STREAM("The relative_position size is not 3");
-                ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is considered [0,0,0]" );
+                ROS_WARN_STREAM("The relative_position size is not 3");
+                ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is considered [0,0,0]" );
                 relative_position.clear();
                 relative_position.push_back(0);
                 relative_position.push_back(0);
@@ -1585,12 +1757,12 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
                 rel_pos.setX(relative_position.at(0));
                 rel_pos.setY(relative_position.at(1));
                 rel_pos.setZ(relative_position.at(2));
-                ROS_WHITE_STREAM("  relative_position: ["<<rel_pos.getX()<<","<<rel_pos.getY()<<","<<rel_pos.getZ()<<"]");
+                ROS_INFO_STREAM("  relative_position: ["<<rel_pos.getX()<<","<<rel_pos.getY()<<","<<rel_pos.getZ()<<"]");
             }
         }
         if ( !getParam(action_name, skill_name, "relative_orientation", relative_quaternion) )
         {
-            ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is not set. It is considered [0,0,0,1]" );
+            ROS_WARN_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is not set. It is considered [0,0,0,1]" );
             relative_quaternion.clear();
             relative_quaternion.push_back(0);
             relative_quaternion.push_back(0);
@@ -1606,8 +1778,8 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
         {
             if ( relative_quaternion.size() != 4 )
             {
-                ROS_YELLOW_STREAM("The relative_quaternion size is not 4");
-                ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is considered [0,0,0,1]" );
+                ROS_WARN_STREAM("The relative_quaternion size is not 4");
+                ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is considered [0,0,0,1]" );
                 relative_quaternion.clear();
                 relative_quaternion.push_back(0);
                 relative_quaternion.push_back(0);
@@ -1625,7 +1797,7 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
                 rel_quat.setY(relative_quaternion.at(1));
                 rel_quat.setZ(relative_quaternion.at(2));
                 rel_quat.setW(relative_quaternion.at(3));
-                ROS_WHITE_STREAM("  relative_orientation: ["<<rel_quat.getX()<<","<<rel_quat.getY()<<","<<rel_quat.getZ()<<","<<rel_quat.getW()<<"]");
+                ROS_INFO_STREAM("  relative_orientation: ["<<rel_quat.getX()<<","<<rel_quat.getY()<<","<<rel_quat.getZ()<<","<<rel_quat.getW()<<"]");
             }
         }
         relative_transform.setOrigin(rel_pos);
@@ -1634,8 +1806,25 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
 
         Eigen::Affine3d T_origin_goal_gripper;
         tf::transformTFToEigen( origin_goal_transform, T_origin_goal_gripper);
-        Eigen::Affine3d T_origin_link_goal = T_origin_goal_gripper* T_relative * T_gripper_to_end_link_;
+        Eigen::Affine3d T_origin_link_goal = T_origin_goal_gripper * T_relative * T_gripper_to_end_link_;
         tf::transformEigenToTF(T_origin_link_goal,origin_link_goal_transform);
+//
+        std::string TF_name = target_TF;
+        Eigen::Affine3d T_origin_gripper_goal = T_origin_goal_gripper * T_relative;
+        tf::transformEigenToTF(T_origin_gripper_goal,origin_gripper_goal_transform);
+        TF_name.append("_goal");
+        transform_stamped.transform.translation.x = origin_gripper_goal_transform.getOrigin().getX();
+        transform_stamped.transform.translation.y = origin_gripper_goal_transform.getOrigin().getY();
+        transform_stamped.transform.translation.z = origin_gripper_goal_transform.getOrigin().getZ();
+        transform_stamped.transform.rotation.x = origin_gripper_goal_transform.getRotation().getX();
+        transform_stamped.transform.rotation.y = origin_gripper_goal_transform.getRotation().getY();
+        transform_stamped.transform.rotation.z = origin_gripper_goal_transform.getRotation().getZ();
+        transform_stamped.transform.rotation.w = origin_gripper_goal_transform.getRotation().getW();
+        transform_stamped.header.stamp = ros::Time::now();
+        transform_stamped.header.frame_id = "world";
+        transform_stamped.child_frame_id = TF_name;
+        tf_br_.sendTransform(transform_stamped);
+//
 
         geometry_msgs::Pose target_pose;
 
@@ -1662,8 +1851,8 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
 
             if ( move_group_->computeCartesianPath(waypoints,0.001,0.0,moveit_trj) < 0.0 )
             {
-                ROS_RED_STREAM("Linear_plan_result: unknown error");
-                ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
+                ROS_ERROR_STREAM("Linear_plan_result: unknown error");
+                ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
                 return skills_executer_msgs::SkillExecutionResponse::Fail;
             }
             plan_time = ros::Time::now().toSec() - plan_time;
@@ -1675,13 +1864,13 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
         {
             move_group_->setPoseTarget(target_pose);
             moveit::core::MoveItErrorCode plan_result = move_group_->plan(moveit_plan_);
-            ROS_WHITE_STREAM("Plan_result: "<<plan_result);
+            ROS_INFO_STREAM("Plan_result: "<<plan_result);
             if ( plan_result != moveit::core::MoveItErrorCode::SUCCESS )
             {
-                ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
+                ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
                 if ( !changeConfig(watch_type_) )
                 {
-                    ROS_RED_STREAM("Problem with configuration manager");
+                    ROS_ERROR_STREAM("Problem with configuration manager");
                     return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
                 }
                 return skills_executer_msgs::SkillExecutionResponse::Fail;
@@ -1703,54 +1892,63 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
 
         if ( !getParam(action_name, skill_name, "position", position) )
         {
-            ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/position is not set" );
-            ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+            ROS_ERROR_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/position is not set" );
+            ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
             return skills_executer_msgs::SkillExecutionResponse::NoParam;
         }
         else
         {
             if ( position.size() != 3 )
             {
-                ROS_RED_STREAM("The position size is not 3");
-                ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+                ROS_ERROR_STREAM("The position size is not 3");
+                ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
                 return skills_executer_msgs::SkillExecutionResponse::NoParam;
             }
             pos.setX(position.at(0));
             pos.setY(position.at(1));
             pos.setZ(position.at(2));
-            ROS_WHITE_STREAM("Read position: ["<<pos.getX()<<","<<pos.getY()<<","<<pos.getZ()<<"]");
+            ROS_INFO_STREAM("Read position: ["<<pos.getX()<<","<<pos.getY()<<","<<pos.getZ()<<"]");
         }
         if ( !getParam(action_name, skill_name, "quaternion", orientation) )
         {
-            ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/quaternion is not set" );
-            ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+            ROS_ERROR_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/quaternion is not set" );
+            ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
             return skills_executer_msgs::SkillExecutionResponse::NoParam;
         }
         else
         {
             if ( orientation.size() != 4 )
             {
-                ROS_RED_STREAM("The quaternion size is not 4");
-                ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+                ROS_ERROR_STREAM("The quaternion size is not 4");
+                ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
                 return skills_executer_msgs::SkillExecutionResponse::NoParam;
             }
             quat.setX(orientation.at(0));
             quat.setY(orientation.at(1));
             quat.setZ(orientation.at(2));
             quat.setW(orientation.at(3));
-            ROS_WHITE_STREAM("Read quaternion: ["<<quat.getX()<<","<<quat.getY()<<","<<quat.getZ()<<","<<quat.getW()<<"]");
+            ROS_INFO_STREAM("Read quaternion: ["<<quat.getX()<<","<<quat.getY()<<","<<quat.getZ()<<","<<quat.getW()<<"]");
        }
         movement_transform.setOrigin(pos);
         movement_transform.setRotation(quat);
 
         if ( !getParam(action_name, skill_name, "frame", move_reference_frame) )
         {
-            ROS_RED_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/frame is not set" );
-            ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+            ROS_ERROR_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/frame is not set" );
+            ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
             return skills_executer_msgs::SkillExecutionResponse::NoParam;
         }
+        else
+        {
+            tf_listener_.getFrameStrings(all_frames_);
+            if (std::find(std::begin(all_frames_), std::end(all_frames_), move_reference_frame) == all_frames_.end())
+            {
+                ROS_ERROR_RED_STREAM(move_reference_frame<<" not in tf list");
+                return skills_executer_msgs::SkillExecutionResponse::NoParam;
+            }
+        }
 
-        ROS_WHITE_STREAM("Read frame: "<<move_reference_frame);
+        ROS_INFO_STREAM("Read frame: "<<move_reference_frame);
 
         try
         {
@@ -1816,8 +2014,8 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
         double plan_time = ros::Time::now().toSec();
         if ( move_group_->computeCartesianPath(waypoints,0.01,0.0,moveit_trj) < 0.0 )
         {
-            ROS_RED_STREAM("Linear_plan_result: unknown error");
-            ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
+            ROS_ERROR_STREAM("Linear_plan_result: unknown error");
+            ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
             return skills_executer_msgs::SkillExecutionResponse::Fail;
         }
         plan_time = ros::Time::now().toSec() - plan_time;
@@ -1830,18 +2028,18 @@ int SkillsExec::move_to(const std::string &action_name, const std::string &skill
 
     if ( !changeConfig(watch_type_) )
     {
-        ROS_RED_STREAM("Problem with configuration manager");
+        ROS_ERROR_STREAM("Problem with configuration manager");
         return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
     }
 
-    ROS_WHITE_STREAM("Move_result: "<<move_result);
+    ROS_INFO_STREAM("Move_result: "<<move_result);
     if ( move_result != moveit::core::MoveItErrorCode::SUCCESS )
     {
-        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
+        ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
         return skills_executer_msgs::SkillExecutionResponse::Fail;
     }
 
-    ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
+    ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
@@ -1885,15 +2083,14 @@ bool SkillsExec::changeConfig(const std::string config_name)
     }
 
 
-    ROS_WHITE_STREAM("Controller "<<config_name<<" started.");
+    ROS_INFO_STREAM("Controller "<<config_name<<" started.");
 
-//    ros::Duration(0.1).sleep();
     return true;
 }
 
 int SkillsExec::reset_ur10e_ft_sensor()
 {
-    ROS_WHITE_STREAM("In reset_ur10e_ft_sensor");
+    ROS_INFO_STREAM("In reset_ur10e_ft_sensor");
     ros::ServiceClient reset_force_sensor_clnt = n_.serviceClient<std_srvs::Trigger>("/ur10e_hw/zero_ftsensor");
     if (!reset_force_sensor_clnt.waitForExistence(ros::Duration(2)))
     {
@@ -1903,7 +2100,7 @@ int SkillsExec::reset_ur10e_ft_sensor()
     std_srvs::Trigger zero_srv;
     if ( !reset_force_sensor_clnt.call(zero_srv) )
     {
-        ROS_RED_STREAM("Unable to reset force sensor");
+        ROS_ERROR_STREAM("Unable to reset force sensor");
         return skills_executer_msgs::SkillExecutionResponse::Error;
     }
 
@@ -1915,7 +2112,7 @@ int SkillsExec::reset_ur10e_ft_sensor()
 
 int SkillsExec::reset_pybullet_ft_sensor()
 {
-    ROS_WHITE_STREAM("In reset_pybullet_ft_sensor");
+    ROS_INFO_STREAM("In reset_pybullet_ft_sensor");
     if (sensored_joint_.empty())
     {
         ROS_INFO_STREAM("Sensored joint name is empty.");
@@ -1935,7 +2132,7 @@ int SkillsExec::reset_pybullet_ft_sensor()
     zero_srv.request.joint_name = sensored_joint_;
     if ( !reset_force_sensor_clnt.call(zero_srv) )
     {
-        ROS_RED_STREAM("Unable to reset force sensor");
+        ROS_ERROR_STREAM("Unable to reset force sensor");
         return skills_executer_msgs::SkillExecutionResponse::Error;
     }
     ros::Duration(0.1).sleep();
@@ -1947,7 +2144,7 @@ int SkillsExec::reset_pybullet_ft_sensor()
 
 int SkillsExec::reset_ati_sensor()
 {
-    ROS_WHITE_STREAM("In reset_ati_sensor");
+    ROS_INFO_STREAM("In reset_ati_sensor");
     ros::ServiceClient reset_force_sensor_clnt = n_.serviceClient<std_srvs::Trigger>("/battery_cell_utils/reset_ati_sensor");
     ROS_WARN("Waiting for %s", reset_force_sensor_clnt.getService().c_str() );
     if (!reset_force_sensor_clnt.waitForExistence(ros::Duration(2)))
@@ -1960,7 +2157,7 @@ int SkillsExec::reset_ati_sensor()
     std_srvs::Trigger reset_srv;
     if ( !reset_force_sensor_clnt.call(reset_srv) )
     {
-        ROS_RED_STREAM("Unable to reset force sensor");
+        ROS_ERROR_STREAM("Unable to reset force sensor");
         return skills_executer_msgs::SkillExecutionResponse::Error;
     }
     ros::Duration(0.1).sleep();
@@ -1972,7 +2169,7 @@ int SkillsExec::reset_ati_sensor()
 
 int SkillsExec::reset_ft_sensor()
 {
-    ROS_WHITE_STREAM("In reset_ft_sensor. Sensor type: "<<sensor_type_);
+    ROS_INFO_STREAM("In reset_ft_sensor. Sensor type: "<<sensor_type_);
     int result;
     if (sensor_type_ == "pybullet")
         result = reset_pybullet_ft_sensor();
@@ -2008,14 +2205,26 @@ void SkillsExec::maxWrenchCalculation()
         if ( force > max_force_ )
         {
             max_force_ = force;
-            //            ROS_WHITE_STREAM("Actual max force value: %lf", max_force_);
+            //            ROS_INFO_STREAM("Actual max force value: %lf", max_force_);
         }
         if ( abs( force - force_old ) > max_force_variation_ )
         {
             contact_ = true;
         }
-
         force_old = force;
+        std::vector<double> actual_wrench_vec = {actual_wrench.wrench.force.x,
+                                                 actual_wrench.wrench.force.y,
+                                                 actual_wrench.wrench.force.z,
+                                                 actual_wrench.wrench.torque.x,
+                                                 actual_wrench.wrench.torque.y,
+                                                 actual_wrench.wrench.torque.z};
+        for (auto i = 0; i < actual_wrench_vec.size(); i++)
+        {
+            if (abs(actual_wrench_vec.at(i)) > max_wrench_.at(i))
+            {
+                max_wrench_.at(i) = abs(actual_wrench_vec.at(i));
+            }
+        }
     }
     return;
 }
@@ -2058,7 +2267,7 @@ void SkillsExec::gripper_feedback()
                 setParam(current_action_name_,"fail",1);
                 std::string param_name = "/" + current_grasped_object_ + "/attached";
                 n_.setParam(param_name,false);
-                ROS_YELLOW_STREAM("No object in the gripper. Current position: "<<actual_js.position.at(index - actual_js.name.begin()));
+                ROS_WARN_STREAM("No object in the gripper. Current position: "<<actual_js.position.at(index - actual_js.name.begin()));
                 break;
             }
 //            if ( actual_js.position.at(index - actual_js.name.begin()) < parallel_2f_gripper_closed_position_ + gripper_tollerance_ && actual_js.position.at(index - actual_js.name.begin()) > parallel_2f_gripper_closed_position_ - gripper_tollerance_ )
@@ -2067,7 +2276,7 @@ void SkillsExec::gripper_feedback()
 //                setParam(current_action_name_,"fail",1);
 //                std::string param_name = "/" + current_grasped_object_ + "/attached";
 //                n_.setParam(param_name,false);
-//                ROS_YELLOW_STREAM("No object in the gripper. Current position: "<<actual_js.position.at(index - actual_js.name.begin()));
+//                ROS_WARN_STREAM("No object in the gripper. Current position: "<<actual_js.position.at(index - actual_js.name.begin()));
 //                break;
 //            }
         }
@@ -2077,21 +2286,21 @@ void SkillsExec::gripper_feedback()
 
 int SkillsExec::joint_move_to(const std::string &action_name, const std::string &skill_name)
 {
-    ROS_WHITE_STREAM("In joint_move_to");
+    ROS_INFO_STREAM("In joint_move_to");
     if ( !changeConfig("trajectory_tracking") )
     {
-        ROS_RED_STREAM("Problem with configuration manager");
+        ROS_ERROR_STREAM("Problem with configuration manager");
         return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
     }
 
     if ( !fjt_ac_->waitForServer(ros::Duration(10)) )
     {
-        ROS_RED_STREAM("Timeout FollowJointTrajectory client for robot "<<robot_name_);
+        ROS_ERROR_STREAM("Timeout FollowJointTrajectory client for robot "<<robot_name_);
         return skills_executer_msgs::SkillExecutionResponse::Error;
     }
 
     ros::Duration(0.5).sleep();
-    ROS_WHITE_STREAM("Move info: ");
+    ROS_INFO_STREAM("Move info: ");
     std::string target_TF;
     double acc, vel, p_time;
     int r_att;
@@ -2104,54 +2313,63 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
 
     if (!getParam(action_name, skill_name, "acceleration_scaling", acc))
     {
-        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/acceleration_scaling is not set, defaul value: 0.5" );
+        ROS_WARN_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/acceleration_scaling is not set, defaul value: 0.5" );
         acc = 0.5;
         setParam(action_name, skill_name, "acceleration_scaling", acc);
-        ROS_WHITE_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/acceleration_scaling: "<<acc);
+        ROS_INFO_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/acceleration_scaling: "<<acc);
     }
     move_group_->setMaxAccelerationScalingFactor(acc);
-    ROS_WHITE_STREAM("  acceleration_scaling: "<<acc);
+    ROS_INFO_STREAM("  acceleration_scaling: "<<acc);
 
     if (!getParam(action_name, skill_name, "velocity_scaling", vel))
     {
-        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/velocity_scaling is not set, defaul value: 0.5" );
+        ROS_WARN_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/velocity_scaling is not set, defaul value: 0.5" );
         vel = 0.5;
         setParam(action_name, skill_name, "velocity_scaling", vel);
-        ROS_WHITE_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/velocity_scaling: "<<vel);
+        ROS_INFO_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/velocity_scaling: "<<vel);
     }
     move_group_->setMaxVelocityScalingFactor(vel);
-    ROS_WHITE_STREAM("  velocity_scaling: "<<vel);
+    ROS_INFO_STREAM("  velocity_scaling: "<<vel);
 
     if (!getParam(action_name, skill_name, "planning_time", p_time))
     {
-        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/planning_time is not set, defaul value: 5.0" );
+        ROS_WARN_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/planning_time is not set, defaul value: 5.0" );
         p_time = 0.5;
         setParam(action_name, skill_name, "planning_time", p_time);
-        ROS_WHITE_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/planning_time: "<<p_time);
+        ROS_INFO_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/planning_time: "<<p_time);
     }
     move_group_->setPlanningTime(p_time);
-    ROS_WHITE_STREAM("  planning_time: "<<p_time);
+    ROS_INFO_STREAM("  planning_time: "<<p_time);
 
     if (!getParam(action_name, skill_name, "replan_attempts", r_att))
     {
-        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/replan_attempts is not set, defaul value: 10" );
+        ROS_WARN_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/replan_attempts is not set, defaul value: 10" );
         r_att = 10;
         setParam(action_name, skill_name, "replan_attempts", r_att);
-        ROS_WHITE_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/replan_attempts: "<<r_att);
+        ROS_INFO_STREAM("  Set "<<action_name<<"/"<<skill_name<<"/replan_attempts: "<<r_att);
     }
     move_group_->setReplanAttempts(r_att);
-    ROS_WHITE_STREAM("  replan_attempts: "<<r_att);
+    ROS_INFO_STREAM("  replan_attempts: "<<r_att);
 
     if (!getParam(action_name, skill_name, "target_frame", target_TF))
     {
-        ROS_RED_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/target_TF is not set" );
-        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
+        ROS_ERROR_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/target_TF is not set" );
+        ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return NoParam: "<<skills_executer_msgs::SkillExecutionResponse::NoParam);
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
+    }
+    else
+    {
+        tf_listener_.getFrameStrings(all_frames_);
+        if (std::find(std::begin(all_frames_), std::end(all_frames_), target_TF) == all_frames_.end())
+        {
+            ROS_ERROR_RED_STREAM(target_TF<<" not in tf list");
+            return skills_executer_msgs::SkillExecutionResponse::NoParam;
+        }
     }
 
     if ( !getParam(action_name, skill_name, "relative_position", relative_position) )
     {
-        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is not set. It is considered [0,0,0]" );
+        ROS_WARN_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is not set. It is considered [0,0,0]" );
         relative_position.clear();
         relative_position.push_back(0);
         relative_position.push_back(0);
@@ -2165,8 +2383,8 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
     {
         if ( relative_position.size() != 3 )
         {
-            ROS_YELLOW_STREAM("The relative_position size is not 3");
-            ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is considered [0,0,0]" );
+            ROS_WARN_STREAM("The relative_position size is not 3");
+            ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_position is considered [0,0,0]" );
             relative_position.clear();
             relative_position.push_back(0);
             relative_position.push_back(0);
@@ -2181,12 +2399,12 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
             rel_pos.setX(relative_position.at(0));
             rel_pos.setY(relative_position.at(1));
             rel_pos.setZ(relative_position.at(2));
-            ROS_WHITE_STREAM("  relative_position: ["<<relative_position.at(0)<<","<<relative_position.at(1)<<","<<relative_position.at(2)<<"]");
+            ROS_INFO_STREAM("  relative_position: ["<<relative_position.at(0)<<","<<relative_position.at(1)<<","<<relative_position.at(2)<<"]");
         }
     }
     if ( !getParam(action_name, skill_name, "relative_orientation", relative_quaternion) )
     {
-        ROS_YELLOW_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is not set. It is considered [0,0,0,1]" );
+        ROS_WARN_STREAM("  The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is not set. It is considered [0,0,0,1]" );
         relative_quaternion.clear();
         relative_quaternion.push_back(0);
         relative_quaternion.push_back(0);
@@ -2202,8 +2420,8 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
     {
         if ( relative_quaternion.size() != 4 )
         {
-            ROS_YELLOW_STREAM("The relative_quaternion size is not 4");
-            ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is considered [0,0,0,1]" );
+            ROS_WARN_STREAM("The relative_quaternion size is not 4");
+            ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/relative_orientation is considered [0,0,0,1]" );
             relative_quaternion.clear();
             relative_quaternion.push_back(0);
             relative_quaternion.push_back(0);
@@ -2221,7 +2439,7 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
             rel_quat.setY(relative_quaternion.at(1));
             rel_quat.setZ(relative_quaternion.at(2));
             rel_quat.setW(relative_quaternion.at(3));
-            ROS_WHITE_STREAM("  relative_orientation: ["<<relative_quaternion.at(0)<<","<<relative_quaternion.at(1)<<","<<relative_quaternion.at(2)<<","<<relative_quaternion.at(3)<<"]");
+            ROS_INFO_STREAM("  relative_orientation: ["<<relative_quaternion.at(0)<<","<<relative_quaternion.at(1)<<","<<relative_quaternion.at(2)<<","<<relative_quaternion.at(3)<<"]");
         }
     }
     relative_transform.setOrigin(rel_pos);
@@ -2284,22 +2502,23 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
             iter += 1;
             if ( iter == max_iter)
             {
-                ROS_RED_STREAM("Goal configuration not found");
+                ROS_ERROR_STREAM("Goal configuration not found");
                 return skills_executer_msgs::SkillExecutionResponse::Fail;
             }
         }
     }
+    std::vector<double> target_conf = get_ik_msg.response.solution.configurations.at(0).configuration;
 
-    move_group_->setJointValueTarget(get_ik_msg.response.solution.configurations.at(0).configuration);
+    move_group_->setJointValueTarget(target_conf);
 
     moveit::core::MoveItErrorCode plan_result = move_group_->plan(moveit_plan_);
-    ROS_WHITE_STREAM("Plan_result: "<<plan_result);
+    ROS_INFO_STREAM("Plan_result: "<<plan_result);
     if ( plan_result != moveit::core::MoveItErrorCode::SUCCESS )
     {
-        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
+        ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
         if ( !changeConfig(watch_type_) )
         {
-            ROS_RED_STREAM("Problem with configuration manager");
+            ROS_ERROR_STREAM("Problem with configuration manager");
             return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
         }
         return skills_executer_msgs::SkillExecutionResponse::Fail;
@@ -2307,28 +2526,45 @@ int SkillsExec::joint_move_to(const std::string &action_name, const std::string 
 
     moveit::core::MoveItErrorCode move_result = move_group_->execute(moveit_plan_);
 
+    std::vector<double> current_conf = move_group_->getCurrentJointValues();
+
     if ( !changeConfig(watch_type_) )
     {
-        ROS_RED_STREAM("Problem with configuration manager");
+        ROS_ERROR_STREAM("Problem with configuration manager");
         return skills_executer_msgs::SkillExecutionResponse::ProblemConfManager;
     }
 
-    ROS_WHITE_STREAM("Move_result: "<<move_result);
+    ROS_INFO_STREAM("Move_result: "<<move_result);
     if ( move_result != moveit::core::MoveItErrorCode::SUCCESS )
     {
-        ROS_RED_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
+        ROS_ERROR_STREAM("/"<<action_name<<"/"<<skill_name<<" return Fail: "<<skills_executer_msgs::SkillExecutionResponse::Fail);
         return skills_executer_msgs::SkillExecutionResponse::Fail;
     }
 
-    std::vector<double> target_conf = get_ik_msg.response.solution.configurations.at(0).configuration;
-    std::vector<double> current_conf = move_group_->getCurrentJointValues();
+    std::string ik_str, curr_str, plan_str;
+    ik_str = "IK configurtion: [";
+    plan_str = "Planned configuration: [";
+    curr_str = "Current configurtion: [";
+    for (auto val: target_conf)
+    {
+        ik_str.append(std::to_string(val));
+        ik_str.append(",");
+    }
+    for (auto val: moveit_plan_.trajectory_.joint_trajectory.points.back().positions)
+    {
+        plan_str.append(std::to_string(val));
+        plan_str.append(",");
+    }
+    for (auto val: current_conf)
+    {
+        curr_str.append(std::to_string(val));
+        curr_str.append(",");
+    }
+    ROS_INFO_STREAM(ik_str<<"]");
+    ROS_INFO_STREAM(plan_str<<"]");
+    ROS_INFO_STREAM(curr_str<<"]");
 
-    ROS_WHITE_STREAM("Target configurtion: ["<<target_conf.at(0)<<","<<target_conf.at(1)<<","<<target_conf.at(2)<<","
-                   <<target_conf.at(3)<<","<<target_conf.at(4)<<","<<target_conf.at(5)<<"]");
-    ROS_WHITE_STREAM("Current configurtion: ["<<current_conf.at(0)<<","<<current_conf.at(1)<<","<<current_conf.at(2)<<","
-                   <<current_conf.at(3)<<","<<current_conf.at(4)<<","<<current_conf.at(5)<<"]");
-
-    ROS_WHITE_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
+    ROS_INFO_STREAM("/"<<action_name<<"/"<<skill_name<<" return Success: "<<skills_executer_msgs::SkillExecutionResponse::Success);
     return skills_executer_msgs::SkillExecutionResponse::Success;
 }
 
@@ -2357,17 +2593,27 @@ int SkillsExec::attachEndEffector(const std::string &action_name, const std::str
 {
     if (!getParam(action_name, skill_name, "reference_end_effector_frame", reference_end_effector_frame_))
     {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/reference_end_effector_frame is not set" );
+        ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/reference_end_effector_frame is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
+    else
+    {
+        tf_listener_.getFrameStrings(all_frames_);
+        if (std::find(std::begin(all_frames_), std::end(all_frames_), reference_end_effector_frame_) == all_frames_.end())
+        {
+            ROS_ERROR_RED_STREAM(reference_end_effector_frame_<<" not in tf list");
+            return skills_executer_msgs::SkillExecutionResponse::NoParam;
+        }
+    }
+
     if (!getParam(action_name, skill_name, "attached_link_name",   attached_link_name_))
     {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/attached_link_name is not set" );
+        ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/attached_link_name is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
     if (!getParam(action_name, skill_name, "end_effector_touch_links", end_effector_touch_links_))
     {
-        ROS_YELLOW_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/end_effector_touch_links is not set" );
+        ROS_WARN_STREAM("The parameter "<<action_name<<"/"<<skill_name<<"/end_effector_touch_links is not set" );
         return skills_executer_msgs::SkillExecutionResponse::NoParam;
     }
 

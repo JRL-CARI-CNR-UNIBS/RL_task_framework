@@ -9,7 +9,11 @@ BTToSkillsExecBridge::BTToSkillsExecBridge(const ros::NodeHandle &n, const std::
     {
         ros::ServiceClient skill_exec_clnt = n_.serviceClient<skills_executer_msgs::SkillExecution>("/"+robot+"/skills_exec/execute_skill");
         ROS_WARN_STREAM("Waiting for "<<skill_exec_clnt.getService());
-        skill_exec_clnt.waitForExistence();
+        if (!skill_exec_clnt.waitForExistence(ros::Duration(5)))
+        {
+            ROS_ERROR_STREAM("Fail to connect with /"+robot+"/skills_exec/execute_skill");
+            exit(1);
+        }
         ROS_WARN_STREAM("Connection ok");
         skill_exec_clnts_.insert(std::make_pair(robot,skill_exec_clnt));
     }

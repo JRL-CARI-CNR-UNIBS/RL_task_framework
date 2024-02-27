@@ -67,6 +67,7 @@ public:
     int attachEndEffector          (const std::string &action_name, const std::string &skill_name);
     int joint_move_to              (const std::string &action_name, const std::string &skill_name);
     int pneumaticSchunkGripperMove (const std::string &action_name, const std::string &skill_name);
+    int pandaGripperMove           (const std::string &action_name, const std::string &skill_name);
     double tf_distance             (const std::string &reference_tf, const std::string &target_frame);
 
     void gripper_feedback     ();
@@ -105,6 +106,9 @@ private:
            minimum_gripper_force_               = 5    ,
            parallel_2f_gripper_closed_position_ = -0.79;
 
+    std::vector<double> max_wrench_ = {0.0,0.0,0.0,0.0,0.0,0.0};
+
+    std::vector<std::string> all_frames_;
     tf::TransformListener tf_listener_;
     tf2_ros::StaticTransformBroadcaster tf_br_;
 
@@ -123,7 +127,8 @@ private:
                        sensor_reset_clnt_,
                        change_config_clnt_,
                        get_ik_clnt_,
-                       pneumatic_schunk_gripper_move_clnt_;
+                       pneumatic_schunk_gripper_move_clnt_,
+                       panda_gripper_move_clnt_;
 
     std::shared_ptr<actionlib::SimpleActionClient<simple_touch_controller_msgs::SimpleTouchAction>>        touch_action_;
     std::shared_ptr<actionlib::SimpleActionClient<relative_cartesian_controller_msgs::RelativeMoveAction>> relative_move_action_;
@@ -145,6 +150,7 @@ private:
                 simple_touch_type_                 ,
                 parallel_2f_gripper_move_type_     ,
                 robotiq_gripper_move_type_         ,
+                panda_gripper_move_type_           ,
                 ur_load_program_type_              ,
                 move_to_type_                      ,
                 linear_move_type_                  ,

@@ -32,7 +32,7 @@ bool BTExec::runTree(skills_util_msgs::RunTree::Request  &req,
         repo.append("/");
         for ( auto const& entry : std::filesystem::directory_iterator(repo))
         {
-            ROS_INFO_STREAM("  File: "<<entry.path().string());
+//            ROS_INFO_STREAM("  File: "<<entry.path().string());
             if( entry.path().extension() == ".xml")
             {
                 ROS_INFO_STREAM("  File: "<<entry.path().string());

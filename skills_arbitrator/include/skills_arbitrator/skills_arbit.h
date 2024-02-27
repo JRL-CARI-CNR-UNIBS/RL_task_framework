@@ -25,22 +25,16 @@ public:
 private:
     ros::NodeHandle n_;
     ros::ServiceServer skill_arbit_srv_;
-    std::string param_ns_;
+    std::string exec_param_ns_, arbit_param_ns_;
 
-    std::map<std::string,std::map<std::string,double>> actions_evaluation_info_,
-                                                       skills_evaluation_info_;
-
-    std::map<std::string,std::vector<std::string>> action_evaluation_indexes_,
-                                                   skill_evaluation_indexes_;
-
-    std::map<std::string,std::vector<double>> action_evaluation_weights_,
-                                              skill_evaluation_weights_;
+    std::map<std::string,std::map<std::string,std::map<std::string,double>>> skill_evaluation_parameters_;
+    std::map<std::string,std::map<std::string,double>> action_evaluation_parameters_;
 };
 
 template<typename T>
 inline bool SkillsArbit::getParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, T &param_value)
 {
-    std::string param_str = "/"+param_ns_+"/actions/"+action_name+"/skills/"+skill_name+"/"+param_name;
+    std::string param_str = "/"+exec_param_ns_+"/actions/"+action_name+"/skills/"+skill_name+"/"+param_name;
     if ( !n_.getParam(param_str, param_value) )
     {
         return false;
@@ -51,7 +45,7 @@ inline bool SkillsArbit::getParam(const std::string &action_name, const std::str
 template<typename T>
 inline bool SkillsArbit::getParam(const std::string &action_name, const std::string &param_name, T &param_value)
 {
-    std::string param_str = "/"+param_ns_+"/actions/"+action_name+"/"+param_name;
+    std::string param_str = "/"+exec_param_ns_+"/actions/"+action_name+"/"+param_name;
     if ( !n_.getParam(param_str, param_value) )
     {
         return false;
@@ -62,7 +56,7 @@ inline bool SkillsArbit::getParam(const std::string &action_name, const std::str
 template<typename T>
 inline void SkillsArbit::setParam(const std::string &action_name, const std::string &skill_name, const std::string &param_name, const T &param_value)
 {
-    std::string param_str = "/"+param_ns_+"/actions/"+action_name+"/skills/"+skill_name+"/"+param_name;
+    std::string param_str = "/"+exec_param_ns_+"/actions/"+action_name+"/skills/"+skill_name+"/"+param_name;
 
     n_.setParam(param_str, param_value);
     return;
@@ -71,7 +65,7 @@ inline void SkillsArbit::setParam(const std::string &action_name, const std::str
 template<typename T>
 inline void SkillsArbit::setParam(const std::string &action_name, const std::string &param_name, const T &param_value)
 {
-    std::string param_str = "/"+param_ns_+"/actions/"+action_name+"/"+param_name;
+    std::string param_str = "/"+exec_param_ns_+"/actions/"+action_name+"/"+param_name;
 
     n_.setParam(param_str, param_value);
     return;

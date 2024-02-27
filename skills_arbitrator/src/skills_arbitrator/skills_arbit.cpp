@@ -5,176 +5,136 @@ namespace skills_arbitrator
 
 SkillsArbit::SkillsArbit(const ros::NodeHandle & n) : n_(n)
 {
-    if (!n_.getParam("/skills_arbitrator/skills_parameters_name_space", param_ns_))
+    if (!n_.getParam("/skills_executer/skills_parameters_name_space", exec_param_ns_))
     {
-        ROS_WARN_BOLDYELLOW_STREAM("No /skills_arbitrator/skills_parameters_name_space param, defaul 'RL_params'");
-        param_ns_ = "RL_params";
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_executer/skills_parameters_name_space param, defaul 'exec_params'");
+        exec_param_ns_ = "exec_params";
     }
 
-    XmlRpc::XmlRpcValue action_types_to_evaluate;
-    if (!n_.getParam("/skills_arbitrator/action_types_to_evaluate", action_types_to_evaluate))
+    if (!n_.getParam("/skills_arbitrator/arbitrator_parameters_name_space", arbit_param_ns_))
+    {
+        ROS_WARN_BOLDYELLOW_STREAM("No /skills_arbitrator/arbitrator_parameters_name_space param, defaul 'arbit_params'");
+        arbit_param_ns_ = "arbit_params";
+    }
+
+    XmlRpc::XmlRpcValue actions_to_evaluate;
+    if (!n_.getParam("/" + arbit_param_ns_ + "/actions", actions_to_evaluate))
     {
         ROS_ERROR_STREAM("No /skills_arbitrator/action_types_to_evaluate param");
         return;
     }
 
-    std::vector<std::string> actions_types = skills_util::getMemberByXml(action_types_to_evaluate);
+    std::vector<std::string> action_names = skills_util::getMemberByXml(actions_to_evaluate);
 
-//    old
-//    for (const std::string action_type: actions_types)
-//    {
-//        std::vector<std::string> index_names;
-//        if (!n_.getParam("/skills_arbitrator/action_types_to_evaluate/" + action_type + "/index_names", index_names))
-//        {
-//            ROS_ERROR_STREAM("No /skills_arbitrator/action_types_to_evaluate/" + action_type + "/index_names param or it is not a vector of string");
-//            return;
-//        }
-//        action_evaluation_indexes_.insert(std::make_pair(action_type,index_names));
-
-//        std::vector<double> index_weights;
-//        if (!n_.getParam("/skills_arbitrator/action_types_to_evaluate/" + action_type + "/index_weights", index_weights))
-//        {
-//            ROS_ERROR_STREAM("No /skills_arbitrator/action_types_to_evaluate/" + action_type + "/index_weights param or it is not a vector of double");
-//            return;
-//        }
-//        action_evaluation_weights_.insert(std::make_pair(action_type,index_weights));
-//    }
-//    for (const std::pair<std::string,std::vector<std::string>> pair: action_evaluation_indexes_)
-//    {
-//        ROS_DEBUG_STREAM(pair.first + ":");
-//        for (const std::string param: pair.second)
-//        {
-//            ROS_DEBUG_STREAM("  - " << param);
-//        }
-//    }
-
-//    for (const std::pair<std::string,std::vector<double>> pair: action_evaluation_weights_)
-//    {
-//        ROS_DEBUG_STREAM(pair.first + ":");
-//        for (const double param: pair.second)
-//        {
-//            ROS_DEBUG_STREAM("  - " << param);
-//        }
-//    }
-//    end old
-
-//    new
-    for (const std::string action_type: actions_types)
+    for (const std::string action_name: action_names)
     {
-        XmlRpc::XmlRpcValue action_indexes;
-        if (!n_.getParam("/skills_arbitrator/action_types_to_evaluate/" + action_type, action_indexes))
+        XmlRpc::XmlRpcValue action_params;
+        if (!n_.getParam("/" + arbit_param_ns_ + "/actions/" + action_name, action_params))
         {
-            ROS_ERROR_STREAM("No /" + param_ns_ + "/" + action_type + " param");
+            ROS_ERROR_STREAM("No /" + arbit_param_ns_ + "/actions/" + action_name + " param");
             return;
         }
-
-        std::vector<std::string> index_names = skills_util::getMemberByXml(action_indexes);
-        double index_weight;
-        std::map<std::string,double> action_info;
-        for (std::string index_name: index_names)
+        std::vector<std::string> param_names = skills_util::getMemberByXml(action_params);
+        std::map<std::string,double> param_name_to_param_value;
+        for (const auto param_name: param_names)
         {
-            if (!n_.getParam("/skills_arbitrator/action_types_to_evaluate/" + action_type + "/" + index_name, index_weight))
+            if (!param_name.compare("skills"))
+                continue;
+
+            double weight;
+            XmlRpc::XmlRpcValue param_xml;
+            if (!n_.getParam("/" + arbit_param_ns_ + "/actions/" + action_name + "/" + param_name, param_xml))
             {
-                ROS_ERROR_STREAM("No /skills_arbitrator/action_types_to_evaluate/" + action_type + "/" + index_name + " param or it is not a vector of double");
+                ROS_ERROR_STREAM("No /" + arbit_param_ns_ + "/actions/" + action_name + "/" + param_name + " param");
                 return;
             }
-            action_info.insert(std::make_pair(index_name,index_weight));
+            else
+            {
+                if (param_xml.getType() == XmlRpc::XmlRpcValue::Type::TypeDouble)
+                {
+                    weight = double(param_xml);
+                }
+                else if (param_xml.getType() == XmlRpc::XmlRpcValue::Type::TypeInt)
+                {
+                    weight = double(int(param_xml));
+                }
+                else
+                {
+                    ROS_ERROR_STREAM("/" + arbit_param_ns_ + "/actions/" + action_name + "/" + param_name + " value type is wrong.");
+                    return;
+                }
+            }
+            param_name_to_param_value.insert(std::make_pair(param_name,weight));
         }
-        actions_evaluation_info_.insert(std::make_pair(action_type,action_info));
-    }
+        action_evaluation_parameters_.insert(std::make_pair(action_name,param_name_to_param_value));
 
-    ROS_INFO_STREAM("Skills_arbitrator params:");
-    ROS_INFO_STREAM(" Actions:");
-    for (const std::pair<std::string,std::map<std::string,double>> action_info: actions_evaluation_info_)
-    {
-        ROS_INFO_STREAM("  " + action_info.first);
-        for (const std::pair<std::string,double> parameter_info: action_info.second)
-            ROS_INFO_STREAM("   " + parameter_info.first + ". Weight: " + std::to_string(parameter_info.second));
-    }
-//    end new
-
-    XmlRpc::XmlRpcValue skill_types_to_evaluate;
-    if (!n_.getParam("/skills_arbitrator/skill_types_to_evaluate", skill_types_to_evaluate))
-    {
-        ROS_ERROR_STREAM("No /skills_arbitrator/skill_types_to_evaluate param");
-        return;
-    }
-
-    std::vector<std::string> skill_types = skills_util::getMemberByXml(skill_types_to_evaluate);
-
-//    old
-//    for (const std::string skill_type: skills_types)
-//    {
-//        std::vector<std::string> index_names;
-//        if (!n_.getParam("/skills_arbitrator/skill_types_to_evaluate/" + skill_type + "/index_names", index_names))
-//        {
-//            ROS_ERROR_STREAM("No /skills_arbitrator/skill_types_to_evaluate/" + skill_type + "/index_names param or it is not a vector of string");
-//            return;
-//        }
-//        skill_evaluation_indexes_.insert(std::make_pair(skill_type,index_names));
-
-//        std::vector<double> index_weights;
-//        if (!n_.getParam("/skills_arbitrator/skill_types_to_evaluate/" + skill_type + "/index_weights", index_weights))
-//        {
-//            ROS_ERROR_STREAM("No /skills_arbitrator/skill_types_to_evaluate/" + skill_type + "/index_weights param or it is not a vector of double");
-//            return;
-//        }
-//        skill_evaluation_weights_.insert(std::make_pair(skill_type,index_weights));
-//    }
-
-//    for (const std::pair<std::string,std::vector<std::string>> pair: skill_evaluation_indexes_)
-//    {
-//        ROS_DEBUG_STREAM(pair.first + ":");
-//        for (const std::string param: pair.second)
-//        {
-//            ROS_DEBUG_STREAM("  - " << param);
-//        }
-//    }
-
-//    for (const std::pair<std::string,std::vector<double>> pair: skill_evaluation_weights_)
-//    {
-//        ROS_DEBUG_STREAM(pair.first + ":");
-//        for (const double param: pair.second)
-//        {
-//            ROS_DEBUG_STREAM("  - " << param);
-//        }
-//    }
-//    end old
-
-//    new
-    for (const std::string skill_type: skill_types)
-    {
-        XmlRpc::XmlRpcValue skill_indexes;
-        if (!n_.getParam("/skills_arbitrator/skill_types_to_evaluate/" + skill_type, skill_indexes))
+        XmlRpc::XmlRpcValue skills_param;
+        if (!n_.getParam("/" + arbit_param_ns_ + "/actions/" + action_name + "/skills", skills_param))
         {
-            ROS_ERROR_STREAM("/skills_arbitrator/skill_types_to_evaluate/" + skill_type + " param");
+            ROS_ERROR_STREAM("No /" + arbit_param_ns_ + "/actions/" + action_name + "/skills param");
             return;
         }
-
-        std::vector<std::string> index_names = skills_util::getMemberByXml(skill_indexes);
-        double index_weight;
-        std::map<std::string,double> skill_info;
-        for (std::string index_name: index_names)
+        std::vector<std::string> skill_names = skills_util::getMemberByXml(skills_param);
+        std::map<std::string,std::map<std::string,double>> skill_name_to_params;
+        for (const std::string skill_name: skill_names)
         {
-            if (!n_.getParam("/skills_arbitrator/skill_types_to_evaluate/" + skill_type + "/" + index_name, index_weight))
+            XmlRpc::XmlRpcValue params;
+            if (!n_.getParam("/" + arbit_param_ns_ + "/actions/" + action_name + "/skills/" + skill_name, params))
             {
-                ROS_ERROR_STREAM("No /skills_arbitrator/skill_types_to_evaluate/" + skill_type + "/" + index_name + " param or it is not a vector of double");
+                ROS_ERROR_STREAM("No /" + arbit_param_ns_ + "/actions/" + action_name + "/skills/" + skill_name + " param");
                 return;
             }
-            skill_info.insert(std::make_pair(index_name,index_weight));
+            std::vector<std::string> param_names = skills_util::getMemberByXml(params);
+            std::map<std::string,double> param_name_to_param_value;
+            for (const std::string param_name: param_names)
+            {
+                double weight;
+                XmlRpc::XmlRpcValue param_xml;
+                if (!n_.getParam("/" + arbit_param_ns_ + "/actions/" + action_name + "/skills/" + skill_name + "/" + param_name, param_xml))
+                {
+                    ROS_ERROR_STREAM("No /" + arbit_param_ns_ + "/actions/" + action_name + "/skills/" + skill_name + "/" + param_name + " param");
+                    return;
+                }
+                else
+                {
+                    if (param_xml.getType() == XmlRpc::XmlRpcValue::Type::TypeDouble)
+                    {
+                        weight = double(param_xml);
+                    }
+                    else if (param_xml.getType() == XmlRpc::XmlRpcValue::Type::TypeInt)
+                    {
+                        weight = double(int(param_xml));
+                    }
+                    else
+                    {
+                        ROS_ERROR_STREAM("/" + arbit_param_ns_ + "/actions/" + action_name + "/skills/" + skill_name + "/" + param_name + " value type is wrong.");
+                        return;
+                    }
+                }
+                param_name_to_param_value.insert(std::make_pair(param_name,weight));
+            }
+            skill_name_to_params.insert(std::make_pair(skill_name,param_name_to_param_value));
         }
-
-        skills_evaluation_info_.insert(std::make_pair(skill_type, skill_info));
+        skill_evaluation_parameters_.insert(std::make_pair(action_name,skill_name_to_params));
     }
 
-    ROS_INFO_STREAM(" Skills:");
-    for (const std::pair<std::string,std::map<std::string,double>> skill_info: skills_evaluation_info_)
+    ROS_INFO_STREAM(arbit_param_ns_ + " params:");
+    for (const auto action: skill_evaluation_parameters_)
     {
-        ROS_INFO_STREAM("  " + skill_info.first);
-        for (const std::pair<std::string,double> parameter_info: skill_info.second)
-            ROS_INFO_STREAM("   " + parameter_info.first + ". Weight: " + std::to_string(parameter_info.second));
+         ROS_INFO_STREAM("  " + action.first + ":");
+         for (const auto param: action_evaluation_parameters_[action.first])
+         {
+             ROS_INFO_STREAM("    " +param.first+": " + std::to_string(param.second));
+         }
+         for (const auto skill: action.second)
+         {
+             ROS_INFO_STREAM("    " +skill.first+":");
+             for (const auto param: skill.second)
+             {
+                 ROS_INFO_STREAM("      " + param.first + ": " + std::to_string(param.second));
+             }
+         }
     }
-//    end new
 
     skill_arbit_srv_ = n_.advertiseService("/skills_arbit/evaluate_skill", &SkillsArbit::skillsArbitration, this);
 }
@@ -192,258 +152,90 @@ bool SkillsArbit::skillsArbitration(skills_arbitrator_msgs::SkillArbitration::Re
 
     if (!getParam(req.action_name, "executed", executed))
     {
-        ROS_RED_STREAM("No param /"<<req.action_name<<"/executed, skill arbitration finish");
+        ROS_ERROR_STREAM("No param /"<<req.action_name<<"/executed, skill arbitration finish");
         res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoParam;
         return true;
     }
 
     if ( executed )
     {
-        if (!getParam(req.action_name, "action_type", action_type))
-        {
-            ROS_RED_STREAM("No param /"<<req.action_name<<"/action_type, skill arbitration finish");
-            res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoParam;
-            return true;
-        }
-        ROS_WHITE_STREAM("Action type: "<<action_type.c_str());
-
-//        old
-//        if ( action_evaluation_indexes_.find(action_type) == action_evaluation_indexes_.end() )
-//        {
-//            ROS_RED_STREAM("/"<<action_type<<" action type is not in the list, skill arbitration finish");
-//            res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoSkillType;
-//            return true;
-//        }
-//        end old
-
-//        new
-        if (actions_evaluation_info_.find(action_type) == actions_evaluation_info_.end() )
-        {
-            ROS_RED_STREAM("/"<<action_type<<" action type is not in the list, skill arbitration finish");
-            res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoSkillType;
-            return true;
-        }
-//        end new
-
         total_reward = 0.0;
-        ROS_WHITE_STREAM("Start total reward: 0.0");
-
-//        old
-//        for (int i = 0; i < action_evaluation_indexes_[action_type].size(); i++)
-//        {
-//            double value;
-//            if ( !getParam(req.action_name,action_evaluation_indexes_[action_type].at(i),value) )
-//            {
-//                ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/"<<action_evaluation_indexes_[action_type].at(i));
-//                setParam(req.action_name,action_evaluation_indexes_[action_type].at(i),0.0);
-//                ROS_WHITE_STREAM("Set /"<<req.action_name<<"/"<<action_evaluation_indexes_[action_type].at(i)<<": "<<0.0);
-//                value = 0.0;
-//            }
-//            ROS_WHITE_STREAM("/"<<req.action_name<<"/"<<action_evaluation_indexes_[action_type].at(i)<<": "<<value);
-//            ROS_WHITE_STREAM("Total_reward + "<<value<<" * "<<action_evaluation_weights_[action_type].at(i));
-//            total_reward = total_reward + ( value * action_evaluation_weights_[action_type].at(i) );
-//            setParam(req.action_name,action_evaluation_indexes_[action_type].at(i)+"_reward",value * action_evaluation_weights_[action_type].at(i));
-//        }
-//        end old
-
-//        new
-        for (const auto& [index_name,index_weight]: actions_evaluation_info_[action_type])
+        ROS_INFO_STREAM("Start total reward: 0.0");
+        bool fail = false;
+        for (const auto param: action_evaluation_parameters_[req.action_name])
         {
-           double value;
-            if ( !getParam(req.action_name,index_name,value) )
+            double value;
+            if (!getParam(req.action_name,param.first,value))
             {
-                ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/"<<index_name);
-                setParam(req.action_name,index_name,0.0);
-                ROS_WHITE_STREAM("Set /"<<req.action_name<<"/"<<index_name<<": "<<0.0);
-                value = 0.0;
+                ROS_ERROR_STREAM("No param /"<<req.action_name<<"/"<<param.first);
+                fail = true;
+                break;
             }
-            ROS_WHITE_STREAM("/"<<req.action_name<<"/"<<index_name<<": "<<value);
-            ROS_WHITE_STREAM("Total_reward + " << value << " * " << index_weight);
-            total_reward = total_reward + ( value * index_weight );
-            setParam(req.action_name,index_name+"_reward",value * index_weight);
+            ROS_INFO_STREAM("/"<<req.action_name<<"/"<<param.first<<": "<<value);
+            ROS_INFO_STREAM("Total_reward + " << value << " * " << param.second);
+            total_reward = total_reward + ( value * param.second );
+            setParam(req.action_name,param.first+"_reward",value * param.second);
         }
-//        end new
-
-        setParam(req.action_name,"total_reward",total_reward);
-        ROS_WHITE_STREAM("Set /"<<req.action_name<<"/total_reward: "<<total_reward);
-
-//        old
-//        for (int i = 0; i < action_evaluation_indexes_[action_type].size(); i++)
-//        {
-//            setParam(req.action_name,action_evaluation_indexes_[action_type].at(i), 0);
-//            ROS_WHITE_STREAM("Set /"<<req.action_name<<"/"<<action_evaluation_indexes_[action_type].at(i)<<": "<<0);
-//        }
-//        end old
-
-//        new
-
-
-//        for (std::pair<std::string,double> index_info: actions_evaluation_info_[action_type])
-//        {
-//            setParam(req.action_name,index_info.first, 0);
-//            ROS_WHITE_STREAM("Set /"<<req.action_name<<"/"<<index_info.first<<": "<<0);
-//        }
-
-        for (const auto& [index_name,index_weight]: actions_evaluation_info_[action_type])
+        if (!fail)
         {
-            setParam(req.action_name,index_name, 0);
-            ROS_WHITE_STREAM("Set /"<<req.action_name<<"/"<<index_name<<": "<<0);
+            setParam(req.action_name,"total_reward",total_reward);
+            ROS_INFO_STREAM("Set /"<<req.action_name<<"/total_reward: "<<total_reward);
         }
-
-//        end new
+        for (const auto param: action_evaluation_parameters_[req.action_name])
+        {
+            setParam(req.action_name,param.first, 0);
+            ROS_INFO_STREAM("Set /"<<req.action_name<<"/"<<param.first<<": "<<0);
+        }
     }
     else
     {
-        ROS_RED_STREAM("/"<<req.action_name<<" not executed, skill arbitration finish");
+        ROS_ERROR_STREAM("/"<<req.action_name<<" not executed, skill arbitration finish");
         res.result = skills_arbitrator_msgs::SkillArbitrationResponse::Fail;
         return true;
     }
 
-//    old
-//    if (!n_.getParamNames(params))
-//    {
-//        ROS_RED_STREAM("Error with getParamNames");
-//        res.result = skills_arbitrator_msgs::SkillArbitrationResponse::Error;
-//        return true;
-//    }
-
-//    for ( const std::string param: params )
-//    {
-//        if ( param.find(req.action_name) != std::string::npos && param.find("skill_type") != std::string::npos )
-//        {
-//            std::string skill_name = param;
-//            std::size_t index = skill_name.find("skill_type");
-//            skill_name.erase(skill_name.begin()+index-1,skill_name.end());
-//            index = skill_name.find_last_of("/");
-//            skill_name.erase(skill_name.begin(),skill_name.begin()+index+1);
-//            std::string skill_type;
-//            if (!getParam(req.action_name, skill_name, "skill_type",   skill_type))
-//            {
-//                ROS_RED_STREAM("No param "<<req.action_name<<"/"<<skill_name<<"/skill_type, skill explore finish");
-//                res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoParam;
-//                return true;
-//            }
-//            skill_type_map.insert(std::make_pair(skill_name,skill_type));
-//            skill_names.push_back(skill_name);
-//        }
-//    }
-
-//    for ( const std::string skill_name: skill_names)
-//    {
-//        ROS_BOLDMAGENTA_STREAM("Skill name: "<<skill_name.c_str());
-
-//        if (!getParam(req.action_name, skill_name, "executed",   executed))
-//        {
-//            ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/"<<skill_name<<"/executed");
-//        }
-//        else{
-//            if ( executed )
-//            {
-//                if (!getParam(req.action_name, skill_name, "skill_type", skill_type_map.at(skill_name)))
-//                {
-//                    ROS_RED_STREAM("No param /"<<req.action_name<<"/"<<skill_name<<"/skill_type, skill arbitration finish");
-//                    res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoParam;
-//                    return true;
-//                }
-//                ROS_WHITE_STREAM("Skill type: "<<skill_type_map.at(skill_name).c_str());
-
-//                if ( skill_evaluation_indexes_.find(skill_type_map.at(skill_name)) == skill_evaluation_indexes_.end() )
-//                {
-//                    ROS_RED_STREAM("/"<<skill_type_map.at(skill_name)<<" skill type  is not in the list, skill arbitration finish");
-//                    res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoSkillType;
-//                    return true;
-//                }
-
-//                double reward = 0.0;
-
-//                for (int i = 0; i < skill_evaluation_indexes_[skill_type_map.at(skill_name)].size(); i++)
-//                {
-//                    double value;
-//                    if ( !getParam(req.action_name,skill_name,skill_evaluation_indexes_[skill_type_map.at(skill_name)].at(i),value) )
-//                    {
-//                        ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/"<<skill_name<<"/"<<skill_evaluation_indexes_[skill_type_map.at(skill_name)].at(i) );
-//                        setParam(req.action_name,skill_name,skill_evaluation_indexes_[skill_type_map.at(skill_name)].at(i),0.0);
-//                        ROS_WHITE_STREAM("Set /"<<req.action_name<<"/"<<skill_name<<"/"<<skill_evaluation_indexes_[skill_type_map.at(skill_name)].at(i)<<": "<<0.0);
-//                        value = 0.0;
-//                        setParam(req.action_name,skill_name,skill_evaluation_indexes_[skill_type_map.at(skill_name)].at(i),value);
-//                    }
-//                    ROS_WHITE_STREAM("/"<<req.action_name<<"/"<<skill_name<<"/"<<skill_evaluation_indexes_[skill_type_map.at(skill_name)].at(i)<<": "<<value);
-//                    ROS_WHITE_STREAM("Reward + "<<value<<" * "<<skill_evaluation_weights_[skill_type_map.at(skill_name)].at(i));
-//                    reward = reward + ( value * skill_evaluation_weights_[skill_type_map.at(skill_name)].at(i) );
-//                }
-
-//                setParam(req.action_name,skill_name,"reward",reward);
-//                ROS_WHITE_STREAM("Set /"<<req.action_name<<"/"<<skill_name<<"/reward: "<<reward);
-//            }
-//        }
-//    }
-//    end old
-
-//    new
     XmlRpc::XmlRpcValue action_info;
-    if (!n_.getParam("/" + param_ns_ + "/actions/" + req.action_name, action_info))
+    if (!n_.getParam("/" + exec_param_ns_ + "/actions/" + req.action_name, action_info))
     {
-        ROS_ERROR_STREAM("No /" + param_ns_ + "/actions/" + req.action_name + " param");
+        ROS_ERROR_STREAM("No /" + exec_param_ns_ + "/actions/" + req.action_name + " param");
         res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoParam;
         return true;
     }
 
-    std::vector<std::string> action_members = skills_util::getMemberByXml(action_info);
-    for (const auto& action_member: action_members)
-        if (n_.hasParam("/"+param_ns_+"/"+req.action_name+"/"+action_member+"/skill_type"))
-            skill_names.push_back(action_member);
-
-    for (const std::string skill_name: skill_names)
+    for (const auto skill_params: skill_evaluation_parameters_[req.action_name])
     {
-        ROS_BOLDMAGENTA_STREAM("Skill name: "<<skill_name.c_str());
+        ROS_BOLDMAGENTA_STREAM("Skill name: "<<skill_params.first.c_str());
 
-        if (!getParam(req.action_name, skill_name, "executed",   executed))
+        if (!getParam(req.action_name, skill_params.first, "executed",   executed))
         {
-            ROS_YELLOW_STREAM("No param /"<<req.action_name<<"/"<<skill_name<<"/executed");
+            ROS_WARN_STREAM("No param /"<<req.action_name<<"/"<<skill_params.first<<"/executed");
+            continue;
         }
         else{
             if ( executed )
             {
-                std::string skill_type;
-                if (!getParam(req.action_name, skill_name, "skill_type", skill_type))
-                {
-                    ROS_RED_STREAM("No param /"<<req.action_name<<"/"<<skill_name<<"/skill_type, skill arbitration finish");
-                    res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoParam;
-                    return true;
-                }
-                ROS_WHITE_STREAM("Skill type: "<<skill_type.c_str());
-
-                if (skills_evaluation_info_.find(skill_type) == skills_evaluation_info_.end())
-                {
-                    ROS_RED_STREAM("/"<<skill_type<<" skill type  is not in the list, skill arbitration finish");
-                    res.result = skills_arbitrator_msgs::SkillArbitrationResponse::NoSkillType;
-                    return true;
-                }
-
                 double reward = 0.0;
-
-                for (const auto& [index_name,index_weight]: actions_evaluation_info_[action_type])
+                bool fail = false;
+                for (const auto param: skill_params.second)
                 {
                     double value;
-
-                    if (!getParam(req.action_name,skill_name,index_name,value))
+                    if (!getParam(req.action_name,skill_params.first,param.first,value))
                     {
-                        ROS_YELLOW_STREAM("No param /" << req.action_name << "/" << skill_name << "/" << index_name);
-                        setParam(req.action_name,skill_name,index_name,0.0);
-                        ROS_WHITE_STREAM("Set /"<<req.action_name<<"/"<<skill_name<<"/"<<index_name<<": "<<0.0);
-                        value = 0.0;
-                        setParam(req.action_name,skill_name,index_name,value);
+                        ROS_ERROR_STREAM("No param /" << req.action_name << "/" << skill_params.first << "/" << param.first);
+                        fail = true;
+                        break;
                     }
-                    ROS_WHITE_STREAM("/"<<req.action_name<<"/"<<skill_name<<"/"<<index_name<<": "<<value);
-                    ROS_WHITE_STREAM("Reward + "<<value<<" * "<<index_weight);
-                    reward = reward + ( value * index_weight );
+                    ROS_INFO_STREAM("/"<<req.action_name<<"/"<<skill_params.first<<"/"<<param.first<<": "<<value);
+                    ROS_INFO_STREAM("Reward + "<<value<<" * "<<param.second);
+                    reward = reward + ( value * param.second );
                 }
-                setParam(req.action_name,skill_name,"reward",reward);
-                ROS_WHITE_STREAM("Set /"<<req.action_name<<"/"<<skill_name<<"/reward: "<<reward);
+                if (fail)
+                    break;
+                setParam(req.action_name,skill_params.first,"reward",reward);
+                ROS_INFO_STREAM("Set /"<<req.action_name<<"/"<<skill_params.first<<"/reward: "<<reward);
             }
         }
     }
-//    end new
 
     ROS_BOLDMAGENTA_STREAM("Arbitrator has finished.");
     res.result = skills_arbitrator_msgs::SkillArbitrationResponse::Success;
