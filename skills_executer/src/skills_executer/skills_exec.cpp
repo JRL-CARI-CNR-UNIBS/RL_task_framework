@@ -1,4 +1,4 @@
-#include <skills_executer/skills_exec.h>
+﻿#include <skills_executer/skills_exec.h>
 
 namespace skills_executer
 {
@@ -376,12 +376,16 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     ROS_INFO_STREAM("Set /"<<req.action_name<<"/"<<req.skill_name<<"/executed: "<<1);
     if ( res.result != skills_executer_msgs::SkillExecutionResponse::Success )
     {
-        setParam(req.action_name, "failure", 1);
+        setParam(req.action_name, "fail", 1);
         ROS_WARN_STREAM("Set /"<<req.action_name<<"/fail: "<<1);
+        setParam(req.action_name, req.skill_name, "fail", 1);
+        ROS_WARN_STREAM("Set /"<<req.action_name<<"/"<<req.skill_name<<"/fail: "<<1);
     }
     else
     {
-        setParam(req.action_name, "failure", 0);
+        setParam(req.action_name, req.skill_name, "fail", 0);
+        ROS_INFO_STREAM("Set /"<<req.action_name<<"/"<<req.skill_name<<"/fail: "<<0);
+        setParam(req.action_name, "fail", 0);
         ROS_INFO_STREAM("Set /"<<req.action_name<<"/fail: "<<0);
     }
 
