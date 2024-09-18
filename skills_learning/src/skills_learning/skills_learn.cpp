@@ -269,7 +269,7 @@ bool SkillsLearn::skillsLearning(skills_learning_msgs::SkillLearning::Request  &
         else
         {
             test_number -= 1;
-            ROS_INFO_STREAM("Action not executedt, /"<<req.action_name<<"/test_number set to "<<test_number);
+            ROS_INFO_STREAM("Action not executed, /"<<req.action_name<<"/test_number set to "<<test_number);
             setParam(req.action_name, "test_number", test_number);
         }
     }

@@ -2,3 +2,8 @@ string tree_name
 string[] folders_paths
 ---
 int8 result
+# IDLE = 0,
+# RUNNING = 1,
+# SUCCESS = 2,
+# FAILURE = 3,
+# SKIPPED = 4,

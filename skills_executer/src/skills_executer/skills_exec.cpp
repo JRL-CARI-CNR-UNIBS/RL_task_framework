@@ -407,7 +407,7 @@ bool SkillsExec::skillsExecution(skills_executer_msgs::SkillExecution::Request  
     std::vector<double> new_total_max_wrench = {0,0,0,0,0,0};
     for (auto i = 0; i < total_max_wrench.size(); i++)
     {
-        if (max_wrench_.at(i) > total_max_wrench.at(i))
+        if (abs(max_wrench_.at(i)) > abs(total_max_wrench.at(i)))
         {
             new_total_max_wrench.at(i) = max_wrench_.at(i);
         }
@@ -2224,9 +2224,9 @@ void SkillsExec::maxWrenchCalculation()
                                                  actual_wrench.wrench.torque.z};
         for (auto i = 0; i < actual_wrench_vec.size(); i++)
         {
-            if (abs(actual_wrench_vec.at(i)) > max_wrench_.at(i))
+            if (abs(actual_wrench_vec.at(i)) > abs(max_wrench_.at(i)))
             {
-                max_wrench_.at(i) = abs(actual_wrench_vec.at(i));
+                max_wrench_.at(i) = actual_wrench_vec.at(i);
             }
         }
     }
